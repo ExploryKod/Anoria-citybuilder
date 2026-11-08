@@ -8,6 +8,9 @@ async function hamletNameOf(hamletId) {
 }
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { renderRichText } from '../shell/richText.js';
+import { raw } from '../shell/safeHtml.js';
+import { showWarningToast } from '../shell/ToastNotifier.js';
 import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 
@@ -79,7 +82,8 @@ function legendIconOf(key) {
   const icon = document.createElement('span');
   icon.className = 'news-event-legend-icon';
   icon.setAttribute('aria-hidden', 'true');
-  icon.innerHTML = source.innerHTML;
+  // The page's own icon, copied as nodes (not read back as a string).
+  icon.replaceChildren(...[...source.childNodes].map((node) => node.cloneNode(true)));
   return icon;
 }
 
@@ -145,30 +149,6 @@ export function makeImageZoomable(element, image) {
   };
 }
 
-const HTML_ESCAPES = Object.freeze({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' });
-
-/**
- * A dépêche's text as the catalog writes it: a blank line starts a paragraph, `**…**` is bold, and lines starting with `- ` make a list (aligned left,
- * under the line of the paragraph that introduces it). Everything else is plain text (escaped), so the result is safe to set as HTML.
- * @param {string} text
- * @returns {string}
- */
-export function richTextHtml(text) {
-  const bold = (line) => line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  const escaped = String(text).replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
-  return escaped
-    .split(/\n{2,}/)
-    .map((paragraph) => {
-      const lines = paragraph.split('\n');
-      const items = lines.filter((line) => line.startsWith('- '));
-      const sentences = lines.filter((line) => !line.startsWith('- '));
-      const sentence = sentences.length > 0 ? `<span class="news-event-paragraph">${bold(sentences.join('\n'))}</span>` : '';
-      const list = items.length > 0 ? `<ul class="news-event-list">${items.map((line) => `<li>${bold(line.slice(2))}</li>`).join('')}</ul>` : '';
-      return sentence + list;
-    })
-    .join('');
-}
-
 /**
  * One picture of a dépêche's `illustrations`, with its caption: a building id (its icon and name from the catalog), or `{ src, label }` for a picture
  * of the tutorial's own (the no-work sprite).
@@ -183,7 +163,7 @@ export function illustrationFigure(entry) {
   picture.setAttribute('aria-hidden', 'true');
   const caption = document.createElement('figcaption');
   if (typeof entry === 'string') {
-    picture.innerHTML = buildingIconHtml(entry);
+    picture.innerHTML = raw(buildingIconHtml(entry));
     caption.textContent = buildingName(entry);
   } else {
     const image = document.createElement('img');
@@ -392,7 +372,7 @@ export function initNewsEventModal(deps) {
       });
     }
     if (bodyEl) {
-      bodyEl.innerHTML = richTextHtml(showBody
+      renderRichText(bodyEl, showBody
         ? view.body
         : item.teaser || 'Une dépêche est disponible contre contribution.');
     }
@@ -487,7 +467,7 @@ export function initNewsEventModal(deps) {
     if (actionEl) actionEl.hidden = !action;
     if (action) {
       const kind = newsActionOf(action);
-      if (actionIconEl) actionIconEl.innerHTML = kind.iconHtml(action);
+      if (actionIconEl) actionIconEl.innerHTML = raw(kind.iconHtml(action));
       if (actionLabelEl) actionLabelEl.textContent = kind.label(action);
       if (actionBtn) {
         actionBtn.title = kind.title(action);
@@ -640,7 +620,14 @@ export function initNewsEventModal(deps) {
     ) {
       return;
     }
-    queue = await deps.intelligence.listIncomingNews();
+    const incoming = await deps.intelligence.listIncomingNews();
+    // A quiet dépêche never opens the modal: a toast names it, and it goes to the archives where the player reads it when they want.
+    const nowQuiet = deps.getGameTime?.() ?? 0;
+    for (const item of incoming.filter((entry) => entry.quiet)) {
+      showWarningToast(`${item.title} — à lire dans les archives des dépêches.`, { timeout: 6000 });
+      await deps.intelligence.archiveNewsItem({ newsItemId: item.id, turn: nowQuiet });
+    }
+    queue = incoming.filter((entry) => !entry.quiet);
     // A blocking dépêche is done once its button has nothing left to offer (the building stands): it is archived without being shown. While it is not,
     // it is shown again a couple of turns after its button was pressed, not before (the player is placing the building).
     const now = deps.getGameTime?.() ?? 0;

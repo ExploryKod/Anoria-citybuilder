@@ -1,3 +1,5 @@
+import { html } from '../../shell/safeHtml.js';
+
 export class ReportSectionPresenter {
     constructor() {
         this.periodType = 'year';
@@ -71,11 +73,11 @@ export class ReportSectionPresenter {
         const reportList = document.getElementById('report-list');
         if (!reportList || !this.reportData) return;
 
-        reportList.innerHTML = this.reportData.items.map(item => {
+        reportList.innerHTML = html`${this.reportData.items.map(item => {
             const statusClass = item.status || 'normal';
             const statusTextClass = `report-item-status ${statusClass}`;
-            
-            return `
+
+            return html`
                 <div class="report-item ${statusClass}">
                     <div class="report-item-bullet"></div>
                     <div class="report-item-content">
@@ -84,7 +86,7 @@ export class ReportSectionPresenter {
                     </div>
                 </div>
             `;
-        }).join('');
+        })}`;
     }
 
     updateReportItem(category, status, message) {

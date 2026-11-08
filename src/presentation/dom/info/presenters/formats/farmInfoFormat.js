@@ -3,6 +3,7 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { html } from '../../../shell/safeHtml.js';
 import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
@@ -36,7 +37,7 @@ export function formatFarmLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
     title: buildingName(vm.buildingType),
-    meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
+    meta: html`📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
 }

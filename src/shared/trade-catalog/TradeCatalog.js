@@ -199,6 +199,56 @@ export const TRADE_CATALOG = Object.freeze([
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
     openingRequirements: Object.freeze({}),
   },
+  {
+    cityId: 'sablia',
+    wants: Object.freeze([
+      { good: 'wheat',  merchantGood: null, baseMultiplier: 1.3 },
+      { good: 'carrot', merchantGood: null, baseMultiplier: 1.2 },
+      { good: 'oil',    merchantGood: null, baseMultiplier: 1.5 },
+      { good: 'pot',    merchantGood: null, baseMultiplier: 1.3 },
+    ]),
+    offers: Object.freeze([{ good: 'petrol', merchantGood: 'dealPetrol', baseMultiplier: 1.3, quantityPerOrder: 25 }]),
+    relation: Object.freeze({ durationMonths: 12, renewalThreshold: 55, breakThreshold: -60 }),
+    transport: Object.freeze({ mode: 'sea', distanceMultiplier: 1.6 }),
+    trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 25 }),
+    sale: Object.freeze({ spread: 0.2, drawWidth: 0.5 }),
+    culture: "Oasis marchande au bord du désert : on n'y cultive presque rien et l'on y paie le grain, l'huile et la poterie au prix fort. Ses marchands sont durs en affaires et changent de fournisseur sans prévenir ; leur prix suit celui du grain dans le monde.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 6 })]),
+    openingRequirements: Object.freeze({}),
+  },
+  {
+    cityId: 'carbonne',
+    wants: Object.freeze([
+      { good: 'wheat', merchantGood: null, baseMultiplier: 1.15 },
+      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.9 },
+      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.7 },
+    ]),
+    offers: Object.freeze([{ good: 'coal', merchantGood: 'dealCoal', baseMultiplier: 1.25, quantityPerOrder: 50 }]),
+    relation: Object.freeze({ durationMonths: 12, renewalThreshold: 50, breakThreshold: -60 }),
+    transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.3 }),
+    trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 30 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Cité de mineurs qui vit de ses galeries : le charbon y est bon marché, le bois d'étai et le fer toujours demandés, et le blé acheté en gros pour nourrir les équipes. Réguliers et peu bavards, ils paient à l'échéance.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 4 })]),
+    openingRequirements: Object.freeze({}),
+  },
+  {
+    cityId: 'frumenta',
+    wants: Object.freeze([
+      { good: 'pot',   merchantGood: null, baseMultiplier: 1.3 },
+      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.9 },
+      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.7 },
+    ]),
+    // Its grain is not cheap (the multiplier is the world's price for it, and the freight is long): the merchants bring it only when the city's own is dearer than that.
+    offers: Object.freeze([{ good: 'wheat', merchantGood: 'dealWheat', baseMultiplier: 1.6, quantityPerOrder: 40 }]),
+    relation: Object.freeze({ durationMonths: 12, renewalThreshold: 50, breakThreshold: -60 }),
+    transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.4 }),
+    trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 30 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Plaine à blé aux greniers immenses, qui vit de ses récoltes. Ses négociants vendent le grain au prix du marché mondial, et le gardent quand il est cher : une mauvaise année dans le monde, et leurs prix suivent. Ils apprécient les pots, le bois et le fer.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
+    openingRequirements: Object.freeze({}),
+  },
 ]);
 
 /**
@@ -261,4 +311,20 @@ export function transportPerUnit({ cityId, quantity, weight }) {
   if (!mode) throw new Error(`[trade] ${cityId} ships by "${entry.transport.mode}", which TRADE_IMPORT.transportModes does not declare`);
   const tier = [...TRADE_IMPORT.volumeTiers].reverse().find((candidate) => quantity >= candidate.from);
   return mode.basePrice * entry.transport.distanceMultiplier * weight * (1 - (tier?.discount ?? 0));
+}
+
+/**
+ * The world market (docs/gameplay/PLAN_CRISES.md): outside Anoria every traded good has a world price, an index around 1 that drifts month by month. It pulls back to its target
+ * by `reversion` of the gap each month and is shaken by `volatility`; a crop's target is the price a world harvest sets (a poor world year makes it dearer: the target is
+ * 1 / the world's harvest factor, to the power `cropCoupling`). The index multiplies the price of every import and of every export, so a city that trades with the world feels its
+ * market, and one that does not trade does not. It never leaves [`floor`, `cap`]. First values, to tune by playing.
+ */
+export const WORLD_MARKET = Object.freeze({ reversion: 0.15, volatility: 0.04, floor: 0.4, cap: 3, cropCoupling: 0.8 });
+
+/**
+ * Every good that crosses a border, imported or exported.
+ * @returns {string[]}
+ */
+export function listTradedGoodIds() {
+  return listTradedGoods().map((entry) => entry.good);
 }

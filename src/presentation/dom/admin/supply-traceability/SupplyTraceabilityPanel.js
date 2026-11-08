@@ -13,6 +13,7 @@ import {
     chainTotalKey,
 } from './SupplyTraceabilityPresenter.js';
 import { listQuantityConsumerNeeds } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { html } from '../../shell/safeHtml.js';
 
 /** @type {{ supply: object } | null} */
 let deps = null;
@@ -378,15 +379,12 @@ function renderNeedStats(container, transactions, needTotalKey, needAmount, need
     const byYear = {};
     filtered.forEach(d => { (byYear[d.year] ??= { year: d.year, months: [] }).months.push(d); });
 
-    let html = '';
+    const yearSections = [];
     for (const yearData of Object.values(byYear).sort((a, b) => b.year - a.year)) {
-        html += `<div class="supply-stats-year-section">
-            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${yearData.year} — ${needLabel}</h4></div>
-            <div class="supply-stats-months">`;
-        for (const d of yearData.months) {
+        const monthCards = yearData.months.map((d) => {
             const pct = d.totalDemand > 0 ? Math.round((d.totalTaken / d.totalDemand) * 100) : 100;
             const statusClass = pct >= 100 ? 'fed' : pct >= 50 ? 'partial' : 'unfed';
-            html += `<div class="supply-stat-month-card">
+            return html`<div class="supply-stat-month-card">
                 <div class="supply-stat-month-header"><span class="supply-stat-month-name">${MONTHS_FR_NEED[d.month]}</span></div>
                 <div class="supply-stat-month-details">
                     <div class="supply-stat-month-item ${statusClass}">
@@ -406,10 +404,12 @@ function renderNeedStats(container, transactions, needTotalKey, needAmount, need
                     </div>
                 </div>
             </div>`;
-        }
-        html += `</div></div>`;
+        });
+        yearSections.push(html`<div class="supply-stats-year-section">
+            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${yearData.year} — ${needLabel}</h4></div>
+            <div class="supply-stats-months">${monthCards}</div></div>`);
     }
-    container.innerHTML = html;
+    container.innerHTML = html`${yearSections}`;
 }
 
 /**
@@ -445,15 +445,13 @@ function renderProductionStats(container, transactions, category, selectedYear) 
     }
 
     const categoryLabel = goodLabel(category) || category;
-    let html = '';
+    const yearSections = [];
     for (const [year, months] of Object.entries(byYear).sort(([a], [b]) => b - a)) {
-        html += `<div class="supply-stats-year-section">
-            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${year} — ${categoryLabel}</h4></div>
-            <div class="supply-stats-months">`;
+        const monthCards = [];
         for (let m = 0; m < 12; m++) {
             const d = months[m];
             if (!d) continue;
-            html += `<div class="supply-stat-month-card">
+            monthCards.push(html`<div class="supply-stat-month-card">
                 <div class="supply-stat-month-header"><span class="supply-stat-month-name">${MONTHS_FR[m]}</span></div>
                 <div class="supply-stat-month-details">
                     <div class="supply-stat-month-item fed">
@@ -472,11 +470,13 @@ function renderProductionStats(container, transactions, category, selectedYear) 
                         <span class="supply-stat-month-value">${d.quantity}</span>
                     </div>
                 </div>
-            </div>`;
+            </div>`);
         }
-        html += `</div></div>`;
+        yearSections.push(html`<div class="supply-stats-year-section">
+            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${year} — ${categoryLabel}</h4></div>
+            <div class="supply-stats-months">${monthCards}</div></div>`);
     }
-    container.innerHTML = html;
+    container.innerHTML = html`${yearSections}`;
 }
 
 /**
@@ -513,15 +513,13 @@ function renderDeliveryStats(container, transactions, category, selectedYear) {
     }
 
     const categoryLabel = goodLabel(category) || category;
-    let html = '';
+    const yearSections = [];
     for (const [year, months] of Object.entries(byYear).sort(([a], [b]) => b - a)) {
-        html += `<div class="supply-stats-year-section">
-            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${year} — ${categoryLabel}</h4></div>
-            <div class="supply-stats-months">`;
+        const monthCards = [];
         for (let m = 0; m < 12; m++) {
             const d = months[m];
             if (!d) continue;
-            html += `<div class="supply-stat-month-card">
+            monthCards.push(html`<div class="supply-stat-month-card">
                 <div class="supply-stat-month-header"><span class="supply-stat-month-name">${MONTHS_FR[m]}</span></div>
                 <div class="supply-stat-month-details">
                     <div class="supply-stat-month-item fed">
@@ -540,11 +538,13 @@ function renderDeliveryStats(container, transactions, category, selectedYear) {
                         <span class="supply-stat-month-value">${d.deliveries}</span>
                     </div>
                 </div>
-            </div>`;
+            </div>`);
         }
-        html += `</div></div>`;
+        yearSections.push(html`<div class="supply-stats-year-section">
+            <div class="supply-stats-year-header"><h4 class="supply-stats-year-title">Année ${year} — ${categoryLabel}</h4></div>
+            <div class="supply-stats-months">${monthCards}</div></div>`);
     }
-    container.innerHTML = html;
+    container.innerHTML = html`${yearSections}`;
 }
 
 /**
@@ -593,9 +593,9 @@ export async function loadSatisfactionCharts() {
 
         // Build pills — clicking only re-renders the chart, no full reload
         if (pillsContainer) {
-            pillsContainer.innerHTML = pillEntries.map(({ key, label }) =>
-                `<button class="supply-traceability-category-pill${activeChartCategory === key ? ' active' : ''}" data-category="${key}">${label}</button>`
-            ).join('');
+            pillsContainer.innerHTML = html`${pillEntries.map(({ key, label }) =>
+                html`<button class="supply-traceability-category-pill${activeChartCategory === key ? ' active' : ''}" data-category="${key}">${label}</button>`
+            )}`;
             pillsContainer.querySelectorAll('.supply-traceability-category-pill').forEach(btn => {
                 btn.addEventListener('click', () => {
                     activeChartCategory = btn.dataset.category || null;
@@ -630,7 +630,7 @@ export async function loadSatisfactionCharts() {
 
     } catch (error) {
         console.error('Error loading supply statistics:', error);
-        container.innerHTML = `
+        container.innerHTML = html`
             <div class="no-supply-stats">
                 <div class="no-supply-stats-icon">❌</div>
                 <div class="no-supply-stats-text">Erreur lors du chargement: ${error.message}</div>
@@ -671,7 +671,7 @@ async function renderSatisfactionChart() {
         const needLabel = goodLabel(activeChartCategory) || activeChartCategory;
         const banner = document.createElement('div');
         banner.className = 'supply-need-demand-banner';
-        banner.innerHTML = `
+        banner.innerHTML = html`
             <span class="supply-need-demand-label">Besoin actuel de la ville :</span>
             <span class="supply-need-demand-value">${monthlyDemand % 1 === 0 ? monthlyDemand : monthlyDemand.toFixed(1)} unités de <strong>${needLabel}</strong> / mois</span>
             <span class="supply-need-demand-annual">(${annualDemand % 1 === 0 ? annualDemand : annualDemand.toFixed(0)} / an — pour ${totalPop} habitants)</span>

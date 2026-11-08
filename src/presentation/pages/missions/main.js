@@ -5,6 +5,8 @@ import {
   isOpenMission,
 } from './missionCatalog.js';
 import { addProfile, listProfiles } from './profileStore.js';
+import { playerNameProblem } from '../../../shared/player-identity/PlayerNamePolicy.js';
+import { html } from '../../dom/shell/safeHtml.js';
 import {
   setBootMode,
   setMissionId,
@@ -62,7 +64,14 @@ function updateStartButtonState() {
   const mission = getSelectedMission();
   const name = getActiveProfileName();
   const openReady = !isOpenMission(mission) || Boolean(selectedMapLayoutId);
-  startBtn.disabled = !name || !openReady;
+  // A name that does not follow the rule (PlayerNamePolicy.js) is told to the player as they type, and the mission does not start with it. An empty field is not an error yet.
+  const problem = name === '' ? null : playerNameProblem(name);
+  const errorEl = document.getElementById('profile-name-error');
+  if (errorEl) {
+    errorEl.hidden = problem === null;
+    errorEl.textContent = problem ?? '';
+  }
+  startBtn.disabled = !name || problem !== null || !openReady;
 }
 
 function setProfileMode(mode) {
@@ -84,18 +93,16 @@ function setProfileMode(mode) {
 function renderProfileModalList() {
   if (!profileModalList) return;
   const profiles = listProfiles();
-  profileModalList.innerHTML = profiles.map((name) => `
-    <li
-      class="mission-modal-list-item${name === selectedExistingProfile ? ' is-selected' : ''}"
-      data-name="${name}"
-      role="button"
-      tabindex="0"
-    >${name}</li>
-  `).join('');
-
-  profileModalList.querySelectorAll('.mission-modal-list-item').forEach((item) => {
+  // A profile name is something the player typed: it becomes text (textContent, dataset), never markup.
+  profileModalList.replaceChildren(...profiles.map((name) => {
+    const item = document.createElement('li');
+    item.className = `mission-modal-list-item${name === selectedExistingProfile ? ' is-selected' : ''}`;
+    item.dataset.name = name;
+    item.setAttribute('role', 'button');
+    item.tabIndex = 0;
+    item.textContent = name;
     const pick = () => {
-      selectedExistingProfile = item.dataset.name ?? '';
+      selectedExistingProfile = name;
       profileModalList.querySelectorAll('.mission-modal-list-item').forEach((el) => {
         el.classList.toggle('is-selected', el === item);
       });
@@ -107,7 +114,8 @@ function renderProfileModalList() {
         pick();
       }
     });
-  });
+    return item;
+  }));
 }
 
 function openProfileModal() {
@@ -199,7 +207,7 @@ function renderDetail(mission) {
     ? renderMyMapSection(selectedMapLayoutId)
     : '';
 
-  detailEl.innerHTML = `
+  detailEl.innerHTML = html`
     <div class="missions-detail-header">
       <div class="missions-preview" aria-hidden="true">${mission.previewEmoji}</div>
       <div class="missions-detail-titles">
@@ -244,17 +252,23 @@ function renderDetail(mission) {
           placeholder="Nom du profil"
           maxlength="32"
           autocomplete="name"
+          aria-describedby="profile-name-error"
         >
+        <p id="profile-name-error" class="mission-profile-error" role="alert" hidden></p>
       </div>
       <div id="profile-existing-panel" class="mission-profile-panel" ${profileMode !== 'existing' ? 'hidden' : ''}>
         <button type="button" id="profile-pick-btn" class="site-btn site-btn--inline">
           Choisir un profil…
         </button>
-        <p id="profile-selected-name" class="mission-profile-selected">${selectedExistingProfile ? `Profil : ${selectedExistingProfile}` : ''}</p>
+        <p id="profile-selected-name" class="mission-profile-selected"></p>
       </div>
     </div>
     ${myMapHtml}
   `;
+
+  // The name of an existing profile is shown as text, set here and not written into the template.
+  const selectedEl = document.getElementById('profile-selected-name');
+  if (selectedEl && selectedExistingProfile) selectedEl.textContent = `Profil : ${selectedExistingProfile}`;
 
   document.querySelectorAll('input[name="profile-mode"]').forEach((input) => {
     input.addEventListener('change', () => setProfileMode(input.value));
@@ -280,25 +294,25 @@ function renderDetail(mission) {
 function renderMissionList() {
   if (!listEl) return;
 
-  const storyItems = STORY_MISSIONS.map((mission) => `
+  const storyItems = STORY_MISSIONS.map((mission) => html`
     <li
       class="missions-list-item${mission.id === selectedMissionId ? ' is-selected' : ''}"
       data-id="${mission.id}"
       role="button"
       tabindex="0"
     >${mission.name}</li>
-  `).join('');
+  `);
 
-  const openItems = OPEN_MISSIONS.map((mission) => `
+  const openItems = OPEN_MISSIONS.map((mission) => html`
     <li
       class="missions-list-item${mission.id === selectedMissionId ? ' is-selected' : ''}"
       data-id="${mission.id}"
       role="button"
       tabindex="0"
     >${mission.name}</li>
-  `).join('');
+  `);
 
-  listEl.innerHTML = `
+  listEl.innerHTML = html`
     <li class="missions-list-section" aria-hidden="true">Missions scénarisées</li>
     ${storyItems}
     <li class="missions-list-section" aria-hidden="true">Open mission</li>
@@ -335,7 +349,7 @@ async function refreshMaps() {
 
 function startMission() {
   const profileName = getActiveProfileName();
-  if (!profileName) return;
+  if (!profileName || playerNameProblem(profileName)) return;
 
   const mission = getSelectedMission();
   if (isOpenMission(mission) && !selectedMapLayoutId) {

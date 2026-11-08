@@ -2,6 +2,7 @@ import { unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { GROUP_CITIZEN_PRESENTATION } from '../../info/population/CitizenStatusPresentation.js';
 import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { html } from '../../shell/safeHtml.js';
 
 /**
  * Tab-chrome labels — reuses the exact same French group labels the
@@ -393,7 +394,7 @@ export class WorkSectionPresenter {
             // Add detail tooltip
             const needDetail = document.createElement('div');
             needDetail.className = 'work-detail-tooltip';
-            needDetail.innerHTML = `
+            needDetail.innerHTML = html`
                 <div class="work-detail-item">
                     <span class="work-detail-label">Besoin restant:</span>
                     <span class="work-detail-value">${remainingNeed}</span>
@@ -420,7 +421,7 @@ export class WorkSectionPresenter {
             // Add detail tooltip showing assigned workers and city-wide available
             const haveDetail = document.createElement('div');
             haveDetail.className = 'work-detail-tooltip';
-            haveDetail.innerHTML = `
+            haveDetail.innerHTML = html`
                 <div class="work-detail-item">
                     <span class="work-detail-label">Ouvriers assignés:</span>
                     <span class="work-detail-value">${skill.workers || 0}</span>

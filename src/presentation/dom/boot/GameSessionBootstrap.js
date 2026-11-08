@@ -328,7 +328,7 @@ export async function bootstrapGameSession(assetManager) {
   });
   initSupplyTraceabilityPopup({ supply: sessionApi.supply });
   initSupplyBalancePopup({ supply: sessionApi.supply, housing: sessionApi.housing, popupManager });
-  initEconomyPopup({ supply: sessionApi.supply, popupManager });
+  initEconomyPopup({ supply: sessionApi.supply, accounting: sessionApi.accounting, popupManager });
 
   if (sessionApi.intelligence) {
     initTutorialHistory({ intelligence: sessionApi.intelligence, popupManager });

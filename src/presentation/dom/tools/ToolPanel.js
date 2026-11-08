@@ -22,6 +22,7 @@ import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
 import { getDirectToolForCategory, toolbarGroupOf } from '../../three/assets/buildingCategories.js';
 import { EDITOR_TOOLS_BY_CATEGORY } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
 import { plotToolClusters } from '../../../shared/land-catalog/plotTools.js';
+import { raw, html } from '../shell/safeHtml.js';
 
 export { getDirectToolForCategory };
 
@@ -241,9 +242,9 @@ export function toggleModal(e) {
   }
 }
 
-function fillLegendPanel(html) {
+function fillLegendPanel(markup) {
   panelLayoutInner.className = 'panel-inner panel-inner--legend-list';
-  panelLayoutInner.innerHTML = html;
+  panelLayoutInner.innerHTML = raw(markup);
   panelLayoutInner.classList.remove('loading-objects');
   loaderButton.classList.remove('active');
 }
@@ -429,9 +430,9 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
 
   const isEmoji = typeof icon === 'string' && icon.length <= 4 && !icon.includes('<');
   if (isEmoji) {
-    button.innerHTML = `<span class="tool-emoji" aria-hidden="true">${icon}</span>`;
+    button.innerHTML = html`<span class="tool-emoji" aria-hidden="true">${icon}</span>`;
   } else {
-    button.innerHTML = icon;
+    button.innerHTML = raw(icon);
   }
 
   if (buttonInfo.stonePathTool) {

@@ -3,6 +3,7 @@
  */
 
 import { buildCityLedgerTableViewModel } from '../../../../contexts/accounting/presentation/index.js';
+import { html } from '../../shell/safeHtml.js';
 
 /**
  * @param {string} fieldId
@@ -60,7 +61,7 @@ function updateNetFlowLabel(thisYearNetFlow, suffixes) {
   }
 
   labelCell.innerHTML =
-    `${labelText}<span class="finances-explanation">Revenus nets - Dépenses nettes</span>`;
+    html`${labelText}<span class="finances-explanation">Revenus nets - Dépenses nettes</span>`;
 }
 
 /** @param {number} balance */

@@ -15,11 +15,13 @@ const el = (tag, className, text) => {
 };
 
 /** One table: a title, its rows (`{ label, amount, kind?, note?, tone?, pill? }`: `pill` the account number, tinted by `tone`), and its total. Shared with the city's balance sheet, which reads the same. */
-export function sideTable(title, rows, total) {
+export function sideTable(title, rows, total, { titleHelp = null } = {}) {
   const table = el('table', 'building-finance-table balance-sheet-table');
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
   const th = el('th', null, title);
+  // A "?" (HelpButton.js) after the title, or after a row's label (`row.help`), where what is shown is not obvious.
+  if (titleHelp) th.append(titleHelp);
   th.scope = 'col';
   th.colSpan = 2;
   headRow.append(th);
@@ -34,6 +36,7 @@ export function sideTable(title, rows, total) {
     label.scope = 'row';
     if (row.note) label.title = row.note;
     if (row.pill) label.append(el('span', 'building-finance-pill', row.pill));
+    if (row.help) label.append(row.help);
     tr.append(label, el('td', 'balance-sheet-amount', row.amount === null ? '' : formatEuro(row.amount)));
     body.append(tr);
   }

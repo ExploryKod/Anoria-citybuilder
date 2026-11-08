@@ -2,6 +2,7 @@ import { registerEditorMap } from '../../../contexts/world-layout/application/co
 import { deleteEditorMap } from '../../../contexts/world-layout/application/commands/DeleteEditorMap.js';
 import { listEditorMapSummaries } from '../../../contexts/world-layout/application/queries/ListEditorMapSummaries.js';
 import { getEditorMapRepository } from '../../../composition/editorMapRepository.js';
+import { html, raw } from '../../dom/shell/safeHtml.js';
 
 /** @typedef {import('../../../contexts/world-layout/domain/EditorMapLayout.js').EditorMapSummary} EditorMapSummary */
 
@@ -20,8 +21,8 @@ export async function loadAvailableEditorMaps() {
  */
 export async function uploadEditorMapFile(file) {
   const text = await file.text();
-  const raw = JSON.parse(text);
-  const layout = await registerEditorMap(getEditorMapRepository(), raw);
+  const parsed = JSON.parse(text);
+  const layout = await registerEditorMap(getEditorMapRepository(), parsed);
   return { id: layout.id, name: layout.name, citySize: layout.citySize };
 }
 
@@ -37,11 +38,12 @@ export async function deleteEditorMapById(mapId) {
  * @returns {string}
  */
 export function renderMyMapSection(selectedMapLayoutId) {
+  // The id of a map comes from a file the player may have uploaded: it is shown as text.
   const sourceLine = selectedMapLayoutId
-    ? `Source : <code>maps/${selectedMapLayoutId}.json</code>`
+    ? html`Source : <code>maps/${selectedMapLayoutId}.json</code>`
     : 'Choisissez une carte ci-dessous.';
 
-  return `
+  return html`
     <div class="mission-my-map">
       <p class="site-section-title">Ma carte</p>
       <p class="mission-my-map-hint">
@@ -49,7 +51,7 @@ export function renderMyMapSection(selectedMapLayoutId) {
         pour charger le terrain conçu.
       </p>
       <div class="mission-my-map-actions">
-        ${getEditorMapRepository().readOnly ? '' : `
+        ${getEditorMapRepository().readOnly ? '' : html`
         <label class="site-btn site-btn--inline mission-my-map-upload">
           Téléverser votre terrain
           <input type="file" id="mission-map-upload" accept="application/json,.json" hidden>
@@ -83,27 +85,28 @@ export function renderMapGrid(gridEl, summaries, selectedMapId, onSelect, onDele
   if (!gridEl) return;
 
   if (summaries.length === 0) {
-    gridEl.innerHTML = '<p class="mission-map-grid-empty">Aucune carte dans <code>public/maps</code>.</p>';
+    gridEl.innerHTML = html`<p class="mission-map-grid-empty">Aucune carte dans <code>public/maps</code>.</p>`;
     return;
   }
 
-  gridEl.innerHTML = summaries.map((summary) => `
+  // The name and the id of a map come from a file the player may have uploaded: they are shown as text (html`` escapes them).
+  gridEl.innerHTML = html`${summaries.map((summary) => html`
     <article
       class="mission-map-card${summary.id === selectedMapId ? ' is-selected' : ''}"
       data-map-id="${summary.id}"
     >
       <button type="button" class="mission-map-card__body" data-action="select">
-        <span class="mission-map-card__name">${escapeHtml(summary.name)}</span>
+        <span class="mission-map-card__name">${summary.name}</span>
       </button>
-      ${getEditorMapRepository().readOnly ? '' : `<button
+      ${getEditorMapRepository().readOnly ? '' : html`<button
         type="button"
         class="mission-map-card__delete"
         data-action="delete"
-        aria-label="Supprimer ${escapeHtml(summary.name)}"
+        aria-label="Supprimer ${summary.name}"
         title="Supprimer"
-      >${TRASH_ICON}</button>`}
+      >${raw(TRASH_ICON)}</button>`}
     </article>
-  `).join('');
+  `)}`;
 
   gridEl.querySelectorAll('.mission-map-card').forEach((card) => {
     const mapId = card.getAttribute('data-map-id') ?? '';
@@ -113,15 +116,4 @@ export function renderMapGrid(gridEl, summaries, selectedMapId, onSelect, onDele
       await onDelete(mapId);
     });
   });
-}
-
-/**
- * @param {string} value
- */
-function escapeHtml(value) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

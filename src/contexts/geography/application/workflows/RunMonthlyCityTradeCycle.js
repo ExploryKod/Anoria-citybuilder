@@ -69,7 +69,7 @@ export class RunMonthlyCityTradeCycle {
    *   saleBias: (sale: { cityId: string, good: string, relation: object }) => number, // [-1, 1]: where the range is centred
    * }} deps
    */
-  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias }) {
+  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, worldIndexOf, homePriceOf, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias }) {
     if (typeof hubSellingPrice !== 'function') throw new Error('[trade] the cycle needs the warehouses\' selling price (hubSellingPrice): it prices what the merchants export');
     this.hubSellingPrice = hubSellingPrice;
     this.repo = cityTradeRepository;
@@ -91,6 +91,12 @@ export class RunMonthlyCityTradeCycle {
     this.addHubStock = addHubStock;
     this.random = random;
     this.saleBias = saleBias;
+    // The world price of a good in a month (WorldMarket.js): it multiplies what the cities pay for an export and ask for an import.
+    if (typeof worldIndexOf !== 'function') throw new Error('[trade] the trade cycle needs the world market (worldIndexOf): without it the prices ignore the world');
+    this.worldIndexOf = worldIndexOf;
+    // The market's price at home for a good the city makes itself (null for any other good): the ceiling an import must stay under.
+    if (typeof homePriceOf !== 'function') throw new Error('[trade] the trade cycle needs the home price of the goods the city makes (homePriceOf)');
+    this.homePriceOf = homePriceOf;
   }
 
   /**
@@ -204,7 +210,7 @@ export class RunMonthlyCityTradeCycle {
       ? Math.min(...(await Promise.all(holders.map((hub) => this.hubSellingPrice(hub, good, { year, monthIndex })))))
       : unitPriceAtStage('hub', good);
     const exportPricing = {
-      unitNet: getResourceBaseValue(good) * want.baseMultiplier * (1 - dutyRate),
+      unitNet: getResourceBaseValue(good) * want.baseMultiplier * (await this.worldIndexOf(good, { year, monthIndex })) * (1 - dutyRate),
       unitCost: cost,
     };
     const ceases = findCeaseReason('export', { exportPricing, failures });
@@ -232,7 +238,7 @@ export class RunMonthlyCityTradeCycle {
     const { taken, byHub, lots } = await this.#takeFromHubsForClient(hubs, want.merchantGood, `city:${cityId}`, quantity, turn);
     if (taken <= 0) return false;
 
-    const saleRatio = this.#drawSaleRatio(entry, want, relation);
+    const saleRatio = this.#drawSaleRatio(entry, want, relation) * (await this.worldIndexOf(good, { year, monthIndex }));
     const unitPrice = getResourceBaseValue(good) * saleRatio;
     const gross = centimes(taken * unitPrice);
     const duty = centimes(gross * dutyRate);
@@ -321,9 +327,9 @@ export class RunMonthlyCityTradeCycle {
     // A deal sits in the warehouse and becomes the real good in it: the room it takes is the room the good takes.
     const planned = Math.min(offer.quantityPerOrder, waiting);
     const pricing = priceImportDelivery({
-      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn),
+      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn), worldIndex: await this.worldIndexOf(good, { year, monthIndex }),
     });
-    const ceases = findCeaseReason('import', { pricing, baseValue: getResourceBaseValue(good), failures });
+    const ceases = findCeaseReason('import', { pricing, baseValue: getResourceBaseValue(good), homePrice: await this.homePriceOf(good, { year, monthIndex }), failures });
     const ceasedBefore = relation.importCeased[good] ?? null;
     if (ceases) {
       if (ceasedBefore?.reason !== ceases.reason) relation.importCeased = { ...relation.importCeased, [good]: { ...ceases, turn } };
@@ -351,7 +357,7 @@ export class RunMonthlyCityTradeCycle {
     // The hubs just lost their deals: the room and the stocks to file the goods on are the ones they hold now.
     const receiving = hubs.filter((hub) => this.hubHolds(hub, good));
 
-    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn) });
+    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn), worldIndex: await this.worldIndexOf(good, { year, monthIndex }) });
 
     // Each merchant house is the importer of the deals it made, in proportion.
     const unitsByHouse = new Map();

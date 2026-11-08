@@ -2,6 +2,7 @@
  * ObjectivesPanel — popup objectifs (DOM + événements).
  */
 import EventBlocker from '../shell/EventBlocker.js';
+import { raw } from '../shell/safeHtml.js';
 
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -398,9 +399,9 @@ class ObjectivesPanel {
         const content = this.panel.querySelector('.objectives-content');
         if (content) {
             if (typeof step.content === 'function') {
-                content.innerHTML = await step.content();
+                content.innerHTML = raw(await step.content());
             } else {
-                content.innerHTML = step.content;
+                content.innerHTML = raw(step.content);
             }
             
             // Ajouter le gestionnaire pour le bouton d'historique
@@ -471,8 +472,8 @@ class ObjectivesPanel {
                     </div>
                 `;
                 
-                historyContent.innerHTML = html;
-                
+                historyContent.innerHTML = raw(html);
+
                 // Ajouter le gestionnaire pour ouvrir l'historique complet
                 const fullHistoryBtn = historyContent.querySelector('#open-full-history-btn');
                 if (fullHistoryBtn) {

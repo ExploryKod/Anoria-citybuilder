@@ -1,5 +1,7 @@
 import { showActiveHamletNameIn } from '../hamletLabel.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { helpButton, bindStaticHelps } from '../../shell/HelpButton.js';
+import { helpIdOfAccount } from '../../../../shared/help-catalog/HelpCatalog.js';
 
 /** A share, as the player reads it: "25 %". @param {number} ratio */
 const formatShare = (ratio) => `${(ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
@@ -37,6 +39,8 @@ class OwnershipSectionPresenter {
   }
 
   bind() {
+    // The titles marked `data-help` in the page (the same whatever happens) get their "?".
+    bindStaticHelps(this.#element('admin-section-ownership'));
     const select = this.#element('ownership-claims-filter');
     select.replaceChildren(...Object.entries(CLAIM_FILTERS).map(([id, { label }]) => {
       const option = el('option', null, label);
@@ -82,13 +86,27 @@ class OwnershipSectionPresenter {
 
   /** The balance sheet of the city: what it holds, then what it owes and its result, each side a list with its total. */
   #renderSheet(sheet) {
+    // The cash is the State's account at its central bank (515); a State with nothing there has no such line, and holds nothing.
+    const cash = sheet.assets.lines.find((line) => line.account === '515')?.amount ?? 0;
+    const resultState = sheet.result < 0 ? 'loss' : 'gain';
     const side = (title, { lines, total }) => {
       const block = el('div', 'ownership-sheet__side');
-      block.append(el('h5', 'ownership-sheet__title', `${title} — ${formatEuro(total)}`));
+      const heading = el('h5', 'ownership-sheet__title', `${title} — ${formatEuro(total)}`);
+      heading.append(helpButton('city.balanceSheet', {
+        state: resultState,
+        figures: { assets: sheet.assets.total, liabilities: sheet.liabilities.total, cash, result: Math.abs(sheet.result) },
+      }));
+      block.append(heading);
       const list = el('ul', 'ownership-list');
       list.append(...lines.map((line) => {
         const item = el('li', 'ownership-row');
-        item.append(el('span', 'ownership-row__subject', line.label), el('span', 'ownership-row__fact', formatEuro(line.amount)));
+        const subject = el('span', 'ownership-row__subject', line.label);
+        if (line.account === 'result') {
+          subject.append(helpButton('city.result.total', { state: resultState, figures: { result: Math.abs(sheet.result) } }));
+        } else if (helpIdOfAccount(line.account)) {
+          subject.append(helpButton(helpIdOfAccount(line.account), { figures: { amount: line.amount } }));
+        }
+        item.append(subject, el('span', 'ownership-row__fact', formatEuro(line.amount)));
         return item;
       }));
       block.append(list);

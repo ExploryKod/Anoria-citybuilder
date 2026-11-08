@@ -12,6 +12,7 @@ import {
   enrichMapBuildings,
 } from './CarteVillePresenter.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { html } from '../shell/safeHtml.js';
 import { getSessionGameTime } from '../../../composition/sessionRuntime.js';
 
 /**
@@ -81,7 +82,8 @@ export async function generateCarteVille() {
   if (!cityMapGrid) return;
 
   try {
-    cityMapGrid.innerHTML = renderCityMapLoadingHtml();
+    // What the renderers return is `html` markup; a plain string would be shown as text (safeHtml.js), never as markup.
+    cityMapGrid.innerHTML = html`${renderCityMapLoadingHtml()}`;
 
     let citySize = 16;
     const city = getCity?.();
@@ -121,18 +123,18 @@ export async function generateCarteVille() {
       }
     });
 
-    cityMapGrid.innerHTML = renderCityMapGridHtml({
+    cityMapGrid.innerHTML = html`${renderCityMapGridHtml({
       citySize,
       buildingMap,
       hasRoadAccessFromCount: (...args) => parcels.hasRoadAccessFromCount(...args),
-    });
+    })}`;
 
     // The legend lists what the map shows, named by the catalog (the status dots stay static)
     const legendBuildings = document.getElementById('city-map-legend-buildings');
-    if (legendBuildings) legendBuildings.innerHTML = renderCityMapLegendHtml(buildings);
+    if (legendBuildings) legendBuildings.innerHTML = html`${renderCityMapLegendHtml(buildings)}`;
   } catch (error) {
     console.error('Error generating city map:', error);
-    cityMapGrid.innerHTML = renderCityMapErrorHtml(error);
+    cityMapGrid.innerHTML = html`${renderCityMapErrorHtml(error)}`;
     cityMapGrid.querySelector('.city-map-retry-btn')?.addEventListener('click', () => {
       void generateCarteVille();
     });

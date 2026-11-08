@@ -6,6 +6,7 @@
 import { WebSocketClient } from './WebSocketClient.js';
 import { getGame, getGameCity } from '../../composition/sessionShell.js';
 import { showToast, showWarningToast } from '../../presentation/dom/shell/ToastNotifier.js';
+import { html } from '../../presentation/dom/shell/safeHtml.js';
 
 export class MultiplayerManager {
     constructor(game, scene) {
@@ -654,7 +655,8 @@ export class MultiplayerManager {
             flex-direction: column;
             gap: 20px;
         `;
-        content.innerHTML = `
+        // `data.message` comes from the server, and the server is the other side of the wire: it is shown as text.
+        content.innerHTML = html`
             <p style="margin: 0; color: var(--primary, #333); font-size: 14px; line-height: 1.5;">
                 ${data.message || `Limite de ${data.maxPlayers} joueurs atteinte (${data.currentPlayers}/${data.maxPlayers})`}
             </p>

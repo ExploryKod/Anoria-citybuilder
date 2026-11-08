@@ -40,6 +40,13 @@ export class DexieNewsItemRepository {
     return count > 0;
   }
 
+  /**
+   * @param {string} prefix
+   */
+  async hasAnyWithIdPrefix(prefix) {
+    return (await db.newsItems.where('id').startsWith(prefix).count()) > 0;
+  }
+
   async listIncoming() {
     const rows = await db.newsItems.where('lifecycle').equals('incoming').toArray();
     return rows.map((row) => createNewsItem(row));

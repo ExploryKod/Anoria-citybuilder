@@ -74,3 +74,29 @@ Lu dans le code. ✅ existe, 🟡 existe en partie, ❌ manque. La chaîne est c
 
 À ajouter pour que la mission 1693 tienne : (1) la définition de mission et le moteur de scénario ; (2) le rendement par année (le choc climatique) ; (3) le prix qui suit la rareté ; (4) les leviers de régime : interdiction d'exporter, prix du pain, règle du grenier public, grain à l'import ;
 (5) la cause de départ « faim », la mortalité de famine réglée et une épidémie ; (6) l'indice des prix. Les points 2 et 5 se règlent dans des catalogues existants ; 3 et 4 demandent du code nouveau.
+
+## Les fondations construites (2026-11-08)
+
+Les missions attendent : on construit d'abord les mécanismes valables partout, et la crise peut venir de la façon de jouer.
+
+1. **Le climat** (`src/shared/climate/`, `YearClimate`) : chaque année est dans une phase (généreuse, ordinaire, mauvaise, désastreuse), tirée une fois et gardée, les phases venant par séries (une mauvaise année en rend une autre plus probable). Le rendement d'une culture est le rendement du
+   catalogue × le facteur de l'année, autant que la culture le ressent (`climateSensitivity` dans `ResourceCategoryCatalog`). Une dépêche annonce janvier d'une année qui n'est pas ordinaire.
+2. **Le prix suit l'offre et la demande** (`ScarcityPolicy`, `PriceBook`) : au rayon (le marché), le prix de la nourriture est multiplié par un facteur lu de l'écart entre le stock que la ville détient et celui qu'une année normale laisserait jusqu'à la prochaine récolte
+   (en mois de consommation). Une récolte à 70 % donne environ ×2,8 ; un excès d'un demi-an divise par deux (plancher 0,5, plafond 3). Hausse *et* baisse sont possibles. Les étages d'avant ne changent pas : la marge des intermédiaires paie la pénurie.
+3. **Le marché mondial** (`WorldMarket`, `WORLD_MARKET`) : chaque bien qui franchit une frontière a un indice de prix mondial, qui dérive chaque mois (rappel vers sa cible + chocs) et se souvient. Les cultures sont tirées par la récolte *du monde* (un climat à part de celui de la ville).
+   L'indice multiplie ce que les villes paient pour un export et demandent pour un import : une ville qui commerce en ressent le marché, une ville qui ne commerce pas, non.
+4. **Plus de partenaires** : Sablia (oasis qui manque de grain, vend du pétrole) et Carbonne (mineurs, charbon bon marché, achète bois, fer et blé), sur la carte et dans le catalogue du commerce.
+5. **L'écran « Marché »** du panneau d'administration : le climat de l'année, la réserve de nourriture et son prix en rayon, les prix du monde.
+
+Pas encore fait : l'indice général des prix (inflation) et les leviers du joueur ; la généralisation du prix à d'autres besoins que la nourriture ; du grain à l'import (les biens importés restent dans l'entrepôt de commerce, sans lien vers les marchés) ; l'arbitrage entre le prix du monde et le prix local ;
+les alertes de risque qui préviennent le joueur que sa façon de jouer mène à une crise.
+
+## Le grain à l'import (2026-11-08)
+
+Les marchands importent du grain par le même chemin que le reste, mais il atterrit dans les greniers : une livraison est classée dans tout entrepôt qui détient le bien, et un grenier ou un moulin détient le blé, d'où les marchés le vendent (ce qui n'est pas le cas du charbon, que seul l'entrepôt de commerce détient).
+
+- **Un accord d'import du blé** (`dealWheat`) et un partenaire qui le vend : **Frumenta**, plaine à blé lointaine (multiplicateur 1,6 du prix de base, fret long).
+- **La règle** : pour un bien que la ville produit elle-même, les marchands ne font un accord que si l'acheter coûte moins cher que le prix du rayon (`importPaysAtHome`) : prix mondial du mois, fret, douane et marge des marchands, contre le prix moyen des marchés, qui porte déjà la pénurie. Année normale : pas d'import.
+  Disette : l'import paie. Mauvaise année du monde aussi : le prix mondial monte et l'import ne paie plus.
+- **Le plafond** de l'import (`unprofitable`) d'un bien que la ville produit est le prix chez elle, pas un multiple de la valeur du bien : une disette ne coupe pas le grain.
+- **Le prix** d'un grain importé entre au coût du grenier et se mêle au grain d'ici ; il concurrence les fermes comme le blé américain en 1873. Le grenier paie les marchands sur sa caisse : sans argent, la commande échoue et les marchands cessent (aide aux entreprises).

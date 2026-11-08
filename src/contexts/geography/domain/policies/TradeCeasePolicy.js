@@ -18,6 +18,7 @@ import { TRADE_EXPORT, TRADE_IMPORT } from '../../../../shared/trade-catalog/Tra
  *   pricing?: { unit: { sale: number } },
  *   exportPricing?: { unitNet: number, unitCost: number },
  *   baseValue?: number,
+ *   homePrice?: number | null, // the market's price at home for a good the city makes itself: the ceiling an import must stay under; null for any other good
  *   failures?: Record<string, number>,
  * }} CeaseContext
  */
@@ -36,7 +37,8 @@ export const CEASE_REASONS = Object.freeze({
   unprofitable: Object.freeze({
     by: 'merchants',
     scope: 'import',
-    applies: ({ pricing, baseValue }) => pricing.unit.sale > baseValue * TRADE_IMPORT.marketCeiling,
+    // The most the market pays: a multiple of the good's value, or what it charges at home for a good the city makes itself (dearer in a shortage).
+    applies: ({ pricing, baseValue, homePrice = null }) => pricing.unit.sale > (homePrice ?? baseValue * TRADE_IMPORT.marketCeiling),
   }),
   no_warehouse: Object.freeze({
     by: 'merchants',

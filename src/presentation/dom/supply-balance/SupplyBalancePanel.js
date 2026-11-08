@@ -15,6 +15,7 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { toSupplyMonth, toSupplySeason } from '../../../composition/supplyTimeLabels.js';
 import { monthsWithoutStock } from '../../../shared/resource-catalog/CropCalendarPolicy.js';
 import { getSessionGameTime } from '../../../composition/sessionRuntime.js';
+import { html } from '../shell/safeHtml.js';
 
 /** @type {{ supply: { describeSupplyBalance: () => Promise<Array<object>>, describePurchasingPower: () => Promise<object> }, housing: { getHunger: () => Promise<{ famished: number, disette: number, penurie: number, atRisk: { disette: number, penurie: number } }> }, popupManager?: object | null } | null} */
 let deps = null;
@@ -24,24 +25,21 @@ let focusSession = null;
 
 const PANEL_ID = 'supply-balance-panel';
 
-/** @param {unknown} value @returns {string} safe inside a text node */
-function escapeHtml(value) {
-  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 const plural = (count, one, many) => (count > 1 ? many : one);
+
+// Every piece below returns `html` markup (values escaped, see safeHtml.js): a piece can sit inside another html`` without being escaped twice.
 
 /** One line of figures: its label on the left, its value on the right. `tone` colours a value that asks for attention. */
 function figureHtml(label, value, tone = '') {
-  return `<div><dt>${escapeHtml(label)}</dt><dd${tone ? ` class="bal-tone-${tone}"` : ''}>${escapeHtml(value)}</dd></div>`;
+  return html`<div><dt>${label}</dt><dd${tone ? html` class="bal-tone-${tone}"` : ''}>${value}</dd></div>`;
 }
 
 /** One section of a card: a small title, its lines, and at most one muted note. `wide` spans the card (the calendar reads as sentences, not figures). */
 function blockHtml(kind, title, figures, note = '') {
-  return `<section class="bal-section bal-section--${kind}">
-    <h5>${escapeHtml(title)}</h5>
-    <dl>${figures.join('')}</dl>
-    ${note ? `<p class="bal-note">${escapeHtml(note)}</p>` : ''}
+  return html`<section class="bal-section bal-section--${kind}">
+    <h5>${title}</h5>
+    <dl>${figures}</dl>
+    ${note ? html`<p class="bal-note">${note}</p>` : ''}
   </section>`;
 }
 
@@ -49,7 +47,7 @@ function blockHtml(kind, title, figures, note = '') {
  * What the chain of the need says: a short status for the chip, and the sentence that explains it when there is something to act on.
  * @param {object} balance
  * @param {string} producerNames
- * @returns {{ chip: string, sentence: string }} `sentence` is html, '' when the status says it all
+ * @returns {{ chip: string, sentence: string }} `sentence` is plain text, '' when the status says it all
  */
 function verdictOf(balance, producerNames) {
   switch (balance.verdict) {
@@ -58,7 +56,7 @@ function verdictOf(balance, producerNames) {
     case 'missing':
       return {
         chip: `Il manque ${balance.buildingsMissing} bâtiment${plural(balance.buildingsMissing, '', 's')}`,
-        sentence: `Pour approvisionner tout le monde : ${escapeHtml(producerNames)}.`,
+        sentence: `Pour approvisionner tout le monde : ${producerNames}.`,
       };
     case 'leaking':
       return { chip: 'Des pertes en route', sentence: "La production théorique suffit, mais une partie n'arrive pas aux habitants." };
@@ -91,8 +89,8 @@ function goodAlertsHtml(balance) {
     const { side, sentence } = getCollectionRefusalReason(refusal.reason);
     alerts.push(`↳ ${side === 'buyer' ? `${buildingName(refusal.marketType)} — ` : ''}${sentence}.`);
   }
-  if (alerts.length === 0) return '';
-  return `<ul class="bal-alerts">${alerts.map((alert) => `<li>${escapeHtml(alert)}</li>`).join('')}</ul>`;
+  if (alerts.length === 0) return html``;
+  return html`<ul class="bal-alerts">${alerts.map((alert) => html`<li>${alert}</li>`)}</ul>`;
 }
 
 const MONTHS_IN_YEAR = 12;
@@ -124,11 +122,11 @@ function monthsToNextSaleOf({ harvest, sale }) {
  * The calendar of each seasonal good of a need, as the catalog declares it (harvest, sale, how long it keeps), and what it means: a crop that goes bad before the next purchase is gone from
  * its store for some months, and the crops that keep the worst are the ones to watch. Not a defect: perishable crops are part of the game, and the player is told.
  * @param {object} balance
- * @returns {string} the block, or '' when no good of the need is seasonal
+ * @returns {import('../shell/safeHtml.js').SafeHtml} the block, or nothing when no good of the need is seasonal
  */
 function calendarHtml(balance) {
   const seasonal = balance.goods.filter((good) => good.calendar);
-  if (seasonal.length === 0) return '';
+  if (seasonal.length === 0) return html``;
   const store = namesOfBuildings('hub', balance.categories).join(' / ');
   const lines = seasonal.map((good) => {
     const { harvest, sale, keepsMonths, keepsInStoreMonths } = good.calendar;
@@ -165,14 +163,14 @@ function hungerHtml(hunger) {
  * One need as a card: its name and status, then the figures in sections side by side: the theory, what happened over the year, what is in stock, the hunger.
  * @param {object} balance a need of `describeSupplyBalance`
  * @param {{ famished: number, disette: number, penurie: number, atRisk: { disette: number, penurie: number } }} hunger
- * @returns {string}
+ * @returns {import('../shell/safeHtml.js').SafeHtml}
  */
 function balanceCardHtml(balance, hunger) {
-  const label = escapeHtml(goodLabel(balance.totalKey));
+  const label = goodLabel(balance.totalKey);
   const producerNames = namesOfBuildings('producer', balance.categories).join(' / ');
   const { chip, sentence } = verdictOf(balance, producerNames);
-  const head = `<header class="bal-head"><h4>${label}</h4><span class="bal-chip bal-chip--${balance.verdict}">${escapeHtml(chip)}</span></header>`;
-  if (balance.verdict === 'idle') return `<article class="bal-card">${head}</article>`;
+  const head = html`<header class="bal-head"><h4>${label}</h4><span class="bal-chip bal-chip--${balance.verdict}">${chip}</span></header>`;
+  if (balance.verdict === 'idle') return html`<article class="bal-card">${head}</article>`;
   const units = (count) => goodAmount(balance.totalKey, Math.round(count));
   const idle = balance.producers - balance.working;
   const sections = [
@@ -199,11 +197,11 @@ function balanceCardHtml(balance, hunger) {
     ]),
   ];
   if (balance.totalKey === getResourceStockShape().totalKey) sections.push(hungerHtml(hunger));
-  return `<article class="bal-card">
+  return html`<article class="bal-card">
     ${head}
-    ${sentence ? `<p class="bal-verdict">${sentence}</p>` : ''}
+    ${sentence ? html`<p class="bal-verdict">${sentence}</p>` : ''}
     ${goodAlertsHtml(balance)}
-    <div class="bal-sections">${sections.join('')}</div>
+    <div class="bal-sections">${sections}</div>
     ${calendarHtml(balance)}
   </article>`;
 }
@@ -212,13 +210,12 @@ function balanceCardHtml(balance, hunger) {
 export async function renderSupplyBalance() {
   const container = document.getElementById('supply-balance-container');
   if (!container) throw new Error('[supply-balance] the balance container is not in the page');
-  container.innerHTML = '<p class="supply-balance-loading">…</p>';
+  container.innerHTML = html`<p class="supply-balance-loading">…</p>`;
   const [balances, hunger] = await Promise.all([deps.supply.describeSupplyBalance(), deps.housing.getHunger()]);
   const severity = { missing: 0, leaking: 1, ok: 2, idle: 3 };
   const ordered = [...balances].sort((a, b) => severity[a.verdict] - severity[b.verdict]);
-  container.innerHTML = `<p class="supply-balance-caveat">Le plafond est une théorie : ce que les bâtiments debout pourraient produire à pleine activité. Le reste dit ce qui s'est réellement passé.</p>${ordered
-    .map((balance) => balanceCardHtml(balance, hunger))
-    .join('')}`;
+  container.innerHTML = html`<p class="supply-balance-caveat">Le plafond est une théorie : ce que les bâtiments debout pourraient produire à pleine activité. Le reste dit ce qui s'est réellement passé.</p>${ordered
+    .map((balance) => balanceCardHtml(balance, hunger))}`;
 }
 
 const euros = (amount) => `${amount.toFixed(2).replace('.', ',').replace('-', '−')} €`;
@@ -227,16 +224,16 @@ const euros = (amount) => `${amount.toFixed(2).replace('.', ',').replace('-', '�
  * One kind of house, one row: what it earns in a month, what it must pay, what is left, what its basic needs cost, and how much of the basket the rest covers.
  * The savings and the goods really bought stay in the row's tooltip: they are not what the row is about.
  * @param {object} kind a kind of `describePurchasingPower`
- * @returns {string} html
+ * @returns {import('../shell/safeHtml.js').SafeHtml} html
  */
 function purchasingPowerRowHtml(kind) {
   const { perHouse } = kind;
   const covered = kind.coverage === null ? null : Math.round(kind.coverage * 100);
   const status = covered === null ? 'idle' : covered >= 100 ? 'ok' : 'short';
   const detail = `Épargne ${euros(perHouse.savings)} · achats de biens constatés ${euros(perHouse.goodsBought)} par maison et par mois`;
-  const short = kind.housesShort > 0 ? `<span class="power-short">${kind.housesShort} sur ${kind.houses} sous le panier</span>` : '';
-  return `<div class="power-row" role="row" title="${escapeHtml(detail)}">
-    <div class="power-kind" role="cell"><strong>${escapeHtml(buildingName(kind.type))}</strong><span>${kind.houses} maison${plural(kind.houses, '', 's')} · ${kind.residents} habitant${plural(kind.residents, '', 's')}</span>${short}</div>
+  const short = kind.housesShort > 0 ? html`<span class="power-short">${kind.housesShort} sur ${kind.houses} sous le panier</span>` : '';
+  return html`<div class="power-row" role="row" title="${detail}">
+    <div class="power-kind" role="cell"><strong>${buildingName(kind.type)}</strong><span>${kind.houses} maison${plural(kind.houses, '', 's')} · ${kind.residents} habitant${plural(kind.residents, '', 's')}</span>${short}</div>
     <div class="power-figure power-secondary" role="cell">${euros(perHouse.income)}</div>
     <div class="power-figure power-secondary" role="cell">${euros(-perHouse.mandatory)}</div>
     <div class="power-figure power-strong" role="cell">${euros(perHouse.livingMargin)}</div>
@@ -252,17 +249,17 @@ function purchasingPowerRowHtml(kind) {
 export async function renderPurchasingPower() {
   const container = document.getElementById('supply-power-container');
   if (!container) throw new Error('[supply-balance] the purchasing-power container is not in the page');
-  container.innerHTML = '<p class="supply-balance-loading">…</p>';
+  container.innerHTML = html`<p class="supply-balance-loading">…</p>`;
   const power = await deps.supply.describePurchasingPower();
   if (!power.ready) {
-    container.innerHTML = '<p class="supply-balance-loading">…</p>';
+    container.innerHTML = html`<p class="supply-balance-loading">…</p>`;
     return;
   }
   const basis = power.months === 12 ? `l'année ${power.year}` : `les ${power.months} premiers mois`;
   const unpriced = [...new Set(power.kinds.flatMap((kind) => kind.unpriced))];
-  const unpricedNote = unpriced.length > 0 ? `<p class="power-note">Pas de marché pour : ${escapeHtml(unpriced.map((totalKey) => goodLabel(totalKey)).join(', '))}. Ces besoins ne sont pas comptés dans le panier.</p>` : '';
-  container.innerHTML = `<section class="power-card">
-    <p class="power-caption">Par maison et par mois, en moyenne sur ${escapeHtml(basis)}. Le reste à vivre est ce qui reste des revenus après les impôts, cotisations, services et loyer ; le panier est ce que coûtent les besoins de base aux prix du marché.</p>
+  const unpricedNote = unpriced.length > 0 ? html`<p class="power-note">Pas de marché pour : ${unpriced.map((totalKey) => goodLabel(totalKey)).join(', ')}. Ces besoins ne sont pas comptés dans le panier.</p>` : '';
+  container.innerHTML = html`<section class="power-card">
+    <p class="power-caption">Par maison et par mois, en moyenne sur ${basis}. Le reste à vivre est ce qui reste des revenus après les impôts, cotisations, services et loyer ; le panier est ce que coûtent les besoins de base aux prix du marché.</p>
     <div class="power-table" role="table">
       <div class="power-row power-head" role="row">
         <div role="columnheader">Catégorie</div>
@@ -272,7 +269,7 @@ export async function renderPurchasingPower() {
         <div class="power-figure" role="columnheader">Panier</div>
         <div class="power-cover" role="columnheader">Couverture</div>
       </div>
-      ${power.kinds.map(purchasingPowerRowHtml).join('')}
+      ${power.kinds.map(purchasingPowerRowHtml)}
     </div>
     ${unpricedNote}
   </section>`;

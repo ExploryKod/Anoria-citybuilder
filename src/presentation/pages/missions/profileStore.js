@@ -1,3 +1,5 @@
+import { playerNameProblem, requirePlayerName } from '../../../shared/player-identity/PlayerNamePolicy.js';
+
 const STORAGE_KEY = 'anoria.playerProfiles';
 
 const DEFAULT_PROFILES = ['Alexandros', 'Era', 'Démo'];
@@ -9,7 +11,12 @@ export function listProfiles() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter((name) => typeof name === 'string' && name.trim());
+        // What the browser's storage holds is as untrusted as what was just typed (another script, a hand edit): a name that does not follow the rule is left out, and said.
+        return parsed.filter((name) => {
+          const problem = playerNameProblem(name);
+          if (problem) console.warn(`[profiles] a stored profile is ignored (${problem}):`, name);
+          return problem === null;
+        }).map((name) => name.trim());
       }
     }
   } catch {
@@ -18,12 +25,12 @@ export function listProfiles() {
   return [...DEFAULT_PROFILES];
 }
 
-/** @param {string} name */
+/**
+ * @param {string} name
+ * @throws {Error} when the name does not follow the rule (PlayerNamePolicy.js): the form tells the player before it gets here
+ */
 export function addProfile(name) {
-  const trimmed = name.trim();
-  if (!trimmed) {
-    return false;
-  }
+  const trimmed = requirePlayerName(name);
   const profiles = listProfiles();
   if (!profiles.includes(trimmed)) {
     profiles.push(trimmed);
@@ -33,5 +40,4 @@ export function addProfile(name) {
       /* ignore */
     }
   }
-  return true;
 }

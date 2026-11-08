@@ -39,6 +39,12 @@ const net = (totals, prefix, side) => {
   return sum;
 };
 
+/**
+ * The months of accounts the economy needs before its product is measured: companies just founded spend more than they have sold, so their value added is below nothing, and
+ * annualised it says nothing of the economy. Until then the economy is "not measured yet" (first values, to tune by playing).
+ */
+export const MINIMUM_MEASURED_MONTHS = 6;
+
 /** What an account holds in cash: the balance of the cash accounts, each exactly (515 is not 5151, a bank's reserves). @param {AccountTotals} totals @returns {number} centimes */
 const cashOf = (totals) => {
   let sum = 0;

@@ -8,8 +8,10 @@
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { goodLabel } from '../shell/CatalogVocabulary.js';
 import { showActiveHamletLabel } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
+import { bindStaticHelps, helpSlotHtml } from '../shell/HelpButton.js';
+import { html } from '../shell/safeHtml.js';
 
-/** @type {{ supply: { describeEconomy: () => Promise<object> }, popupManager?: object | null } | null} */
+/** @type {{ supply: { describeEconomy: () => Promise<object> }, accounting: { getCityBorrowing: () => Promise<object> }, popupManager?: object | null } | null} */
 let deps = null;
 
 /** @type {ReturnType<typeof createModalFocusSession> | null} */
@@ -17,7 +19,6 @@ let focusSession = null;
 
 const PANEL_ID = 'economy-panel';
 
-const escapeHtml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const WAIT = '…';
 // `|| 0` turns a rounded -0 into 0: "−0 €" is not a figure.
 const euros = (amount) => (amount === null ? WAIT : `${(Math.round(amount) || 0).toLocaleString('fr-FR')} €`.replace('-', '−'));
@@ -29,44 +30,43 @@ const names = (services) => services.map((service) => goodLabel(service)).join('
 /**
  * A table: a caption, its column heads, its rows. The first cell of a row is its label (with an optional hint under it); the others are figures, right-aligned. On a phone the heads
  * go and each figure carries its own head above it (`data-label`), the label spanning the row.
- * @param {{ caption: string, heads: string[], rows: Array<{ cells: string[], hint?: string, strong?: boolean, bar?: number | null }>, note?: string }} table
- * @returns {string} html
+ * A "?" (HelpCatalog.js) goes after the caption (`help`) or after a row's label (`row.help`), as `{ id, reading }`, where the term or the figure is not obvious.
+ * @param {{ caption: string, heads: string[], rows: Array<{ cells: string[], hint?: string, strong?: boolean, bar?: number | null, help?: { id: string, reading?: object } }>, note?: string, help?: { id: string, reading?: object } | null }} table
+ * @returns {import('../shell/safeHtml.js').SafeHtml} html: every value is escaped by `html`, and a table can sit inside another html`` without being escaped twice
  */
-function tableHtml({ caption, heads, rows, note = '', warning = '' }) {
+function tableHtml({ caption, heads, rows, note = '', warning = '', help = null }) {
   const columns = `minmax(0, 2fr) ${heads.slice(1).map(() => 'minmax(88px, 1fr)').join(' ')}`;
-  const head = `<div class="eco-row eco-head" role="row">${heads.map((label, at) => `<div role="columnheader" class="${at === 0 ? 'eco-label' : 'eco-figure'}">${escapeHtml(label)}</div>`).join('')}</div>`;
+  const head = html`<div class="eco-row eco-head" role="row">${heads.map((label, at) => html`<div role="columnheader" class="${at === 0 ? 'eco-label' : 'eco-figure'}">${label}</div>`)}</div>`;
   const body = rows
     .map(
-      (row) => `<div class="eco-row${row.strong ? ' eco-row--strong' : ''}${row.muted ? ' eco-row--muted' : ''}" role="row">
-      <div role="cell" class="eco-label">${escapeHtml(row.cells[0])}${row.hint ? `<small>${escapeHtml(row.hint)}</small>` : ''}</div>
+      (row) => html`<div class="eco-row${row.strong ? ' eco-row--strong' : ''}${row.muted ? ' eco-row--muted' : ''}" role="row">
+      <div role="cell" class="eco-label">${row.cells[0]}${row.help ? helpSlotHtml(row.help.id, row.help.reading) : ''}${row.hint ? html`<small>${row.hint}</small>` : ''}</div>
       ${row.cells
         .slice(1)
-        .map((cell, at) => `<div role="cell" class="eco-figure" data-label="${escapeHtml(heads[at + 1])}">${escapeHtml(cell)}</div>`)
-        .join('')}
-      ${row.bar === undefined ? '' : `<span class="eco-bar" aria-hidden="true"><span style="width:${Math.round((row.bar ?? 0) * 100)}%"></span></span>`}
+        .map((cell, at) => html`<div role="cell" class="eco-figure" data-label="${heads[at + 1]}">${cell}</div>`)}
+      ${row.bar === undefined ? '' : html`<span class="eco-bar" aria-hidden="true"><span style="width:${Math.round((row.bar ?? 0) * 100)}%"></span></span>`}
     </div>`,
-    )
-    .join('');
-  return `<section class="eco-card">
-    <h5>${escapeHtml(caption)}</h5>
+    );
+  return html`<section class="eco-card">
+    <h5>${caption}${help ? helpSlotHtml(help.id, help.reading) : ''}</h5>
     <div class="eco-table" role="table" style="--eco-columns:${columns}">${head}${body}</div>
-    ${warning ? `<p class="eco-warning">${escapeHtml(warning)}</p>` : ''}
-    ${note ? `<p class="eco-note">${escapeHtml(note)}</p>` : ''}
+    ${warning ? html`<p class="eco-warning">${warning}</p>` : ''}
+    ${note ? html`<p class="eco-note">${note}</p>` : ''}
   </section>`;
 }
 
-/** @param {object} economy a ready `describeEconomy` @returns {string} the Production tab */
+/** @param {object} economy a ready `describeEconomy` @returns {import('../shell/safeHtml.js').SafeHtml} the Production tab */
 function productionHtml(economy) {
   const { perInhabitant } = economy;
   const parts = economy.valueAdded + economy.publicOutput;
   const part = (amount) => (parts > 0 ? percent(Math.round((amount / parts) * 1000) / 10) : WAIT);
-  return `${tableHtml({
+  return html`${tableHtml({
     caption: 'Produit intérieur, sur une année',
     heads: ['Indicateur', 'Montant', 'Par habitant'],
     rows: [
-      { cells: ['PIB', euros(economy.gdp), euros(perInhabitant.gdp)], hint: 'ce que les entreprises ajoutent, plus l\'administration à son coût' },
-      { cells: ['PIB en parité de pouvoir d\'achat', euros(economy.gdpPpp), euros(perInhabitant.gdpPpp)], hint: economy.parity === null ? 'pas encore de marché pour comparer les prix' : `prix du panier de référence ÷ prix ici = ${economy.parity.toLocaleString('fr-FR')}` },
-      { cells: ['PNB', euros(economy.gni), euros(perInhabitant.gni)], hint: `PIB moins ${euros(economy.externalInterest)} d'intérêts versés hors du jeu` },
+      { cells: ['PIB', euros(economy.gdp), euros(perInhabitant.gdp)], hint: 'ce que les entreprises ajoutent, plus l\'administration à son coût', help: { id: 'economy.gdp', reading: { figures: { gdp: economy.gdp } } } },
+      { cells: ['PIB en parité de pouvoir d\'achat', euros(economy.gdpPpp), euros(perInhabitant.gdpPpp)], help: { id: 'economy.gdpPpp' }, hint: economy.parity === null ? 'pas encore de marché pour comparer les prix' : `prix du panier de référence ÷ prix ici = ${economy.parity.toLocaleString('fr-FR')}` },
+      { cells: ['PNB', euros(economy.gni), euros(perInhabitant.gni)], help: { id: 'economy.gni', reading: { figures: { interest: economy.externalInterest } } }, hint: `PIB moins ${euros(economy.externalInterest)} d'intérêts versés hors du jeu` },
     ],
   })}
   ${tableHtml({
@@ -80,13 +80,15 @@ function productionHtml(economy) {
   })}`;
 }
 
-/** @param {object} economy a ready `describeEconomy` @returns {string} the Dettes tab */
-function debtsHtml(economy) {
+/** @param {object} economy a ready `describeEconomy` @param {{ ceiling: number, headroom: number }} borrowing the ceiling the lenders put on the city's debt @returns {string} the Dettes tab */
+function debtsHtml(economy, borrowing) {
   const { publicDebt: debt, privateDebt, ratios } = economy;
   const ofGdp = (amount) => (economy.gdp > 0 ? percent(Math.round((amount / economy.gdp) * 1000) / 10) : WAIT);
   const ofLoans = (amount) => (debt.loans > 0 ? percent(Math.round((amount / debt.loans) * 1000) / 10) : WAIT);
-  return `${tableHtml({
+  const { ceiling, headroom } = borrowing;
+  return html`${tableHtml({
     caption: 'Dette publique',
+    help: { id: 'economy.debt', reading: { state: headroom > 0 ? 'room' : 'ceiling', figures: { gross: debt.gross, ceiling, headroom } } },
     heads: ['Poste', 'Montant', 'Du PIB'],
     rows: [
       { cells: ['Prêts', euros(debt.loans), ofGdp(debt.loans)] },
@@ -144,8 +146,9 @@ function developmentHtml(economy) {
   const dimensionRows = development.dimensions.map((dimension) => ({ cells: [dimension.label, index(dimension.index)], hint: dimension.parts.map(partText).join(' · '), bar: dimension.index }));
   const income = { cells: ['Revenu', index(development.income)], hint: development.incomePerInhabitant === null ? 'le PIB en PPA attend un marché' : `${euros(development.incomePerInhabitant)} par habitant et par an, en PPA`, bar: development.income };
   const coverageRows = development.dimensions.flatMap((dimension) => dimension.parts.filter((part) => part.kind === 'services')).map((part) => ({ cells: [names(part.services), shareOf(part.share)] }));
-  return `${tableHtml({
+  return html`${tableHtml({
     caption: 'Indice de développement humain',
+    help: { id: 'economy.hdi', reading: development.hdi === null ? { state: 'invalid' } : { state: 'valid', figures: { hdi: development.hdi } } },
     heads: ['Dimension', 'Indice'],
     rows: [...dimensionRows, income, { cells: ['IDH', development.hdi === null ? '—' : index(development.hdi)], strong: true, muted: development.hdi === null, bar: development.hdi }],
     note: `Moyenne géométrique des trois dimensions, de 0 à 1. Le jeu n'a ni espérance de vie ni années d'école : la santé est dite par la faim et les soins, l'éducation par l'école primaire, l'école et la bibliothèque.`,
@@ -174,15 +177,17 @@ export async function renderEconomy() {
   const container = document.getElementById('economy-container');
   if (!container) throw new Error('[economy] the economy container is not in the page');
   container.querySelectorAll('.eco-tab-content').forEach((content) => {
-    content.innerHTML = `<p class="supply-balance-loading">${WAIT}</p>`;
+    content.innerHTML = html`<p class="supply-balance-loading">${WAIT}</p>`;
   });
-  const economy = await deps.supply.describeEconomy();
+  const [economy, borrowing] = await Promise.all([deps.supply.describeEconomy(), deps.accounting.getCityBorrowing()]);
   const basis = economy.ready ? (economy.months === 12 ? 'les 12 derniers mois' : `les ${economy.months} premiers mois, ramenés à une année`) : '';
   for (const tab of TABS) {
     const content = document.getElementById(`economy-${tab.id}-tab`);
-    content.innerHTML = economy.ready
-      ? `<p class="supply-balance-caveat">Chiffres annuels sur ${escapeHtml(basis)}, les dettes à l'instant. ${economy.population.toLocaleString('fr-FR')} habitants.</p>${tab.render(economy)}`
-      : `<p class="supply-balance-loading">${WAIT}</p>`;
+    const markup = economy.ready
+      ? html`<p class="supply-balance-caveat">Chiffres annuels sur ${basis}, les dettes à l'instant. ${economy.population.toLocaleString('fr-FR')} habitants.</p>${tab.render(economy, borrowing)}`
+      : html`<p class="supply-balance-loading">${WAIT}</p>`;
+    content.innerHTML = html`${markup}`;
+    bindStaticHelps(content);
   }
 }
 

@@ -12,6 +12,7 @@ import { initArchivesSection } from './archives/initArchivesSection.js';
 import { initCommerceSection } from './commerce/initCommerceSection.js';
 import { initTaxesSection } from './taxes/initTaxesSection.js';
 import { initCompanyAidSection } from './companyAid/initCompanyAidSection.js';
+import { initMarketSection } from './market/initMarketSection.js';
 import { initOwnershipSection } from './ownership/initOwnershipSection.js';
 import { initCentralBankSection } from './centralBank/initCentralBankSection.js';
 import { initCustomsSection } from './customs/initCustomsSection.js';
@@ -47,6 +48,7 @@ export async function initAdminSections(deps) {
   initCompanyAidSection(deps);
   initCentralBankSection(deps);
   initOwnershipSection(deps);
+  initMarketSection(deps);
   initCustomsSection(deps);
   if (deps.trade) initPricesSection(deps);
   if (deps.employment) initWagesSection(deps);

@@ -7,6 +7,37 @@
     text-align: left;
 }
 
+/* The city's financial levers (loans, journal): buttons above the budget. Narrow first: they share the width, and wrap when it is short. */
+.finances-levers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.finances-lever-btn {
+    flex: 1 1 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: var(--border-radius-small);
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.finances-lever-btn:hover,
+.finances-lever-btn:focus-visible {
+    background: rgba(251, 129, 34, 0.1);
+    border-color: rgba(251, 129, 34, 0.6);
+}
+
 .finances-hamlet-filter-row {
     display: flex;
     align-items: center;

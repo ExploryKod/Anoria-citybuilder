@@ -44,12 +44,14 @@ export class PriceBook {
    * @param {() => Promise<{ wageRateOf: (skill: string, level: number) => number, maintenanceCostOf: (buildingType: string) => number, employerContributionRate: number }>} deps.loadProducerCosting
    *   what a producer's month costs apart from its inputs: the labour market's wages, the employer's contribution on them and the buildings' upkeep (accounting's)
    */
-  constructor({ sumInflowCosts, loadProducerCosting }) {
+  constructor({ sumInflowCosts, loadProducerCosting, loadScarcity }) {
+    if (typeof loadScarcity !== 'function') throw new Error('[supply] the price book needs the scarcity of the goods (loadScarcity): without it the price ignores supply and demand');
+    this.loadScarcity = loadScarcity;
     if (typeof sumInflowCosts !== 'function') throw new Error('[supply] the price book needs the deliveries logged (sumInflowCosts)');
     if (typeof loadProducerCosting !== 'function') throw new Error('[supply] the price book needs the producers\' costing (loadProducerCosting): without wages and upkeep a producer\'s price is not its cost');
     this.sumInflowCosts = sumInflowCosts;
     this.loadProducerCosting = loadProducerCosting;
-    /** @type {Map<number, { averageCosts: Map<string, number>, hubCostByGood: Map<string, number>, costing: object, standardCosts: Map<string, number | null> }>} */
+    /** @type {Map<number, { averageCosts: Map<string, number>, hubCostByGood: Map<string, number>, costing: object, standardCosts: Map<string, number | null>, scarcity: Map<string, number> }>} */
     this.months = new Map();
   }
 
@@ -74,7 +76,7 @@ export class PriceBook {
       }
     }
     const hubCostByGood = new Map([...hubTotals].map(([category, total]) => [category, total.amount / total.quantity]));
-    this.months.set(key, { averageCosts, hubCostByGood, costing: await this.loadProducerCosting(), standardCosts: new Map() });
+    this.months.set(key, { averageCosts, hubCostByGood, costing: await this.loadProducerCosting(), standardCosts: new Map(), scarcity: await this.loadScarcity(period) });
     // Only the latest months are kept, but never the one just prepared: a past month asked for (a year read back) is older than the kept ones and would delete itself,
     // leaving `sellingPrice` to find it missing right after `ensure` returned.
     for (const dropped of [...this.months.keys()].sort((a, b) => a - b).slice(0, -MONTHS_KEPT)) {
@@ -151,6 +153,9 @@ export class PriceBook {
       return cost === null ? unitPriceAtStage(stage, category) : this.#withUnsoldRisk(building, category, priceFromCost('producer', cost));
     }
     const cost = state.averageCosts.get(`${building.id}|${category}`) ?? openingUnitCost(stage, category);
-    return this.#withUnsoldRisk(building, category, priceFromCost(stage, cost));
+    const price = this.#withUnsoldRisk(building, category, priceFromCost(stage, cost));
+    // At the shelf, the price follows supply and demand: a good that is short sells dearer, one that is plentiful cheaper (ScarcityCatalog.js). The stages before it do not,
+    // so the factor is applied once and the middlemen's margin is what a shortage pays.
+    return stage === 'distributor' ? Math.round(price * (state.scarcity.get(category) ?? 1) * 100) / 100 : price;
   }
 }

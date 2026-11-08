@@ -18,6 +18,7 @@ import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding, isAppointedWorkplace } from '../../../composition/employmentCatalog.js';
 import { lowestHouseTierForWorkers } from '../../../shared/population/workforceQueries.js';
 import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
+import { raw } from '../shell/safeHtml.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
@@ -137,7 +138,7 @@ function mountRoadButton() {
   button.dataset.toolid = toolId;
   button.title = name;
   button.setAttribute('aria-label', name);
-  button.querySelector('.toolbar-toggle-icon').innerHTML = buildingIconHtml(toolId);
+  button.querySelector('.toolbar-toggle-icon').innerHTML = raw(buildingIconHtml(toolId));
   button.querySelector('.sr-only').textContent = name;
   button.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -631,7 +632,7 @@ function buildPills() {
       const iconWrap = document.createElement('span');
       iconWrap.className = 'mobile-build-bar__pill-icon';
       iconWrap.setAttribute('aria-hidden', 'true');
-      iconWrap.innerHTML = iconHtml;
+      iconWrap.innerHTML = raw(iconHtml);
       pill.appendChild(iconWrap);
     }
 

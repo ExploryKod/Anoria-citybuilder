@@ -67,6 +67,11 @@ No row says who owns it: ownership is read (`OwnershipRegisterPolicy`, `getOwner
 names its lender: a bank of the game (`lenderBuildingId`) or a partner city (`lenderCityId`, `ExternalLenderCatalog`); one that names neither throws. The city may sell the shares it holds to the property company (`SellCityStake`: `stake_sold`/`stake_bought`, at their cost); every holder is paid its dividend in January
 (`SettleCompanyAid`), and the city has a balance sheet read from its account (`StateBalanceSheetPolicy`, never plugged). Plan: `docs/gameplay/PLAN_OWNERSHIP.md`.
 
+## Prices follow the climate, supply and demand, and the world
+
+A crop's yield is the catalog's times the year's climate (`src/shared/climate/`, drawn once and kept); the retail price of food is moved by how short or plentiful it is (`ScarcityPolicy`, applied by the `PriceBook` at the
+shelf); every traded good has a world price index (`WorldMarket`) that multiplies what the cities pay and ask. All three are in the game's settings, read strictly. Figures are first values: `docs/gameplay/PLAN_CRISES.md`.
+
 ## No saved games to migrate
 
 There are no saved games to keep. Never write a migration, a compatibility path, or a fallback for data written by an
@@ -227,6 +232,25 @@ Any screen, panel, table or card you add or change must work on a phone as well 
 width first, then widen. No horizontal page scroll; touch targets of at least 40 px; text that wraps instead of overflowing; a table that cannot fit drops its secondary
 columns (keep the essential ones) rather than shrinking everything. Add the `@media` rule in the same change as the markup, never "later". Style in the Material spirit,
 "less is more": one level of frame, space and a thin divider to tell sections apart, labels and figures aligned on one grid.
+
+## Texts in modals (dépêches, help, questions): structured, short, left-aligned
+
+A text the player reads in a modal is written to be scanned, not read like a novel: short paragraphs that say one thing, **bold** on the words to catch first, a heading
+only when a part needs one, and lists for anything that enumerates. One convention for all of them, laid out by `src/presentation/dom/shell/richText.js`: a blank line
+starts a block, `## ` is a heading (h3 — the modal's own title is the h2, so the hierarchy is h2 then h3, never skipped), `- ` lines are a list (a quiet card per line,
+no visible bullet), `**…**` is bold. It is built with the DOM (`renderRichText`, text nodes only), never with `innerHTML`: a text that holds markup (a name the player typed)
+stays text, so there is no escaping to forget. Do not put a text a player or a catalog wrote into `innerHTML`. Everything reads from the left edge (title, paragraphs, lists), never centred. A new modal reuses `ConfirmModal.js`
+(`confirmModal`, `noticeModal`) or the news modal and its classes; it does not write its own text styles. The explanations behind a "?" live in
+`src/shared/help-catalog/HelpCatalog.js` (figures are put in bold automatically; shared sentences are `FRAGMENTS`), a dépêche's text in `NewsDraftCatalog.js`.
+
+## What a player types, or another player sends, is text and never markup (XSS)
+
+A profile name, a pseudo, a room or map name, a value read back from storage or the network: it reaches the page with `textContent`, `createElement`, `dataset`,
+`replaceChildren`, or the `html` tagged template of `src/presentation/dom/shell/safeHtml.js` (values escaped by default, markup asked for with `raw()`), never concatenated
+into `innerHTML`. Toasts go through `ToastNotifier.js`, which escapes (the library puts the message in innerHTML). A name follows `PlayerNamePolicy.js` on the form, on what
+is read back, and on the multiplayer server (`isValidName`, which never trusts the client). The native platform is enough: no sanitizing library, because we never need
+to render markup a player wrote. The barrier is `pnpm lint:security` (ESLint with `eslint-plugin-no-unsanitized`, `eslint.config.js`): it refuses an `innerHTML` given a value that
+did not go through `html` / `escapeHtml`, and `deploy/deploy.sh` runs it before it builds and publishes. Regression tests: `tests/presentation/dom/shell/xssGuards.test.js`, `richText.test.js`.
 
 ## Keep the flow: no commands that make the user wait
 

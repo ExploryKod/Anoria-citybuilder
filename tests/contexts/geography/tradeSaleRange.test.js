@@ -17,7 +17,7 @@ async function unitPriceSold({ draw, bias }) {
   const sales = [];
   const relation = openRelationRow({ cityId: 'silvania', demandMultiplier: 1 });
   const hub = { id: 'hub1', type: 'TradeWarehouse', maxStock: 500, stocks: { dealBook: 10, goods: 10 } };
-  const cycle = new RunMonthlyCityTradeCycle({
+  const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
     cityTradeRepository: {
       async getActiveRelations() { return [relation]; },
       async saveRelation() {},

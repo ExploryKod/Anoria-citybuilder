@@ -2,6 +2,7 @@ import { showActiveHamletNameIn } from '../hamletLabel.js';
 import { buildingName } from '../../shell/CatalogVocabulary.js';
 import { formatEuro, formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { balanceSheetView } from '../../info/views/balanceSheetView.js';
+import { helpButton } from '../../shell/HelpButton.js';
 
 /** A share of the deposits, as the player reads it: "20 %". @param {number} ratio */
 const formatShare = (ratio) => `${(ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
@@ -117,6 +118,8 @@ class CentralBankSectionPresenter {
       note: 'Les comptes de la banque centrale de cet État, tels qu’ils sont aujourd’hui. Elle ne détient pas d’argent à elle : ce qu’elle doit au Trésor et aux banques (leurs réserves) fait face à ce qu’elle leur a prêté, à la dotation de fondation de l’État et aux devises qu’elle a converties.',
     }));
 
+    this.#attachHelps({ policy, solvency, borrowing });
+
     const insolvency = this.#element('bank-insolvency');
     // The supervisor's word: a bank thin on capital is warned, then its lending is frozen, then (equity below nothing) it is insolvent and may be liquidated.
     const thin = solvency && solvency.capitalStatus !== 'sound';
@@ -135,6 +138,49 @@ class CentralBankSectionPresenter {
         + `Recapitaliser : la ville apporte ${needed} en capital. `
         + (solvency.insolvent ? 'Liquider : la banque est démolie, la ville rembourse d\'un coup ses prêts, les épargnants récupèrent ce que sa caisse permet et la ville garantit le reste.' : '');
       this.#element('bank-recapitalise').textContent = `Recapitaliser (${needed})`;
+    }
+  }
+
+  /**
+   * A "?" (HelpCatalog.js) after the label of the line whose value sits in `valueId`: what the term is, with the figures of the moment. Put again at each refresh, since the
+   * state a text is written for moves with the bank. A line the bank does not yet have (no bank built) has none.
+   * @param {string} valueId
+   * @param {string} id the entry of the help catalog
+   * @param {{ state?: string, figures?: Record<string, number> }} reading
+   */
+  #help(valueId, id, reading) {
+    const value = this.#element(valueId);
+    // A line of the effects list is `<div><dt>label</dt><dd>value</dd></div>`; a lever's value sits beside the label of its row.
+    const label = value.parentElement.querySelector(':scope > dt') ?? value.closest('.taxes-row')?.querySelector('.taxes-row-label');
+    if (!label) throw new Error(`[central-bank] #${valueId} has no label to put a "?" on`);
+    label.querySelector(':scope > .help-btn')?.remove();
+    label.append(helpButton(id, reading));
+  }
+
+  /** The "?" of the section: only on what is not obvious (the levers, the bank's health and its link with the central bank). */
+  #attachHelps({ policy, solvency, borrowing }) {
+    const catalog = this.accounting.getBankHelpFigures();
+    this.#help('policy-rate-value', 'bank.policyRate', { figures: { rate: policy.rate, marginalSpread: catalog.marginalSpread, depositSpread: catalog.depositSpread } });
+    this.#help('reserve-ratio-value', 'bank.reserveRatio', { figures: { ratio: policy.reserveRatio } });
+    this.#help('policy-rate-saving-share', 'bank.savingShare', { figures: { share: policy.householdSavingShare } });
+    this.#help('policy-rate-company-credit', 'bank.companyCredit', { figures: { rate: policy.companyCreditRate, months: catalog.companyCreditCeilingMonths } });
+    this.#help('policy-rate-corridor', 'bank.corridor', { figures: { deposit: policy.corridor.deposit, main: policy.corridor.main, marginal: policy.corridor.marginal } });
+    this.#help('policy-rate-refinancing', 'bank.refinancing', { figures: { owed: policy.refinancingOutstanding } });
+    this.#help('city-debt-ceiling', 'economy.debt', {
+      state: borrowing.headroom > 0 ? 'room' : 'ceiling',
+      figures: { gross: borrowing.debt, ceiling: borrowing.ceiling, headroom: borrowing.headroom },
+    });
+    // What the bank holds or owes exists only once a bank is built: before that the lines show a dash and explain nothing.
+    if (policy.bankPosition) {
+      const { reserves, requiredReserve, collateralCapacity } = policy.bankPosition;
+      this.#help('bank-reserve-position', 'bank.reservePosition', { state: reserves >= requiredReserve ? 'ok' : 'short', figures: { reserves, required: requiredReserve } });
+      this.#help('bank-collateral', 'bank.collateral', { figures: { capacity: collateralCapacity, haircut: catalog.collateralHaircut } });
+    }
+    if (solvency && solvency.ratio !== null) {
+      this.#help('bank-capital-ratio', 'bank.capitalRatio', {
+        state: solvency.capitalStatus,
+        figures: { ratio: solvency.ratio, warning: policy.capitalRatios.warning, minimum: policy.capitalRatios.minimum, cap: catalog.depositGuaranteeCap },
+      });
     }
   }
 

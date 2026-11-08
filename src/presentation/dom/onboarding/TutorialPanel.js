@@ -2,6 +2,7 @@
  * TutorialPanel — popup tutoriel (DOM + événements).
  */
 import EventBlocker from '../shell/EventBlocker.js';
+import { raw } from '../shell/safeHtml.js';
 
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -446,7 +447,7 @@ class TutorialPanel {
         // Mettre à jour le contenu
         const content = this.panel.querySelector('.tutorial-content');
         if (content) {
-            content.innerHTML = step.content;
+            content.innerHTML = raw(step.content);
             content.scrollTop = 0;
         }
 

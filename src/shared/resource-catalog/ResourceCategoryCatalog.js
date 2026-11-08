@@ -18,25 +18,26 @@
  * `kind: 'importDeal'` — a deal waiting for a real import: an agreement, not a good. It costs nothing to make (the
  * merchants are paid on delivery, not when they make the deal), so it declares a baseValue of 0, and it is not a good
  * the houses buy (see getGoodCategories). `importGood` names the imported good it will turn into.
+ * `climateSensitivity` — a crop's share of the climate's swing (src/shared/climate): 1 yields the whole swing of the year, 0.5 half of it; a good without it is no crop.
  * `transportWeight` — an imported good's weight/volume factor in the transport charge (see TradeCatalog `transport`).
  */
 const BASKET = Object.freeze({ one: 'panier', many: 'paniers' });
 const unitOf = (one, many) => Object.freeze({ one, many });
 export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
-  wheat:  Object.freeze({ vatCategory: 'essential', emoji: '🌾', label: 'Blé',     unit: BASKET, baseValue: 0.8,  colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
-  cabbage: Object.freeze({ vatCategory: 'essential', emoji: '🥬', label: 'Chou',   unit: BASKET, baseValue: 0.5,  colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
-  carrot: Object.freeze({ vatCategory: 'essential', emoji: '🥕', label: 'Carotte', unit: BASKET, baseValue: 0.6,  colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
+  wheat:  Object.freeze({ vatCategory: 'essential', emoji: '🌾', label: 'Blé',     unit: BASKET, baseValue: 0.8, climateSensitivity: 1, transportWeight: 2,  colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
+  cabbage: Object.freeze({ vatCategory: 'essential', emoji: '🥬', label: 'Chou',   unit: BASKET, baseValue: 0.5, climateSensitivity: 0.5,  colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
+  carrot: Object.freeze({ vatCategory: 'essential', emoji: '🥕', label: 'Carotte', unit: BASKET, baseValue: 0.6, climateSensitivity: 0.6,  colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
   // Imported goods: bought from a trade city (see TradeCatalog `offers`), never made here.
   coal:   Object.freeze({ vatCategory: 'other', emoji: '⛏️', label: 'Charbon', unit: unitOf('tonne', 'tonnes'), baseValue: 1.2, transportWeight: 3, colors: Object.freeze({ dark: '#37474F', pale: '#B0BEC5' }) }),
   petrol: Object.freeze({ vatCategory: 'other', emoji: '🛢️', label: 'Pétrole', unit: unitOf('baril', 'barils'), baseValue: 3.0, transportWeight: 1, colors: Object.freeze({ dark: '#4E342E', pale: '#BCAAA4' }) }),
   uranium: Object.freeze({ vatCategory: 'other', emoji: '☢️', label: 'Uranium', unit: unitOf('fût', 'fûts'), baseValue: 8.0, transportWeight: 1, colors: Object.freeze({ dark: '#558B2F', pale: '#DCEDC8' }) }),
   exoticWood: Object.freeze({ vatCategory: 'luxury', emoji: '🌳', label: 'Bois exotique', unit: unitOf('bille', 'billes'), baseValue: 4.0, transportWeight: 2, colors: Object.freeze({ dark: '#7B1F2E', pale: '#E3A4AE' }) }),
-  dattes: Object.freeze({ vatCategory: 'essential', emoji: '🌴', label: 'Dattes',  unit: BASKET, baseValue: 1.2,  colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
+  dattes: Object.freeze({ vatCategory: 'essential', emoji: '🌴', label: 'Dattes',  unit: BASKET, baseValue: 1.2, climateSensitivity: 0.5,  colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
   wood:   Object.freeze({ vatCategory: 'essential', emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), baseValue: 1.0, colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
   heat: Object.freeze({ emoji: '🔥', label: 'Chauffage', unit: unitOf('unité', 'unités') }),
   // Lighting: olive green for oil, beeswax for candles.
-  olive: Object.freeze({ vatCategory: 'essential', emoji: '🫒', label: 'Olive', unit: unitOf('olive', 'olives'), baseValue: 0.4, colors: Object.freeze({ dark: '#556B2F', pale: '#C5D19A' }) }),
+  olive: Object.freeze({ vatCategory: 'essential', emoji: '🫒', label: 'Olive', unit: unitOf('olive', 'olives'), baseValue: 0.4, climateSensitivity: 0.7, colors: Object.freeze({ dark: '#556B2F', pale: '#C5D19A' }) }),
   oil:    Object.freeze({ vatCategory: 'essential', emoji: '🪔', label: 'Huile',  unit: unitOf('jarre', 'jarres'),   baseValue: 2.0, colors: Object.freeze({ dark: '#B59B2E', pale: '#EBDDA0' }) }),
   candle: Object.freeze({ vatCategory: 'essential', emoji: '🕯️', label: 'Bougie', unit: unitOf('bougie', 'bougies'), baseValue: 1.5, colors: Object.freeze({ dark: '#D9B84A', pale: '#F6EDC4' }) }),
   light: Object.freeze({ emoji: '💡', label: 'Éclairage', unit: unitOf('unité', 'unités') }),
@@ -63,6 +64,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   // Deals waiting for an import: made by the merchants' business, turned into the real good when the city delivers.
   dealCoal:        Object.freeze({ kind: 'importDeal', importGood: 'coal', emoji: '🤝', label: 'Import charbon', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#37474F', pale: '#B0BEC5' }) }),
   dealPetrol:      Object.freeze({ kind: 'importDeal', importGood: 'petrol', emoji: '🤝', label: 'Import pétrole', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#4E342E', pale: '#BCAAA4' }) }),
+  dealWheat:       Object.freeze({ kind: 'importDeal', importGood: 'wheat', emoji: '🤝', label: 'Import blé', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
   dealUranium:     Object.freeze({ kind: 'importDeal', importGood: 'uranium', emoji: '🤝', label: 'Import uranium', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#558B2F', pale: '#DCEDC8' }) }),
   dealExoticWood:  Object.freeze({ kind: 'importDeal', importGood: 'exoticWood', emoji: '🤝', label: 'Import bois exotique', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#7B1F2E', pale: '#E3A4AE' }) }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
@@ -164,6 +166,12 @@ export function hasResourceCategoryPresentation(category) {
  * @param {string} category
  * @returns {number}
  */
+/** @param {string} category @returns {number | null} how much of the year's swing this crop feels, null for a good that is no crop */
+export function getClimateSensitivity(category) {
+  if (!hasResourceCategoryPresentation(category)) throw new Error(`[resource-catalog] "${category}" is not declared in ResourceCategoryCatalog`);
+  return RESOURCE_CATEGORY_PRESENTATION[category].climateSensitivity ?? null;
+}
+
 export function getResourceBaseValue(category) {
   if (!hasResourceCategoryPresentation(category)) {
     throw new Error(`[resource-catalog] "${category}" is not declared in ResourceCategoryCatalog: it has no price`);

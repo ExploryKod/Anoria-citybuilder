@@ -4,6 +4,8 @@
  * Collapsible: expanded panel OR discrete FAB icon (like cookie consent).
  */
 
+import { raw } from '../dom/shell/safeHtml.js';
+
 function activityIconSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>`;
 }
@@ -41,7 +43,7 @@ export function createPerfHud({
   collapseBtn.className = 'perf-hud__collapse';
   collapseBtn.title = 'Réduire les stats';
   collapseBtn.setAttribute('aria-label', 'Réduire les stats de performance');
-  collapseBtn.innerHTML = closeIconSvg();
+  collapseBtn.innerHTML = raw(closeIconSvg());
 
   const canvas = document.createElement('canvas');
   canvas.className = 'perf-hud-canvas';
@@ -53,7 +55,7 @@ export function createPerfHud({
   fab.className = 'perf-hud__fab';
   fab.title = 'Stats de performance';
   fab.setAttribute('aria-label', 'Afficher les stats de performance');
-  fab.innerHTML = activityIconSvg();
+  fab.innerHTML = raw(activityIconSvg());
 
   root.appendChild(panel);
   root.appendChild(fab);

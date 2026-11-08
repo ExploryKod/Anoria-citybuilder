@@ -17,6 +17,7 @@ import { buildingInstanceName, buildingName } from '../../../shell/CatalogVocabu
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 import { staffingStatusLine } from './staffingReasonFormat.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
+import { html } from '../../../shell/safeHtml.js';
 
 /**
  * @param {string} buildingType
@@ -36,7 +37,7 @@ export function formatServiceLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
     title: buildingInstanceName(vm.buildingType, vm.buildingRow),
-    meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
+    meta: html`📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
 }

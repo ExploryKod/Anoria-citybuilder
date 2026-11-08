@@ -4,6 +4,7 @@ import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { satisfactionOf, formatSatisfaction } from '../../../../shared/trade-catalog/satisfaction.js';
 import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { html } from '../../shell/safeHtml.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
@@ -78,7 +79,7 @@ export class CommerceSectionPresenter {
       return;
     }
 
-    container.innerHTML = relations.map((rel) => this.#relationCard(rel)).join('');
+    container.innerHTML = html`${relations.map((rel) => this.#relationCard(rel))}`;
   }
 
   /** @param {object} rel */
@@ -104,13 +105,12 @@ export class CommerceSectionPresenter {
         const customsRate = this.accounting.getCustomsDuty('anoria', 'export', w.good, getSessionGameTime());
         const low = +(base * w.baseMultiplier * (1 - spread)).toFixed(2);
         const high = +(base * w.baseMultiplier * (1 + spread)).toFixed(2);
-        return `<div class="commerce-relation-row">${w.good} : <strong>${low} à ${high} €/u</strong> · douane ${Math.round(customsRate * 100)} %</div>`;
-      })
-      .join('');
+        return html`<div class="commerce-relation-row">${w.good} : <strong>${low} à ${high} €/u</strong> · douane ${Math.round(customsRate * 100)} %</div>`;
+      });
 
     const ceaseRows = this.#ceaseRows(rel);
 
-    return `
+    return html`
       <div class="commerce-relation-card ${status !== 'active' ? status : ''}">
         <div class="commerce-relation-header">
           <span class="commerce-relation-city">${cityLabel}</span>
@@ -140,14 +140,14 @@ export class CommerceSectionPresenter {
     const say = ({ by, reason }) =>
       `${TRADE_CEASE_WORDING.by[by] ?? unresolvedTerm('cease actor', by)} : ${TRADE_CEASE_WORDING.reasons[reason] ?? unresolvedTerm('cease reason', reason)}`;
     const rows = [];
-    if (rel.ceased) rows.push(`<div class="commerce-relation-row">${say(rel.ceased)}</div>`);
+    if (rel.ceased) rows.push(html`<div class="commerce-relation-row">${say(rel.ceased)}</div>`);
     for (const [good, ceased] of Object.entries(rel.importCeased)) {
-      rows.push(`<div class="commerce-relation-row">Import ${goodLabel(good)} — ${say(ceased)}</div>`);
+      rows.push(html`<div class="commerce-relation-row">Import ${goodLabel(good)} — ${say(ceased)}</div>`);
     }
     for (const [good, ceased] of Object.entries(rel.exportCeased)) {
-      rows.push(`<div class="commerce-relation-row">Export ${goodLabel(good)} — ${say(ceased)}</div>`);
+      rows.push(html`<div class="commerce-relation-row">Export ${goodLabel(good)} — ${say(ceased)}</div>`);
     }
-    return rows.join('');
+    return html`${rows}`;
   }
 
   async #renderBudgetImpact() {

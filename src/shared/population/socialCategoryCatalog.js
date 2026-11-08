@@ -256,8 +256,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
     }),
   }),
   // The city's administrators (the mayor's house): six at most, whatever the tier. From the first tier, with no requirement, they hold
-  // `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and the collection of the simple
-  // taxes (citizen, income, VAT). The second tier adds the collection of the companies' tax and of the customs. No workplace asks for these as a worker:
+  // `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and the collection of every tax
+  // (citizen, income, VAT, companies' tax, customs). The second tier grants nothing yet. No workplace asks for these as a worker:
   // they are the house's own functions, and the house reaches its tiers only while its needs are paid (so while its stipend is enough).
   // The one exception is `banque-centrale`: the central bank's two posts are filled by appointment from this house (`employment.appointed`), not by the
   // labour market, and its administrators stay paid by the city.
@@ -279,13 +279,16 @@ export const SOCIAL_CATEGORY = Object.freeze({
           [TAX_COLLECTION_SKILLS.citizen]: 1,
           [TAX_COLLECTION_SKILLS.income]: 1,
           [TAX_COLLECTION_SKILLS.vat]: 1,
+          [TAX_COLLECTION_SKILLS.corporate]: 1,
+          [TAX_COLLECTION_SKILLS.customs]: 1,
           'banque-centrale': 1,
         }),
       }),
+      // The second tier grants no skill yet: what it will bring the administrators is still to be settled.
       2: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,
         requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
-        skills: Object.freeze({ [TAX_COLLECTION_SKILLS.corporate]: 1, [TAX_COLLECTION_SKILLS.customs]: 1 }),
+        skills: Object.freeze({}),
       }),
       3: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,

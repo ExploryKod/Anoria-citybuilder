@@ -1,4 +1,5 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
+import { html } from '../shell/safeHtml.js';
 import { goodIcon, goodLabel } from '../shell/CatalogVocabulary.js';
 import { satisfactionOf,formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
 import {
@@ -16,7 +17,7 @@ const RELATION_STATUS_CLASS = { active: 'open', suspended: 'closed', expired: 'c
 function renderCityPanel(cityId, tradeInfo = null) {
   const city = getWorldCityById(cityId);
   if (!city) {
-    return `
+    return html`
       <div class="trade-map-panel-empty">
         <p>Sélectionnez une ville sur la carte</p>
       </div>`;
@@ -25,15 +26,15 @@ function renderCityPanel(cityId, tradeInfo = null) {
   const categoryLabel = WORLD_CITY_CATEGORY_LABELS[city.category] ?? '';
   const tradeBlock = tradeInfo ? renderTradeBlock(tradeInfo) : '';
 
-  return `
+  return html`
     <div class="trade-map-panel-inner" data-city-id="${city.id}">
       <div class="trade-map-panel-header">
         <div class="trade-map-panel-title-group">
           <h3 class="trade-map-panel-city">${city.name}</h3>
         </div>
-        ${categoryLabel ? `<span class="trade-map-panel-category">${categoryLabel}</span>` : ''}
+        ${categoryLabel ? html`<span class="trade-map-panel-category">${categoryLabel}</span>` : ''}
       </div>
-      ${city.description ? `<p class="trade-map-panel-desc">${city.description}</p>` : ''}
+      ${city.description ? html`<p class="trade-map-panel-desc">${city.description}</p>` : ''}
       ${tradeBlock}
     </div>`;
 }
@@ -49,8 +50,7 @@ function renderTradeBlock({ relation, entry, sales }) {
   const statusClass = status ? (RELATION_STATUS_CLASS[status] ?? 'closed') : 'closed';
 
   const wantsLine = entry.wants
-    .map((w) => `<span class="trade-map-good-icon" title="${goodLabel(w.good)}" aria-label="${goodLabel(w.good)}" role="img">${goodIcon(w.good)}</span>`)
-    .join('');
+    .map((w) => html`<span class="trade-map-good-icon" title="${goodLabel(w.good)}" aria-label="${goodLabel(w.good)}" role="img">${goodIcon(w.good)}</span>`);
 
   // Last-month sales summary — quick glance only; the full log lives in the exchange modal.
   const lastMonthSales = sales.slice(0, entry.wants.length * 2);
@@ -58,11 +58,11 @@ function renderTradeBlock({ relation, entry, sales }) {
     ? lastMonthSales.map((s) => {
         const qty = s.quantity ?? 0;
         const customs = s.customsCollected ?? 0;
-        return `<li>${s.good ?? s.foodType} — ${qty} unités · douane <strong>${customs} €</strong></li>`;
-      }).join('')
-    : '<li>Aucune vente récente</li>';
+        return html`<li>${s.good ?? s.foodType} — ${qty} unités · douane <strong>${customs} €</strong></li>`;
+      })
+    : html`<li>Aucune vente récente</li>`;
 
-  return `
+  return html`
     <div class="trade-map-trade-block">
       <div class="trade-map-trade-header">
         <span class="trade-map-panel-route ${statusClass}">${statusLabel}</span>
@@ -70,7 +70,7 @@ function renderTradeBlock({ relation, entry, sales }) {
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5z"/><path d="M17 9h3v8a2 2 0 0 1-2 2h-1"/><path d="M7 9h7M7 12h7M7 15h4"/></svg>
         </button>
       </div>
-      ${status === 'active' ? `
+      ${status === 'active' ? html`
         <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
         <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${formatSatisfaction(satisfactionOf(relation))}</strong></p>
         <div class="trade-map-trade-recent">
@@ -91,7 +91,7 @@ export function renderWorldMapShell(view, selection = {}) {
     hamletId: selection.hamletId ?? null,
   };
 
-  return `
+  return html`
     <div class="map-page-body">
       <div class="map-page-canvas trade-map-canvas world-map-host" id="world-map-host">
         <div id="world-map-view" class="world-map-view" aria-label="Carte hexagonale du monde"></div>
@@ -103,7 +103,7 @@ export function renderWorldMapShell(view, selection = {}) {
 }
 
 /** Shown where a hamlet could be entered: the map is read-only, the carousel in the game switches hamlet. */
-const CHANGE_HAMLET_IN_GAME_NOTE = '<p class="trade-map-panel-active-note">Pour changer de hameau, utilisez le carrousel dans le jeu.</p>';
+const CHANGE_HAMLET_IN_GAME_NOTE = html`<p class="trade-map-panel-active-note">Pour changer de hameau, utilisez le carrousel dans le jeu.</p>`;
 
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
@@ -112,7 +112,7 @@ const CHANGE_HAMLET_IN_GAME_NOTE = '<p class="trade-map-panel-active-note">Pour 
 export function renderWorldHamletPanel(view, hamletId) {
   const hamlet = view.hamlets.find((item) => item.id === hamletId);
   if (!hamlet) {
-    return `
+    return html`
       <div class="trade-map-panel-empty">
         <p>Sélectionnez un hameau sur la carte</p>
       </div>`;
@@ -120,7 +120,7 @@ export function renderWorldHamletPanel(view, hamletId) {
 
   let statusText = 'Verrouillé';
   let statusClass = 'closed';
-  let actionHtml = '<p class="trade-map-panel-active-note">Ce hameau n’est pas encore accessible.</p>';
+  let actionHtml = html`<p class="trade-map-panel-active-note">Ce hameau n’est pas encore accessible.</p>`;
 
   // The map only shows; changing hamlet happens in the game, with the hamlet carousel (no page load).
   if (hamlet.access === HAMLET_ACCESS.active) {
@@ -133,7 +133,7 @@ export function renderWorldHamletPanel(view, hamletId) {
     actionHtml = CHANGE_HAMLET_IN_GAME_NOTE;
   }
 
-  return `
+  return html`
     <div class="trade-map-panel-inner" data-hamlet-id="${hamlet.id}">
       <div class="trade-map-panel-header">
         <div class="trade-map-panel-title-group">

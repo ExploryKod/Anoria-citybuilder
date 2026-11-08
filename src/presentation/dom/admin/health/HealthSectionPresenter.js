@@ -8,6 +8,7 @@ import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
 import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { renderHealthHistogram } from '../../info/views/healthHistogramView.js';
+import { html } from '../../shell/safeHtml.js';
 
 /**
  * The city's health, read from its citizens (`housing.getCityHealth`): the average over the inhabitants, how many they are and how
@@ -198,7 +199,7 @@ export class HealthSectionPresenter {
         const sick = health === null ? '…' : `${health.sick}${health.citizens > 0 ? ` (${Math.round((health.sick / health.citizens) * 100)} %)` : ''}`;
         const sickClass = health !== null && health.sick > 0 ? 'high-risk' : '';
 
-        healthSections.innerHTML = `
+        healthSections.innerHTML = html`
             <div class="health-section">
                 <div class="health-section-title">${HEALTH_LABELS.score}</div>
                 <div class="health-items">

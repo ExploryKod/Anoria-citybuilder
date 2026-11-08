@@ -18,7 +18,7 @@ describe('buildPriceWaterfall', () => {
   test('an imported good carries the freight, the duty and the merchants\' margin the import rule charges, and the duty is its share of the price', () => {
     const entry = getTradeCatalogEntry('briga');
     const offer = entry.offers[0];
-    const delivery = priceImportDelivery({ cityId: 'briga', offer, quantity: offer.quantityPerOrder, dutyRate: 0.2 });
+    const delivery = priceImportDelivery({ cityId: 'briga', offer, quantity: offer.quantityPerOrder, dutyRate: 0.2, worldIndex: 1 });
     const waterfall = buildPriceWaterfall({
       good: offer.good,
       reference: 1.2,

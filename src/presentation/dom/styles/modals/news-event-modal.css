@@ -3,7 +3,7 @@
 .news-event-modal {
   position: fixed;
   inset: 0;
-  z-index: var(--z-index-modal);
+  z-index: var(--z-index-modal-top);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,7 +49,7 @@
   border-bottom: 2px solid var(--cta);
 }
 
-.news-event-modal-header h3 {
+.news-event-modal-header h2 {
   margin: 0 0 6px;
   font-size: 1.15rem;
   font-weight: 600;
@@ -69,27 +69,70 @@
 
 .news-event-modal-body {
   margin: 0;
-  line-height: 1.45;
-  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 0.98rem;
 }
 
-/* A paragraph of the text the catalog wrote (a blank line in the text starts one). */
+/*
+ * The text the catalogs write (richText.js): real blocks, all on the same left edge. A paragraph is short and says one thing; a heading (h3, the modal's title is the h2)
+ * opens a part; a list shows no bullet, each line a quiet card with an accent rule; bold picks out the words to catch at a glance.
+ */
 .news-event-paragraph {
-  display: block;
+  margin: 0;
 }
 
 .news-event-paragraph + .news-event-paragraph,
 .news-event-paragraph + .news-event-list,
-.news-event-list + .news-event-paragraph {
+.news-event-list + .news-event-paragraph,
+.news-event-list + .news-event-list {
   margin-top: 0.8em;
 }
 
-/* A list written in the catalog (lines starting with "- "): aligned left, even in a centred dépêche. */
-.news-event-list {
-  margin: 0.4em 0 0;
-  padding-left: 1.4em;
+/* Every text of a modal reads from the left: a dépêche, a question, an explanation. */
+.news-event-modal-card,
+.news-event-modal-header,
+.news-event-modal-content {
   text-align: left;
-  white-space: normal;
+}
+
+.news-event-heading {
+  margin: 1.2em 0 0.4em;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.news-event-heading:first-child {
+  margin-top: 0;
+}
+
+.news-event-modal strong {
+  font-weight: 700;
+}
+
+.news-event-list {
+  list-style: none;
+  margin: 0.5em 0 0;
+  /* The browser's own indent would push the text off the edge the paragraph is on. */
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.news-event-list > li {
+  margin: 0;
+  padding: 7px 12px 7px 14px;
+  border-left: 3px solid var(--cta);
+  border-radius: 0 6px 6px 0;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.news-event-list > li::marker {
+  content: none;
 }
 
 /* The buildings a dépêche shows under its text, all in one row. */
@@ -382,7 +425,7 @@
     padding: 8px 16px 6px;
   }
 
-  .news-event-modal:not(.confirm-modal) .news-event-modal-header h3 {
+  .news-event-modal:not(.confirm-modal) .news-event-modal-header h2 {
     margin: 0 0 2px;
     font-size: 1rem;
   }
@@ -451,7 +494,7 @@
   font-family: inherit;
 }
 
-.confirm-modal .news-event-modal-header h3 {
+.confirm-modal .news-event-modal-header h2 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
@@ -489,17 +532,27 @@
   content: none;
 }
 
-/* A building's name, above what it brings down. */
+/* What the entry is called (an h3), above what it says. */
 .confirm-modal-item-label {
   display: block;
-  margin-bottom: 3px;
+  margin: 0 0 3px;
+  font-size: 0.93rem;
   font-weight: 700;
+  line-height: 1.3;
 }
 
-/* A line break in the text is kept: one consequence per line. */
-.confirm-modal-item-text {
-  display: block;
-  white-space: pre-line;
+/* A line break in the text is kept (one consequence per line); the paragraphs inside sit close, the entry is already a card. */
+.confirm-modal-item-text .news-event-paragraph + .news-event-paragraph,
+.confirm-modal-item-text .news-event-paragraph + .news-event-list,
+.confirm-modal-item-text .news-event-list + .news-event-paragraph {
+  margin-top: 0.5em;
+}
+
+/* A list inside an entry (itself a card) is not a card of cards: it shows lines with an accent rule only. */
+.confirm-modal-item .news-event-list > li {
+  background: none;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 /* The two answers of a confirmation are big enough to touch (40px) and share the width on a narrow screen. */

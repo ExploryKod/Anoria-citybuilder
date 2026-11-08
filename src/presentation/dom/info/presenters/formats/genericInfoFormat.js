@@ -4,6 +4,7 @@
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { buildingName } from '../../../shell/CatalogVocabulary.js';
+import { html } from '../../../shell/safeHtml.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -12,7 +13,7 @@ export function formatGenericLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
     title: buildingName(vm.buildingType),
-    meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
+    meta: html`📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
 }

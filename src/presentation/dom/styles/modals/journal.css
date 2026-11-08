@@ -6,7 +6,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: var(--z-index-modal);
+    z-index: var(--z-index-modal-over);
     display: none;
     align-items: center;
     justify-content: center;
@@ -51,6 +51,111 @@
     margin: 0;
     font-size: 20px;
     color: var(--primary);
+}
+
+/* Under the title: the filter button and the search box on one line, the box taking the room that is left. */
+.journal-header-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.journal-search {
+    position: relative;
+    flex: 1 1 200px;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+}
+
+.journal-search > svg {
+    position: absolute;
+    left: 14px;
+    pointer-events: none;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.journal-search__input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 14px 0 38px;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
+    font-size: 14px;
+}
+
+.journal-search__input:focus-visible {
+    outline: 2px solid var(--cta);
+    outline-offset: 1px;
+    border-color: var(--cta);
+}
+
+/* The result of a search: one line above the entries; the entries it hides are really hidden. */
+.journal-search-status {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.journal-list [hidden] {
+    display: none !important;
+}
+
+/* The totals of a year or a month would still count the entries a search hides: they are not shown while it lasts. */
+.journal-list.is-searching .journal-year-summary,
+.journal-list.is-searching .journal-month-summary {
+    display: none;
+}
+
+/* The filter button: quiet while nothing is filtered, tinted when a filter is in force (its label then names it). */
+.journal-filter-toggle {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    max-width: 100%;
+    padding: 0 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.journal-filter-toggle:hover,
+.journal-filter-toggle[aria-expanded="true"] {
+    border-color: var(--cta);
+    background: rgba(251, 129, 34, 0.08);
+}
+
+.journal-filter-toggle.is-filtering {
+    border-color: var(--cta);
+    color: var(--cta);
+}
+
+.journal-filter-toggle__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.journal-filter-toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.journal-filter-panel[hidden] {
+    display: none;
 }
 
 .journal-filter-pills {
@@ -149,114 +254,181 @@
     flex: 1;
 }
 
+/*
+ * The controls above the entries, one toolbar on a grid of two rows:
+ *   [ scope: Hameau | Flux privés ]            [ Actualiser ] [ Exporter ▾ ]
+ *   [ period: Tout | 7 j | 30 j | 60 j ] [ hamlet ▾ ]
+ * Choices that exclude each other (the scope, the period) are segmented controls: one frame, the chosen one filled. The actions are quiet, and the three exports are one menu.
+ * Everything is 40 px high, so the rows line up and a thumb reaches them. A phone stacks the rows (see the media queries).
+ */
+/* The toolbar is a stacking context of its own, above the entries that follow it (so the export menu opens over them) and under the sticky header of a phone (30, below). */
+.journal-toolbar {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "scope actions"
+        "filters filters";
+    align-items: center;
+    gap: 12px 16px;
+    margin-bottom: 20px;
+}
+
+.journal-scope-tabs { grid-area: scope; }
+.journal-actions { grid-area: actions; }
+.journal-filters { grid-area: filters; }
+
+.journal-scope-tabs,
+.journal-period {
+    display: inline-flex;
+    justify-self: start;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
 .journal-filters {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
 }
 
+.journal-scope-tab,
 .journal-filter-btn {
-    padding: 8px 16px;
-    border: 1px solid var(--cta);
-    background: white;
-    color: var(--cta);
-    border-radius: 6px;
-    cursor: pointer;
+    min-height: 34px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
     font-size: 14px;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
+.journal-scope-tab:hover,
 .journal-filter-btn:hover {
-    background: #f0f0f0;
+    background: rgba(0, 0, 0, 0.06);
 }
 
+.journal-scope-tab.active,
 .journal-filter-btn.active {
     background: var(--cta);
-    color: white;
+    color: #fff;
 }
 
-.journal-scope-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+.journal-scope-tab:focus-visible,
+.journal-filter-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
-.journal-scope-tab {
-    padding: 8px 16px;
-    border: 1px solid var(--cta);
-    background: white;
-    color: var(--cta);
-    border-radius: 6px;
-    cursor: pointer;
+.journal-hamlet-filter {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
     font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
 }
 
-.journal-scope-tab:hover {
-    background: #f0f0f0;
-}
-
-.journal-scope-tab.active {
-    background: var(--cta);
-    color: white;
-}
-
-.journal-refresh-section {
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-}
-
-.journal-refresh-btn {
-    padding: 10px 20px;
-    background: var(--cta);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
+.journal-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: background-color 0.2s ease;
+    margin: 0;
 }
 
-.journal-refresh-btn:hover {
-    background: #009999;
+.journal-refresh-btn,
+.journal-export-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.journal-export-summary::-webkit-details-marker {
+    display: none;
+}
+
+.journal-export-summary::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.journal-refresh-btn:hover,
+.journal-export-summary:hover,
+.journal-export-menu[open] > .journal-export-summary {
+    border-color: var(--cta);
+    background: rgba(251, 129, 34, 0.08);
+}
+
+.journal-refresh-btn:focus-visible,
+.journal-export-summary:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* The export menu: a small sheet under its button, one choice per line. */
+.journal-export-menu {
+    position: relative;
 }
 
 .journal-export-buttons {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 220px;
+    padding: 6px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .journal-export-btn {
-    padding: 8px 12px;
-    border: 1px solid #666;
-    background: white;
-    color: #333;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-weight: 500;
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
 }
 
 .journal-export-btn:hover {
-    background: #f0f0f0;
-    border-color: var(--cta);
+    background: rgba(251, 129, 34, 0.1);
     color: var(--cta);
 }
 
@@ -1003,7 +1175,8 @@
     .journal-header {
         position: sticky;
         top: 0;
-        z-index: 2;
+        /* Over the toolbar (10) and its export menu: the toolbar scrolls under the header, never over it. */
+        z-index: 30;
         align-items: center;
         gap: 12px;
         padding: 10px 12px;
@@ -1037,18 +1210,44 @@
         padding: 12px;
     }
 
-    .journal-filters {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-        padding-bottom: 2px;
+    /* Phone: the toolbar's rows stack, each at the full width; the choices and the actions share the line they are on. */
+    .journal-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "scope"
+            "filters"
+            "actions";
     }
 
-    .journal-filters::-webkit-scrollbar {
-        display: none;
+    .journal-scope-tabs,
+    .journal-period {
+        justify-self: stretch;
     }
 
-    .journal-filters > * {
-        flex: 0 0 auto;
+    .journal-scope-tab,
+    .journal-filter-btn {
+        flex: 1 1 0;
+        min-height: 40px;
+        padding: 0 8px;
+    }
+
+    .journal-hamlet-filter {
+        flex: 1 1 100%;
+    }
+
+    .journal-actions > * {
+        flex: 1 1 0;
+    }
+
+    .journal-refresh-btn,
+    .journal-export-summary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .journal-export-buttons {
+        left: 0;
+        right: 0;
+        min-width: 0;
     }
 }

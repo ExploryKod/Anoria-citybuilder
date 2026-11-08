@@ -1,6 +1,7 @@
 import { setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
 import { goodLabel } from '../../../shell/CatalogVocabulary.js';
+import { html } from '../../../shell/safeHtml.js';
 import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 /**
  * The view the chart draws: a hub that holds several flows of goods (see `storageViews`) draws one flow at a time,
@@ -31,13 +32,12 @@ function chartNoteOf(view, flowId) {
 
 /** The buttons that switch the chart from one flow to another (none when the hub holds a single flow). */
 function renderFlowTabs(view, flowId) {
-  if (!(view.storageViews?.length > 1)) return '';
-  return `<div class="hub-flow-tabs" role="tablist">${view.storageViews
+  if (!(view.storageViews?.length > 1)) return html``;
+  return html`<div class="hub-flow-tabs" role="tablist">${view.storageViews
     .map(
       (flow) =>
-        `<button type="button" role="tab" class="hub-flow-tab hub-flow-tab--${flow.id}${flow.id === flowId ? ' is-active' : ''}" data-flow="${flow.id}" aria-selected="${flow.id === flowId}">${flow.label}</button>`
-    )
-    .join('')}</div>`;
+        html`<button type="button" role="tab" class="hub-flow-tab hub-flow-tab--${flow.id}${flow.id === flowId ? ' is-active' : ''}" data-flow="${flow.id}" aria-selected="${flow.id === flowId}">${flow.label}</button>`
+    )}</div>`;
 }
 
 /** Marks the flow pill that is picked, and unmarks the others. */
@@ -184,12 +184,12 @@ export async function renderHubStorageInfoPanel({
     flowId: view.storageViews?.[0]?.id ?? null,
   };
 
-  container.innerHTML = `
+  container.innerHTML = html`
     <div class="hub-info-panel">
       ${renderFlowTabs(view, ctx.flowId)}
       <section class="hub-storage-chart-section${ctx.flowId ? ` hub-storage-chart-section--${ctx.flowId}` : ''}">
         <h3 class="hub-storage-chart-title">${chartTitleOf(view, ctx.flowId)}</h3>
-        ${chartNoteOf(view, ctx.flowId) ? `<p class="hub-storage-chart-note">${chartNoteOf(view, ctx.flowId)}</p>` : ''}
+        ${chartNoteOf(view, ctx.flowId) ? html`<p class="hub-storage-chart-note">${chartNoteOf(view, ctx.flowId)}</p>` : ''}
         ${renderHubStoragePieChart(chartViewOf(view, ctx.flowId), formatHubStockSummary(chartViewOf(view, ctx.flowId)))}
       </section>
     </div>
@@ -235,13 +235,13 @@ function renderOrdersGuide(modes) {
   const described = modes.map((mode) => {
     const description = MODE_DESCRIPTIONS[mode.id];
     if (!description) throw new Error(`[hubStorageInfoPanel] the storage mode "${mode.id}" has no description (MODE_DESCRIPTIONS)`);
-    return `<dt>${mode.label}</dt><dd>${description}</dd>`;
+    return html`<dt>${mode.label}</dt><dd>${description}</dd>`;
   });
-  return `
+  return html`
     <section class="hub-orders-guide" aria-labelledby="hub-orders-guide-title">
       <h4 id="hub-orders-guide-title" class="hub-orders-guide-title">Les modes</h4>
-      <p class="hub-orders-cycle">${modes.map((mode) => `<strong>${mode.label}</strong>`).join(' → ')}</p>
-      <dl class="hub-orders-modes">${described.join('')}</dl>
+      <p class="hub-orders-cycle">${modes.flatMap((mode, index) => (index === 0 ? [html`<strong>${mode.label}</strong>`] : [' → ', html`<strong>${mode.label}</strong>`]))}</p>
+      <dl class="hub-orders-modes">${described}</dl>
       <p class="hub-orders-note"><strong>Plafond</strong> — le pourcentage est la part de l'entrepôt que ce bien peut remplir au plus.</p>
       <p class="hub-orders-note"><strong>Égalité</strong> — si plusieurs biens sont à 100 % (ou se chevauchent), la place libre va au premier arrivé.</p>
     </section>`;
@@ -274,7 +274,7 @@ export async function renderHubStorageOrdersPanel({
     flowId: view.storageViews?.[0]?.id ?? null,
   };
 
-  container.innerHTML = `
+  container.innerHTML = html`
     <div class="hub-info-panel">
       ${renderFlowTabs(view, ctx.flowId)}
       <div class="hub-orders-panel"></div>
@@ -341,13 +341,13 @@ export async function renderHubStorageOrdersPanel({
  * @param {ReadonlyArray<{ id: string, label: string }>} modes
  */
 function renderHubOrdersPanelShell(ordersPanel, view, modes) {
-  ordersPanel.innerHTML = `
+  ordersPanel.innerHTML = html`
     <div class="hub-orders-warnings"></div>
     <h3 class="hub-orders-title">Ordres de stockage</h3>
     <div class="hub-orders-c3-list">
       ${view.lines
         .map(
-          (line) => `
+          (line) => html`
         <div class="hub-order-c3-row${line.amount > line.maxCap ? ' hub-order-c3-row--overflow' : ''}" data-product="${line.productId}">
           <span class="hub-order-c3-icon">${line.emoji}</span>
           <span class="hub-order-c3-label">${line.label} <span class="hub-order-emptying" data-role="emptying" hidden></span></span>
@@ -361,8 +361,7 @@ function renderHubOrdersPanelShell(ordersPanel, view, modes) {
           </div>
         </div>
       `
-        )
-        .join('')}
+        )}
     </div>
     ${renderOrdersGuide(modes)}
   `;

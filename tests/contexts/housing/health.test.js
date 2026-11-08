@@ -59,7 +59,7 @@ describe('health environment — the parts add up to the level', () => {
   test('a served house: each factor gives its points, and base plus parts is exactly the level', () => {
     const environment = describeHealthEnvironment(wellServed, PERIOD, around());
     expect(environment.parts.map((part) => [part.id, part.points])).toEqual([
-      ['foodVariety', 16], ['prevention', 12], ['water', 12], ['primaryEducation', 6], ['pollution', 0], ['contagion', 0],
+      ['foodVariety', 16], ['prevention', 12], ['water', 12], ['primaryEducation', 6], ['pollution', 0], ['hunger', 0], ['contagion', 0],
     ]);
     expect(environment.base + environment.parts.reduce((sum, part) => sum + part.points, 0)).toBe(environment.level);
   });

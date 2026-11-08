@@ -6,6 +6,7 @@
  * @property {(id: string) => Promise<NewsItem | null>} getById
  * @property {(id: string) => Promise<void>} deleteById
  * @property {(turn: number, sourceId: string) => Promise<boolean>} hasAnyForTurnAndSource
+ * @property {(prefix: string) => Promise<boolean>} hasAnyWithIdPrefix
  * @property {() => Promise<NewsItem[]>} listIncoming
  * @property {() => Promise<NewsItem[]>} listArchived
  */

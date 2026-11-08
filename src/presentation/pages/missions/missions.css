@@ -304,6 +304,14 @@
   font-weight: 600;
 }
 
+/* Why the name typed is refused: under the field, wrapping on a narrow screen. */
+.mission-profile-error {
+  margin: 6px 0 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 .mission-profile .site-btn--inline {
   min-width: 160px;
 }

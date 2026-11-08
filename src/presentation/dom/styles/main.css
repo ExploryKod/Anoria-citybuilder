@@ -97,6 +97,10 @@
     /* Draggable pop rail — above HUD chrome, below modals */
     --z-index-hud-pop-rail: 10025;
     --z-index-modal: 10030;
+    /* Opened from inside the admin panel (the loans, the journal): over it, never under */
+    --z-index-modal-over: 10035;
+    /* A dépêche, a question or an explanation (news / confirm / notice modal): over every modal and over the building sheet (10050), so it is never hidden behind one */
+    --z-index-modal-top: 10060;
     /* Toasts: above everything, the loading screen included (errors and tips reach the player while the game loads). */
     --z-index-notification: 100001;
     /* Building sheet: above every menu, the HUD and the toasts, so its close button is always reachable */
@@ -4159,4 +4163,46 @@ select.company-aid-field {
 .company-aid-apply:hover,
 .company-aid-apply:focus-visible {
     background: #1b5e20;
+}
+
+/* "?" that explains what is not obvious (HelpButton.js): a small round button, its touch target widened to 40 px without moving the text around it. */
+.help-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 8px;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.7;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+.help-btn::after {
+    content: '';
+    position: absolute;
+    inset: -9px;
+}
+
+.help-btn:hover,
+.help-btn:focus-visible {
+    opacity: 1;
+}
+
+/* A line of text with a "?" after it, above a table that has no title of its own (the balance of the accounts). */
+.help-row {
+    display: flex;
+    align-items: center;
+    margin: 0 0 8px;
+    font-weight: 600;
 }

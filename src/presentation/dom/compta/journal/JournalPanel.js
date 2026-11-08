@@ -6,6 +6,8 @@
 import { renderJournalList } from './JournalPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { html } from '../../shell/safeHtml.js';
+import { matchesSearchWords, normalizeForSearch, searchWordsOf } from './journalSearch.js';
 
 /**
  * @type {{
@@ -56,7 +58,10 @@ export function initJournalPopup(panelDeps) {
     journalFocusSession?.release({ restoreFocus: false });
     journalFocusSession = createModalFocusSession({
       panel: journalPanel,
-      onEscape: closeJournal,
+      // Escape first clears a search that is typed, and only then closes the journal.
+      onEscape: () => {
+        if (!clearSearch()) closeJournal();
+      },
       initialFocus: '.journal-close-btn',
     });
   }
@@ -136,6 +141,19 @@ export function initJournalPopup(panelDeps) {
   });
 
   initTypeSelect(filterPills);
+  initFilterToggle(filterPills);
+  initSearch();
+
+  // The export menu folds away after a choice, and when the player clicks elsewhere.
+  const exportMenu = document.querySelector('.journal-export-menu');
+  if (exportMenu) {
+    exportMenu.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('.journal-export-btn')) exportMenu.open = false;
+    });
+    document.addEventListener('click', (event) => {
+      if (exportMenu.open && event.target instanceof Node && !exportMenu.contains(event.target)) exportMenu.open = false;
+    });
+  }
 
   const exportJsonBtn = document.getElementById('journal-export-json-btn');
   const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
@@ -158,6 +176,93 @@ export function initJournalPopup(panelDeps) {
       await exportJournalToPDF();
     });
   }
+}
+
+/**
+ * The search box. It does not ask the journal again: it hides the entries whose text (the text on screen, what the player reads) does not hold every word typed. The words
+ * are only compared with that text (journalSearch.js): nothing typed is written into the page, so there is nothing to inject. While a search is on, the totals of the years and
+ * months are hidden (they would still count the entries that are hidden), and a line says how many entries match.
+ */
+function initSearch() {
+  const input = document.getElementById('journal-search-input');
+  if (!input) throw new Error('Journal: #journal-search-input is missing from game.html');
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    // A word at a time is plenty: the list is filtered when the player pauses, not at every key.
+    timer = setTimeout(applySearch, 150);
+  });
+}
+
+/** What was normalized for each entry already, so typing does not normalize every entry again at each pause (the entries are new elements after each load). */
+const searchableText = new WeakMap();
+
+/** Hides the entries that do not match the search typed, and the months and years left with none. Called after a typing pause and after each load of the list. */
+function applySearch() {
+  const input = document.getElementById('journal-search-input');
+  const list = document.getElementById('journal-list');
+  const status = document.getElementById('journal-search-status');
+  if (!input || !list || !status) return;
+
+  const words = searchWordsOf(input.value);
+  const searching = words.length > 0;
+  list.classList.toggle('is-searching', searching);
+
+  let found = 0;
+  const entries = list.querySelectorAll('.journal-entry');
+  for (const entry of entries) {
+    if (!searchableText.has(entry)) searchableText.set(entry, normalizeForSearch(entry.textContent));
+    const shown = !searching || matchesSearchWords(searchableText.get(entry), words);
+    entry.hidden = !shown;
+    if (shown) found += 1;
+  }
+  for (const group of list.querySelectorAll('.journal-month-group, .journal-year-group')) {
+    group.hidden = searching && !group.querySelector('.journal-entry:not([hidden])');
+  }
+
+  // The line is text (textContent): the words typed are shown back as text, never as markup.
+  status.hidden = !searching || entries.length === 0;
+  status.textContent = !searching ? '' : found === 0 ? `Aucune écriture ne contient « ${words.join(' ')} ».` : `${found} écriture${found > 1 ? 's' : ''} sur ${entries.length}.`;
+}
+
+/**
+ * Empties the search box if it holds something, and shows the whole list again.
+ * @returns {boolean} whether there was something to clear
+ */
+function clearSearch() {
+  const input = document.getElementById('journal-search-input');
+  if (!input || input.value === '') return false;
+  input.value = '';
+  applySearch();
+  input.focus();
+  return true;
+}
+
+/**
+ * The list of filters (about twenty pills) is folded away behind one button, so the journal opens on its entries and not on a wall of pills. The button says what is
+ * filtered while the list is folded ("Filtre : Impôts et taxes"), so a filter in force is never hidden.
+ * @param {NodeListOf<Element>} filterPills
+ */
+function initFilterToggle(filterPills) {
+  const toggle = document.getElementById('journal-filter-toggle');
+  const panel = document.getElementById('journal-filter-panel');
+  const label = toggle?.querySelector('.journal-filter-toggle__label');
+  if (!toggle || !panel || !label) throw new Error('Journal: #journal-filter-toggle, its label or #journal-filter-panel is missing from game.html');
+
+  const sync = () => {
+    const active = [...filterPills].find((pill) => pill.classList.contains('active'));
+    label.textContent = active ? `Filtre : ${active.querySelector('.pill-label')?.textContent.trim() ?? active.dataset.filter}` : 'Filtrer';
+    toggle.classList.toggle('is-filtering', Boolean(active));
+  };
+
+  toggle.addEventListener('click', () => {
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    toggle.setAttribute('aria-expanded', String(opening));
+  });
+  // A click on a pill (or the dropdown, which clicks the pill) has already moved the active mark when this runs: the button follows.
+  filterPills.forEach((pill) => pill.addEventListener('click', sync));
+  sync();
 }
 
 /**
@@ -272,13 +377,16 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
                     <div class="no-journal-entries-text">Aucune écriture dans le journal</div>
                 </div>
             `;
+      applySearch();
       return;
     }
 
-    journalList.innerHTML = renderJournalList(ledger, accounting, hamletNames, scopeLabel);
+    journalList.innerHTML = html`${renderJournalList(ledger, accounting, hamletNames, scopeLabel)}`;
+    // A search that is typed holds across a new load (a period, a hamlet, a filter changed): it is applied to the new list.
+    applySearch();
   } catch (error) {
     console.error('Error loading journal entries:', error);
-    journalList.innerHTML = `
+    journalList.innerHTML = html`
             <div class="journal-loading">
                 <p>Erreur lors du chargement du journal: ${error.message}</p>
             </div>

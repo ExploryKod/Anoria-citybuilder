@@ -1,4 +1,7 @@
 import { createModalFocusSession } from './modalFocus.js';
+import { renderRichText } from './richText.js';
+
+let modalCount = 0;
 
 /**
  * A yes/no question in front of the game, answered before anything happens. Reuses the look of the
@@ -25,15 +28,19 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
 
     const header = document.createElement('div');
     header.className = 'news-event-modal-header';
-    const heading = document.createElement('h3');
+    // The dialog's title is its h2; what the entries are called under it are h3: one hierarchy, whatever the modal says.
+    const heading = document.createElement('h2');
+    heading.id = `confirm-modal-title-${++modalCount}`;
     heading.textContent = title;
+    modal.setAttribute('aria-labelledby', heading.id);
     header.appendChild(heading);
 
     const content = document.createElement('div');
     content.className = 'news-event-modal-content';
-    const body = document.createElement('p');
+    // The text is laid out by richText.js (paragraphs, bold, `- ` lists, `## ` headings), the same convention as a dépêche, built from text nodes only.
+    const body = document.createElement('div');
     body.className = 'news-event-modal-body';
-    body.textContent = message;
+    renderRichText(body, message);
     content.appendChild(body);
     if (items.length > 0) {
       const list = document.createElement('ul');
@@ -42,14 +49,14 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
         const line = document.createElement('li');
         line.className = 'confirm-modal-item';
         if (typeof item === 'string') {
-          line.textContent = item;
+          renderRichText(line, item);
         } else {
-          const label = document.createElement('span');
+          const label = document.createElement('h3');
           label.className = 'confirm-modal-item-label';
           label.textContent = item.label;
-          const text = document.createElement('span');
+          const text = document.createElement('div');
           text.className = 'confirm-modal-item-text';
-          text.textContent = item.text;
+          renderRichText(text, item.text);
           line.append(label, text);
         }
         list.appendChild(line);
@@ -68,7 +75,9 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
     confirm.type = 'button';
     confirm.className = 'modal-btn modal-btn-primary';
     confirm.textContent = confirmLabel;
-    footer.append(cancel, confirm);
+    // A notice has a single button: nothing to refuse.
+    if (cancelLabel === null) footer.append(confirm);
+    else footer.append(cancel, confirm);
 
     card.append(header, content, footer);
     modal.appendChild(card);
@@ -84,6 +93,15 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
 
     document.body.appendChild(modal);
     // Focus starts on "no": a stray Enter must not destroy anything.
-    session = createModalFocusSession({ panel: modal, onEscape: () => answer(false), initialFocus: cancel });
+    session = createModalFocusSession({ panel: modal, onEscape: () => answer(false), initialFocus: cancelLabel === null ? confirm : cancel });
   });
+}
+
+/**
+ * A message the player must read before going on (a refusal, a result), in the look of the game's modals: one button, no choice.
+ * @param {{ title: string, message: string, items?: Array<string | { label: string, text: string }>, closeLabel?: string }} options
+ * @returns {Promise<void>}
+ */
+export async function noticeModal({ title, message, items = [], closeLabel = 'Fermer' }) {
+  await confirmModal({ title, message, items, confirmLabel: closeLabel, cancelLabel: null });
 }
