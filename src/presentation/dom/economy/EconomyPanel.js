@@ -8,8 +8,10 @@
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { goodLabel } from '../shell/CatalogVocabulary.js';
 import { showActiveHamletLabel } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
-import { bindStaticHelps, helpSlotHtml } from '../shell/HelpButton.js';
+import { bindStaticHelps } from '../shell/HelpButton.js';
 import { html } from '../shell/safeHtml.js';
+import { tableHtml } from './ecoTable.js';
+import { renderTradeBalanceTab } from './TradeBalanceTab.js';
 
 /** @type {{ supply: { describeEconomy: () => Promise<object> }, accounting: { getCityBorrowing: () => Promise<object> }, popupManager?: object | null } | null} */
 let deps = null;
@@ -27,34 +29,6 @@ const shareOf = (share) => (share === null ? WAIT : percent(Math.round(share * 1
 const index = (value) => (value === null ? WAIT : value.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }));
 const names = (services) => services.map((service) => goodLabel(service)).join(' ou ');
 
-/**
- * A table: a caption, its column heads, its rows. The first cell of a row is its label (with an optional hint under it); the others are figures, right-aligned. On a phone the heads
- * go and each figure carries its own head above it (`data-label`), the label spanning the row.
- * A "?" (HelpCatalog.js) goes after the caption (`help`) or after a row's label (`row.help`), as `{ id, reading }`, where the term or the figure is not obvious.
- * @param {{ caption: string, heads: string[], rows: Array<{ cells: string[], hint?: string, strong?: boolean, bar?: number | null, help?: { id: string, reading?: object } }>, note?: string, help?: { id: string, reading?: object } | null }} table
- * @returns {import('../shell/safeHtml.js').SafeHtml} html: every value is escaped by `html`, and a table can sit inside another html`` without being escaped twice
- */
-function tableHtml({ caption, heads, rows, note = '', warning = '', help = null }) {
-  const columns = `minmax(0, 2fr) ${heads.slice(1).map(() => 'minmax(88px, 1fr)').join(' ')}`;
-  const head = html`<div class="eco-row eco-head" role="row">${heads.map((label, at) => html`<div role="columnheader" class="${at === 0 ? 'eco-label' : 'eco-figure'}">${label}</div>`)}</div>`;
-  const body = rows
-    .map(
-      (row) => html`<div class="eco-row${row.strong ? ' eco-row--strong' : ''}${row.muted ? ' eco-row--muted' : ''}" role="row">
-      <div role="cell" class="eco-label">${row.cells[0]}${row.help ? helpSlotHtml(row.help.id, row.help.reading) : ''}${row.hint ? html`<small>${row.hint}</small>` : ''}</div>
-      ${row.cells
-        .slice(1)
-        .map((cell, at) => html`<div role="cell" class="eco-figure" data-label="${heads[at + 1]}">${cell}</div>`)}
-      ${row.bar === undefined ? '' : html`<span class="eco-bar" aria-hidden="true"><span style="width:${Math.round((row.bar ?? 0) * 100)}%"></span></span>`}
-    </div>`,
-    );
-  return html`<section class="eco-card">
-    <h5>${caption}${help ? helpSlotHtml(help.id, help.reading) : ''}</h5>
-    <div class="eco-table" role="table" style="--eco-columns:${columns}">${head}${body}</div>
-    ${warning ? html`<p class="eco-warning">${warning}</p>` : ''}
-    ${note ? html`<p class="eco-note">${note}</p>` : ''}
-  </section>`;
-}
-
 /** @param {object} economy a ready `describeEconomy` @returns {import('../shell/safeHtml.js').SafeHtml} the Production tab */
 function productionHtml(economy) {
   const { perInhabitant } = economy;
@@ -71,10 +45,19 @@ function productionHtml(economy) {
   })}
   ${tableHtml({
     caption: 'D\'où vient le PIB',
+    help: { id: 'economy.gdpOrigin' },
+    // Said up front, not only behind the "?": a negative value added makes the whole product unrepresentative (the companies, still founding themselves, spend more than they sell).
+    warning: economy.valueAdded < 0 ? 'Les entreprises ont acheté plus qu\'elles n\'ont vendu sur la période : ce PIB ne reflète pas une économie qui tourne. Souvent, des entreprises viennent d\'être fondées, ou ne produisent pas faute d\'ouvriers (voir l\'onglet Emploi).' : '',
     heads: ['Composante', 'Montant', 'Part'],
     rows: [
-      { cells: ['Valeur ajoutée des entreprises', euros(economy.valueAdded), part(economy.valueAdded)], hint: `production moins consommations, ${economy.privateDebt.companies} entreprises` },
-      { cells: ['Administration, à son coût', euros(economy.publicOutput), part(economy.publicOutput)], hint: 'salaires de la ville' },
+      {
+        cells: ['Valeur ajoutée des entreprises', euros(economy.valueAdded), part(economy.valueAdded)],
+        hint: economy.valueAdded < 0
+          ? `négative : ce que les ${economy.privateDebt.companies} entreprises ont vendu ne couvre pas ce qu'elles ont acheté pour produire`
+          : `ce que les ${economy.privateDebt.companies} entreprises ont vendu moins ce qu'elles ont acheté pour produire`,
+        tone: economy.valueAdded < 0 ? 'bad' : 'good',
+      },
+      { cells: ['Salaires de la ville (administration)', euros(economy.publicOutput), part(economy.publicOutput)], hint: 'seulement les salariés de la ville ; ceux des entreprises sont déjà dans leur valeur ajoutée' },
       { cells: ['PIB', euros(economy.gdp), parts > 0 ? '100 %' : WAIT], strong: true },
     ],
   })}`;
@@ -95,10 +78,12 @@ function debtsHtml(economy, borrowing) {
       { cells: ['Découvert de la ville', euros(debt.overdraft), ofGdp(debt.overdraft)] },
       { cells: ['Dettes fournisseurs', euros(debt.suppliers), ofGdp(debt.suppliers)] },
       { cells: ['Dette brute', euros(debt.gross), percent(ratios.grossDebtOfGdp)], strong: true },
-      { cells: ['Trésorerie', euros(-debt.cash), ofGdp(-debt.cash)] },
-      { cells: ['Créances', euros(-debt.receivables), ofGdp(-debt.receivables)] },
-      { cells: ['Prêts accordés aux entreprises', euros(-debt.loansGranted), ofGdp(-debt.loansGranted)], hint: 'ils reviennent à mesure des remboursements' },
-      { cells: ['Dette nette', euros(debt.net), percent(ratios.netDebtOfGdp)], strong: true, hint: debt.net < 0 ? 'négative : la ville détient plus qu\'elle ne doit, elle est créancière nette' : '' },
+      { cells: ['Trésorerie', euros(debt.cash), ofGdp(debt.cash)], hint: 'l\'argent en caisse, déduit de la dette' },
+      { cells: ['Créances', euros(debt.receivables), ofGdp(debt.receivables)], hint: 'ce qu\'on doit à la ville, déduit de la dette' },
+      { cells: ['Prêts accordés aux entreprises', euros(debt.loansGranted), ofGdp(debt.loansGranted)], hint: 'déduits de la dette ; ils reviennent à mesure des remboursements' },
+      debt.net < 0
+        ? { cells: ['Ville créancière nette', euros(-debt.net), percent(ratios.netDebtOfGdp === null ? null : -ratios.netDebtOfGdp)], strong: true, tone: 'good', hint: 'elle détient plus qu\'elle ne doit' }
+        : { cells: ['Ville débitrice nette', euros(debt.net), percent(ratios.netDebtOfGdp)], strong: true, tone: 'bad' },
       { cells: ['Participations dans les entreprises', euros(debt.holdings), ofGdp(debt.holdings)], hint: 'le capital que la ville a investi : non déduit de la dette, il n\'est pas liquide' },
     ],
   })}
@@ -180,6 +165,8 @@ export async function renderEconomy() {
     content.innerHTML = html`<p class="supply-balance-loading">${WAIT}</p>`;
   });
   const [economy, borrowing] = await Promise.all([deps.supply.describeEconomy(), deps.accounting.getCityBorrowing()]);
+  // What the city paid abroad in interest: the commentary of the trade tab quotes it. Not known while the economy is not measured.
+  lastInterest = economy.ready ? economy.externalInterest : null;
   const basis = economy.ready ? (economy.months === 12 ? 'les 12 derniers mois' : `les ${economy.months} premiers mois, ramenés à une année`) : '';
   for (const tab of TABS) {
     const content = document.getElementById(`economy-${tab.id}-tab`);
@@ -189,6 +176,18 @@ export async function renderEconomy() {
     content.innerHTML = html`${markup}`;
     bindStaticHelps(content);
   }
+  // The trade tab is read when it is shown (see showTab), not with the others: if it is the one open, it is read now.
+  if (document.getElementById('economy-trade-tab')?.classList.contains('active')) drawTradeTab();
+}
+
+/** What the economy says the city paid abroad in interest over twelve months, or null while it is not known. */
+let lastInterest = null;
+
+/** Reads the trade balance and draws it in its tab: when the tab is opened, never before. */
+function drawTradeTab() {
+  const container = document.getElementById('economy-trade-tab');
+  if (!container) throw new Error('[economy] #economy-trade-tab is missing from the page');
+  renderTradeBalanceTab(container, { accounting: deps.accounting, interest: lastInterest }).catch((error) => console.error('[economy] the trade balance could not be shown:', error));
 }
 
 /** @param {string} id the tab to show */
@@ -199,6 +198,7 @@ function showTab(id) {
     tab.setAttribute('aria-selected', String(active));
   });
   document.querySelectorAll('#economy-panel .eco-tab-content').forEach((content) => content.classList.toggle('active', content.id === `economy-${id}-tab`));
+  if (id === 'trade') drawTradeTab();
 }
 
 /** @param {{ supply: object, popupManager?: object | null }} panelDeps */

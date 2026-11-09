@@ -142,7 +142,7 @@ describe('formatMessagesModel — market supply-chain complaints (moved off the 
   test('complains when no farms feed it', () => {
     const model = formatMessagesModel(marketVm({ noFarmsNearby: true }));
     // The goods are the ones the market's own catalog entry sells.
-    expect(model.complaints).toEqual(['Aucun approvisionnement : Blé, Carotte, Chou']);
+    expect(model.complaints).toEqual(['Aucun approvisionnement : Blé, Carotte, Chou, Pain, Soupe au chou']);
   });
 
   test('complains when no houses are in reach', () => {
@@ -154,7 +154,7 @@ describe('formatMessagesModel — market supply-chain complaints (moved off the 
     const model = formatMessagesModel(marketVm({ noFarmsNearby: true, worker: 0, workerNeed: 2 }));
     expect(model.complaints).toEqual([
       "Nous manquons de personnel, l'activité est totalement à l'arrêt",
-      'Aucun approvisionnement : Blé, Carotte, Chou',
+      'Aucun approvisionnement : Blé, Carotte, Chou, Pain, Soupe au chou',
     ]);
   });
 });

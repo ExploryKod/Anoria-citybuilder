@@ -16,14 +16,34 @@ export class HubServing {
 
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {{ listExternalClients?: (category: string) => Array<{ id: string, type: string }> }} [deps]
+   * @param {{
+   *   listExternalClients?: (category: string) => Array<{ id: string, type: string }>,
+   *   lotUnitPrice?: (lot: { lotKey: string, category: string, turn: number }) => Promise<number | null>,
+   * }} [deps]
    *   `listExternalClients` names client candidates that are not a building row at all — an external
    *   trade city buying a merchant's deal good (see createSupplyContext.js: the composition root is
    *   the one place supply is allowed to reach into geography's trade catalog for this).
+   *   `lotUnitPrice` says what a lot's unit costs at the hub (the producer's price, or the landed price of an import): the cheapest lot is served first, so a good made
+   *   here and the same good imported compete on price. Without it the lots are served in key order (a harness that prices nothing).
    */
-  constructor(supplyBuildingRepository, { listExternalClients } = {}) {
+  constructor(supplyBuildingRepository, { listExternalClients, lotUnitPrice } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.listExternalClients = listExternalClients ?? (() => []);
+    this.lotUnitPrice = lotUnitPrice ?? null;
+  }
+
+  /**
+   * The unit price of each lot of a good, asked once per call: a lookup the allocation reads, or nothing when no pricing was given.
+   * @param {ReadonlyArray<string>} lotKeys
+   * @param {string} category
+   * @param {number} turn
+   * @returns {Promise<((lotKey: string) => number | null) | undefined>}
+   */
+  async #priceOf(lotKeys, category, turn) {
+    if (!this.lotUnitPrice) return undefined;
+    const prices = new Map();
+    for (const lotKey of lotKeys) prices.set(lotKey, await this.lotUnitPrice({ lotKey, category, turn }));
+    return (lotKey) => prices.get(lotKey) ?? null;
   }
 
   /**
@@ -97,6 +117,7 @@ export class HubServing {
       priorityOf: await this.#priorityOf(Object.keys(lots), category),
       othersWanted: othersWanted(hub.clientDemand?.[category], client, turn),
       client,
+      priceOf: await this.#priceOf(Object.keys(lots), category, turn),
     });
   }
 
@@ -116,6 +137,7 @@ export class HubServing {
       othersWanted: othersWanted(hub.clientDemand?.[category], client, turn),
       client,
       want: amount,
+      priceOf: await this.#priceOf(Object.keys(lots), category, turn),
     });
     await this.supplyBuildingRepository.updateBuildingFields(hubId, {
       lots: { ...(hub.lots ?? {}), [category]: takeFromLots(lots, takes) },

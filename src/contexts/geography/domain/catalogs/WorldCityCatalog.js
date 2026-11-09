@@ -103,6 +103,15 @@ export const WORLD_CITIES = Object.freeze([
     description: 'Plaine à blé lointaine, qui vend du grain.',
   },
   {
+    id: 'ateli',
+    name: 'Ateli',
+    category: WORLD_CITY_CATEGORIES.far,
+    x: 12,
+    y: 52,
+    labelAnchor: 'left',
+    description: 'Cité-atelier lointaine, qui produit en grande série et à bas prix.',
+  },
+  {
     id: 'vexlor',
     name: 'Vexlor',
     category: WORLD_CITY_CATEGORIES.enemy,

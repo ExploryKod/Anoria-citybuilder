@@ -1,4 +1,5 @@
-import { importCapabilities, openRelationRow } from './importCapabilities.js';
+import { importCapabilities, openRelationRow, referencePriceOf } from './importCapabilities.js';
+import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
 import { RunMonthlyCityTradeCycle } from '../../../src/contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
@@ -61,7 +62,6 @@ describe('RunMonthlyCityTradeCycle — order rhythm survives a year rollover', (
   test('a relation last ordered late in year 0 orders again once monthNumber (not monthIndex) advances enough', async () => {
     const relation = openRelationRow({
       cityId: 'silvania', // frequencyMonths: 2 in TradeCatalog.js
-      satisfactionScore: 20,
       demandMultiplier: 1,
       lastOrderMonth: 10, // set by a previous run, in absolute-month terms
     });
@@ -334,7 +334,7 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     expect(hub.stocks.coal).toBe(40); // Briga's offer: 40 per order
     expect(hub.lots.coal).toEqual({ 'city:briga': 40 });
 
-    const priced = priceImportDelivery({ cityId: 'briga', offer: { good: 'coal', baseMultiplier: 1.35 }, quantity: 40, dutyRate: 0.1, worldIndex: 1 });
+    const priced = priceImportDelivery({ cityId: 'briga', offer: getTradeCatalogEntry('briga').offers.find((candidate) => candidate.good === 'coal'), quantity: 40, dutyRate: 0.1, worldIndex: 1, referencePrice: referencePriceOf('coal') });
     const amountOf = (type) => merchantLines.find((line) => line.type === type)?.amount;
     expect(merchantLines.every((line) => line.houseId === 'house-1' && line.partnerId === 'briga')).toBe(true);
     expect(amountOf('import_coal')).toBe(priced.foreign);
@@ -384,12 +384,15 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     expect(row.importCeased.coal).toMatchObject({ reason: 'no_warehouse', by: 'merchants' });
   });
 
-  test('a city whose confidence is gone ends the relation: it ceases, and says so', async () => {
-    const { cycle, row, merchantLines } = build({ relation: { satisfactionScore: -80 } });
+  test('a partner as cold as can be orders less but never ends the relation: the satisfaction cools, it does not cut', async () => {
+    const { cycle, row, merchantLines } = build({ relation: { goodSatisfaction: { export: { wheat: 0, carrot: 0 }, import: { coal: -100 } } } });
     await order(cycle);
 
-    expect(row.status).toBe('expired');
-    expect(row.ceased).toMatchObject({ reason: 'satisfaction_too_low', by: 'city' });
-    expect(merchantLines).toHaveLength(0);
+    expect(row.status).toBe('active');
+    expect(row.ceased).toBeNull();
+    // Briga's order is 40 a time; at the bottom of the scale it places the floor's share (40 %): 16.
+    expect(merchantLines.find((line) => line.type === 'import_coal').description).toContain('16 unités');
+    expect(row.goodSatisfaction.import.coal).toBeGreaterThan(-100); // an order that went through warms it again
+    expect(row.goodReview.import.coal).toMatchObject({ sales: expect.any(Number), availability: expect.any(Number), barriers: expect.any(Number) });
   });
 });

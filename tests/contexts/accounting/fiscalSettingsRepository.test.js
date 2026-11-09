@@ -47,7 +47,7 @@ describe('LocalStorageFiscalSettingsRepository — customs duties per good', () 
   test('a good only has the flows the trade catalog gives it', () => {
     repo.ensureCustomsDuties(listTradedGoods());
     expect(() => repo.getCustomsDuty('anoria', 'export', 'coal', 0)).toThrow(/not a good this city trades/);
-    expect(() => repo.getCustomsDuty('anoria', 'import', 'wood', 0)).toThrow(/not a good this city trades/);
+    expect(() => repo.getCustomsDuty('anoria', 'import', 'gold', 0)).toThrow(/not a good this city trades/);
   });
 
   test('a duty the player set survives the next boot, a good the table lacked gets its default', () => {

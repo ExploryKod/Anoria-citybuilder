@@ -118,3 +118,31 @@ describe('Supply — a reservoir cannot overflow', () => {
     expect(purchases).toHaveLength(0);
   });
 });
+
+// Regression: a building made all of its output with a single worker present (the sick do not count); it makes what its staff makes, and burns only that share of its inputs.
+describe('Supply — a building makes what its staff makes', () => {
+  test('a coal plant with 1 of its 3 workers present makes a third of the energy and burns a third of the coal', async () => {
+    const id = ids('trade', 'plant');
+    const { repo, produce } = build([
+      { id: id.trade, type: 'TradeWarehouse', x: 40, y: 0, stocks: { coal: 10, goods: 10 } },
+      { id: id.plant, type: 'CoalPlant', x: 0, y: 0, stocks: {}, worker: 1, workerNeed: 3 },
+    ]);
+
+    await produce.execute({ buildingId: id.plant, period: month(0) });
+
+    expect(repo.raw.get(id.plant).stocks.energy).toBe(40);
+    expect(repo.raw.get(id.trade).stocks.coal).toBe(8); // 2 burned, not 4
+  });
+
+  test('with nobody present it still makes nothing', async () => {
+    const id = ids('trade', 'plant');
+    const { repo, produce } = build([
+      { id: id.trade, type: 'TradeWarehouse', x: 40, y: 0, stocks: { coal: 10, goods: 10 } },
+      { id: id.plant, type: 'CoalPlant', x: 0, y: 0, stocks: {}, worker: 0, workerNeed: 3 },
+    ]);
+
+    await produce.execute({ buildingId: id.plant, period: month(0) });
+
+    expect(repo.raw.get(id.plant).stocks.energy ?? 0).toBe(0);
+  });
+});

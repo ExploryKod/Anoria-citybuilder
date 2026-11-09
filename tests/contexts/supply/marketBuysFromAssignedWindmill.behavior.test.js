@@ -7,7 +7,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
-import { getMaxStockForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { getMaxStockForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
@@ -27,6 +27,12 @@ class InMemorySupplyBuildingRepository {
     });
   }
 
+  async findByResourceRole(role, categories) {
+    const found = [];
+    for (const row of this.raw.values()) if (hasResourceRole(row.type, role, categories)) found.push(await this.findById(row.id));
+    return found;
+  }
+
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
     if (b) b.stocks = { ...createSupplyStock(stocks) };
@@ -43,10 +49,11 @@ class InMemorySupplyBuildingRepository {
   }
 }
 
-function windmill(id, stocks, linkedDistributors) {
+function windmill(id, stocks, linkedDistributors, position = { x: 5, y: 5 }) {
   return {
     id,
     type: 'Windmill-001',
+    ...position,
     roadCount: 1,
     worker: 1,
     workerNeed: 1,
@@ -56,10 +63,11 @@ function windmill(id, stocks, linkedDistributors) {
   };
 }
 
-function market(id, stocks, supplyHubId) {
+function market(id, stocks, supplyHubId, position = { x: 5, y: 7 }) {
   return {
     id,
     type: 'Market-Stall-Red',
+    ...position,
     roadCount: 1,
     worker: 1,
     workerNeed: 1,
@@ -179,7 +187,8 @@ describe('Supply — market buys from assigned windmill', () => {
     expect((await repo.findById(windmillId)).lastOutflow).toEqual({ year: 1, monthIndex: 5, units: 1 });
   });
 
-  test('refuses when market has no windmill link', async () => {
+  test('refuses when the hamlet has no windmill at all', async () => {
+    repo.raw.delete(windmillId);
     const orphanId = createBuildingInstanceId();
     repo.raw.set(
       orphanId,
@@ -193,5 +202,55 @@ describe('Supply — market buys from assigned windmill', () => {
     });
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_source_link');
+  });
+
+  test('a market far from every windmill still draws on the nearest one: no reach limit', async () => {
+    const farMarketId = createBuildingInstanceId();
+    repo.raw.set(farMarketId, market(farMarketId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }, null, { x: 300, y: 300 }));
+
+    const outcome = await command.execute({ targetId: farMarketId, period: { turn: 1 }, demand: 4 });
+
+    expect(outcome.transferred).toBe(true);
+    expect(outcome.transfers[0].sourceId).toBe(windmillId);
+  });
+
+  // The market draws on every granary in its reach, not only the one it remembers: the nearest first, the next for what the nearest cannot give.
+  describe('several granaries in reach', () => {
+    const empty = { wheat: 0, carrot: 0, cabbage: 0, food: 0 };
+    const stocked = (wheat) => ({ wheat, carrot: 0, cabbage: 0, food: wheat });
+
+    test('a market that remembers no granary draws on the one in reach', async () => {
+      const lonelyId = createBuildingInstanceId();
+      repo.raw.set(lonelyId, market(lonelyId, { ...empty }, null, { x: 5, y: 8 }));
+
+      const outcome = await command.execute({ targetId: lonelyId, period: { turn: 1 }, demand: 4 });
+
+      expect(outcome.transferred).toBe(true);
+      expect(outcome.totalUnits).toBe(4);
+    });
+
+    test('takes from the nearest granary first, then from the next for what is still missing', async () => {
+      const farId = createBuildingInstanceId();
+      repo.raw.set(farId, windmill(farId, stocked(10), [], { x: 5, y: 12 })); // 5 tiles from the market at (5, 7)
+      // The first granary (5, 5) is 2 tiles away and holds 10: lower its stock so it cannot fill the demand alone.
+      repo.raw.get(windmillId).stocks = stocked(3);
+
+      const outcome = await pull(8);
+
+      expect(outcome.transfers.map((transfer) => [transfer.sourceId, transfer.amount])).toEqual([[windmillId, 3], [farId, 5]]);
+      expect(repo.raw.get(farId).stocks.wheat).toBe(5);
+    });
+
+    test('two granaries as near as each other: the first orientation of the catalog\'s order wins', async () => {
+      // The market at (5, 7): one granary 2 tiles north (5, 5), one 2 tiles south-east-ish (6, 8)? Use exactly equal distances: (5, 5) north, (7, 7) east.
+      repo.raw.get(windmillId).stocks = stocked(10);
+      const eastId = createBuildingInstanceId();
+      repo.raw.set(eastId, windmill(eastId, stocked(10), [], { x: 7, y: 7 }));
+
+      const outcome = await pull(4);
+
+      // MARKET_SILO_DIRECTION_ORDER ranks east before north: the east granary serves first.
+      expect(outcome.transfers.map((transfer) => transfer.sourceId)).toEqual([eastId]);
+    });
   });
 });

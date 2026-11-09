@@ -2,11 +2,18 @@ import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/
 import { addCategoryAmount } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { lotOrigin } from '../../../src/contexts/supply/domain/policies/HubLotsPolicy.js';
 import { referenceHubSellingPrice } from '../../helpers/referencePriceBook.js';
+import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
+import { openingGoodReview, openingGoodSatisfaction } from '../../../src/shared/trade-catalog/satisfaction.js';
+import { createWorldReferencePrices } from '../../../src/composition/createWorldReferencePrices.js';
 
-/** A relation row as the game opens it (createTradeContext.js): the cease state starts empty. */
+/** The world's reference price of a good, as the game computes it (the cities' prices are built on it). */
+export const { referencePriceOf } = createWorldReferencePrices();
+
+/** A relation row as the game opens it (createTradeContext.js): the cease state starts empty, every good at the middle of the satisfaction scale. */
 export const openRelationRow = (fields) => ({
   status: 'active',
-  satisfactionScore: 50,
+  goodSatisfaction: openingGoodSatisfaction(getTradeCatalogEntry(fields.cityId)),
+  goodReview: openingGoodReview(),
   lastOrderMonth: null,
   contractEndMonth: null,
   ceased: null,
@@ -22,8 +29,14 @@ export const openRelationRow = (fields) => ({
  * them, never importing supply's domain layer itself). `merchantLines`, `cityLines` and `deliveries` collect what the
  * cycle books and sells for an import.
  */
-export function importCapabilities({ merchantLines = [], cityLines = [], deliveries = [] } = {}) {
+export function importCapabilities({ merchantLines = [], cityLines = [], deliveries = [], relationEventLog = [] } = {}) {
   return {
+    referencePriceOf,
+    // The relation's journal, in memory: what the cycle writes in it is in `relationEventLog`.
+    relationEvents: {
+      record: async (event) => { relationEventLog.push(event); },
+      lastCustoms: async (cityId, good, flow) => relationEventLog.filter((event) => event.cityId === cityId && event.kind.startsWith('customs_') && event.good === good && event.flow === flow).at(-1) ?? null,
+    },
     recordMerchantLine: async (line) => {
       merchantLines.push(line);
       return { recorded: true };

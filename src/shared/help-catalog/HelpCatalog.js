@@ -17,7 +17,7 @@
 
 /** @typedef {string | Readonly<Record<string, string>>} HelpText */
 /** @typedef {{ label: HelpText, text: HelpText, when?: string | ReadonlyArray<string> } | { fragment: string }} HelpItem an item, or the name of a `FRAGMENTS` item shared by several entries (it names no figure) */
-/** @typedef {{ about: string, title: string, message: HelpText, items?: ReadonlyArray<HelpItem>, figures?: Readonly<Record<string, 'euro' | 'percent' | 'index' | 'count'>>, states?: ReadonlyArray<string> }} HelpEntry */
+/** @typedef {{ about: string, title: string, message: HelpText, items?: ReadonlyArray<HelpItem>, figures?: Readonly<Record<string, 'euro' | 'percent' | 'index' | 'count' | 'text'>>, states?: ReadonlyArray<string> }} HelpEntry */
 
 const LOSS_OR_GAIN = Object.freeze(['loss', 'gain']);
 
@@ -128,12 +128,17 @@ export const HELP = Object.freeze({
   'economy.gdp': {
     about: 'le PIB',
     title: 'Le produit intérieur brut (PIB)',
-    message: 'Le **PIB** mesure ce que l’économie de la ville **produit en une année** : {gdp}.\n\nIl additionne ce que les entreprises ajoutent aux biens qu’elles achètent (leur **valeur ajoutée**) et l’**administration** de la ville, comptée à son coût (ses salaires).',
+    message: 'Le **PIB** mesure ce que l’économie de la ville **produit en une année** : {gdp}.\n\nIl additionne ce que les entreprises ajoutent aux biens qu’elles achètent (leur **valeur ajoutée**) et les **salaires de la ville** (son administration).',
     figures: { gdp: 'euro' },
     items: [
       { label: 'À quoi il sert', text: 'Il mesure la taille de l’économie, et c’est la base de ce que les prêteurs acceptent de prêter à la ville : sa dette est plafonnée à une part du PIB.' },
       { fragment: 'perYear' },
     ],
+  },
+  'economy.gdpOrigin': {
+    about: 'd’où vient le PIB',
+    title: 'D’où vient le PIB',
+    message: 'Le PIB est la **somme de deux parts**.\n\nLa **valeur ajoutée des entreprises** : ce qu’elles ont vendu, moins ce qu’elles ont acheté pour produire (matières, énergie…). Elle est **négative** quand elles achètent plus qu’elles ne vendent : une entreprise qui ne produit pas (faute d’ouvriers, par exemple) ne vend rien, mais paie encore son entretien.\n\nLes **salaires de la ville** (l’administration) : la ville ne vend rien, on compte donc ce qu’elle paie à ses propres salariés comme sa production. Les salariés des **entreprises** ne sont pas ici : leurs salaires sont déjà dans la valeur ajoutée de leur entreprise, on ne les compte pas deux fois.\n\nLes parts s’additionnent à **100 %**. Une part négative en fait dépasser une autre au-delà de 100 %.',
   },
   'economy.gdpPpp': {
     about: 'le PIB en parité de pouvoir d’achat',
@@ -340,6 +345,109 @@ export const HELP = Object.freeze({
       { when: ['uniform', 'byCategory'], label: 'Exonérer', text: 'Cocher « exonéré » retire la TVA de ce bien ou de cette prestation, quel que soit le taux de sa catégorie.' },
       { when: 'uniform', label: 'Un seul taux', text: 'Décocher « même taux pour tous les produits » permet de régler un taux par catégorie.' },
     ],
+  },
+  // The commentary under the trade balance (EconomyPanel.js, tradeBalanceCommentary.js): the state, what weighs, what it brings in the game, what can be done.
+  // Each entry is one paragraph of it; the builder picks the entries the state calls for. `period` is a word ("ce mois", "cette année").
+  'trade.balance': {
+    about: 'la balance commerciale',
+    title: 'La balance commerciale',
+    message: {
+      none: 'Aucun échange avec l’étranger {period}.',
+      deficit: 'La ville a **acheté plus qu’elle n’a vendu** {period} : un solde de **−{balance}**. Les ventes ne couvrent que {coverage} des achats.',
+      balanced: 'Les ventes et les achats **s’équilibrent** {period} : un solde de {balance}, les ventes couvrent {coverage} des achats.',
+      surplus: 'La ville a **vendu plus qu’elle n’a acheté** {period} : un solde de **+{balance}**. Les ventes couvrent {coverage} des achats.',
+      'surplus-only': 'La ville a **vendu {period} sans rien acheter** : un solde de **+{balance}**.',
+    },
+    figures: { period: 'text', balance: 'euro', coverage: 'percent' },
+    states: ['none', 'deficit', 'balanced', 'surplus', 'surplus-only'],
+    items: [
+      { when: 'none', label: 'Pourquoi', text: 'Les négociants échangent quand une ville partenaire cherche un bien que la ville produit, ou en offre un qu’elle achète.' },
+      { when: 'deficit', label: 'Ce que cela fait', text: 'Un déficit **fait sortir de l’argent** de l’économie : la banque centrale **cède des devises**, et ses réserves de change baissent.' },
+      { when: ['surplus', 'surplus-only'], label: 'Ce que cela fait', text: 'Un excédent **fait entrer de l’argent** : les réserves de change de la banque centrale augmentent.' },
+      { when: ['surplus', 'surplus-only'], label: 'Le revers', text: 'La ville dépend de ses clients : un embargo de leur part la toucherait fort.' },
+      { when: 'balanced', label: 'Ce que cela fait', text: 'Presque aucun argent n’entre ni ne sort par le commerce.' },
+    ],
+  },
+  'trade.balance.trend': {
+    about: 'l’évolution de la balance',
+    title: 'L’évolution de la balance',
+    message: {
+      better: 'Par rapport à {previous}, le solde s’est **amélioré** de {change}.',
+      same: 'Par rapport à {previous}, le solde est **stable**.',
+      worse: 'Par rapport à {previous}, le solde s’est **dégradé** de {change}.',
+    },
+    figures: { previous: 'text', change: 'euro' },
+    states: ['better', 'same', 'worse'],
+  },
+  'trade.balance.causes': {
+    about: 'ce qui pèse sur la balance',
+    title: 'Ce qui pèse sur la balance',
+    message: {
+      deficit: 'Ce qui creuse le plus l’écart : **{good}**, et **{city}** est le partenaire qui pèse le plus.',
+      'deficit-goods': 'Ce qui creuse le plus l’écart : **{good}**.',
+      surplus: 'Ce qui rapporte le plus : **{good}**, et **{city}** est le partenaire qui pèse le plus.',
+      'surplus-goods': 'Ce qui rapporte le plus : **{good}**.',
+    },
+    figures: { good: 'text', city: 'text' },
+    states: ['deficit', 'deficit-goods', 'surplus', 'surplus-goods'],
+  },
+  'trade.balance.interest': {
+    about: 'les intérêts versés à l’étranger',
+    title: 'Les intérêts versés à l’étranger',
+    message: {
+      some: 'Les prêts de villes partenaires ont coûté **{interest}** d’intérêts sur douze mois : cet argent **quitte l’économie** (le PNB passe sous le PIB), et la dette de la ville est plafonnée.',
+      none: 'Aucun intérêt n’est versé à l’étranger : la ville n’a pas de prêt de ville partenaire.',
+    },
+    figures: { interest: 'euro' },
+    states: ['some', 'none'],
+  },
+  'trade.balance.levers': {
+    about: 'ce qu’on peut faire',
+    title: 'Ce qu’on peut faire',
+    message: 'Les **droits de douane** (section Commerce du panneau administrateur) renchérissent les achats à l’étranger et rapportent à la ville : c’est le levier d’aujourd’hui contre un déficit.',
+  },
+  'trade.dependence.exportPartner': {
+    about: 'la dépendance à un client',
+    title: 'La dépendance à un client',
+    message: {
+      warning: '**{share}** de vos ventes passent par **{name}** : un seul client pèse plus que tous les autres ensemble.',
+      strong: '**{share}** de vos ventes passent par **{name}** : un embargo de sa part vous priverait de l’essentiel.',
+    },
+    figures: { share: 'percent', name: 'text' },
+    states: ['warning', 'strong'],
+  },
+  'trade.dependence.importPartner': {
+    about: 'la dépendance à un fournisseur',
+    title: 'La dépendance à un fournisseur',
+    message: {
+      warning: '**{share}** de vos achats viennent de **{name}** : un seul fournisseur pèse plus que tous les autres ensemble.',
+      strong: '**{share}** de vos achats viennent de **{name}** : s’il vous coupait ses livraisons, la ville s’en ressentirait partout.',
+    },
+    figures: { share: 'percent', name: 'text' },
+    states: ['warning', 'strong'],
+  },
+  'trade.dependence.exportGood': {
+    about: 'la dépendance à un produit',
+    title: 'La dépendance à un produit',
+    message: {
+      warning: '**{share}** de vos ventes à l’étranger reposent sur un seul bien : **{name}**.',
+      strong: '**{share}** de vos ventes à l’étranger reposent sur un seul bien, **{name}** : si son marché se ferme, la ville perd l’essentiel de ses exportations.',
+    },
+    figures: { share: 'percent', name: 'text' },
+    states: ['warning', 'strong'],
+  },
+  // The climate of the business with a partner city (the Commerce section of the admin panel, the world map): its commercial satisfaction, good by good.
+  'trade.satisfaction': {
+    about: 'le climat des affaires',
+    title: 'Le climat des affaires',
+    message: 'Le **climat des affaires** dit si les négociants de la ville ont envie de commercer un bien avec vous. Il se lit **bien par bien**, de −100 à +100 ; celui de la ville est leur moyenne, pesée par les quantités.\n\nIl **monte** quand les commandes sont honorées et que les accords attendent en entrepôt. Il **baisse** quand rien ne se passe, ou quand nos **droits de douane** renchérissent l’échange.\n\nIl **ne coupe jamais** le commerce : un climat glacial fait seulement commander **moins** (jusqu’à {floor} de la quantité habituelle) et payer **moins cher**, et il remonte dès que les échanges reprennent.',
+    figures: { floor: 'percent' },
+  },
+  // The relation with a partner city (the Commerce section of the admin panel): the memory between the two States, read from the journal of what marked it.
+  'trade.relation': {
+    about: 'la relation avec la ville',
+    title: 'La relation',
+    message: 'La **relation** est la mémoire entre deux États : ce qui l’a marquée, **même il y a longtemps**. Elle est différente du climat des affaires, qui ne parle que du commerce d’aujourd’hui.\n\nChaque événement pèse au départ, puis la ville l’**oublie peu à peu**, plus ou moins vite selon son caractère (un partenaire « tenace » oublie lentement, un « oublieux » vite). Il en reste toujours **un résidu**.\n\nPour l’instant, ce sont **nos droits de douane** qui la marquent : s’ils dépassent ce que la ville tolère, elle le prend pour un acte hostile ; s’ils redescendent, elle s’apaise un peu.',
   },
   // What a building shows of itself (the État tab of its sheet): the same text for every building, the figures its own.
   'building.solidity': {

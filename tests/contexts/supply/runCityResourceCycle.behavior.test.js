@@ -27,6 +27,8 @@ function toSnapshot(b) {
   return createSupplyBuildingSnapshot({
     id: b.id,
     type: b.type,
+    x: b.x,
+    y: b.y,
     roadCount: b.roadCount,
     worker: b.worker,
     workerNeed: b.workerNeed,

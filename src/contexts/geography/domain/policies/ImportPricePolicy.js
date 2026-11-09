@@ -1,5 +1,6 @@
-import { TRADE_IMPORT, transportPerUnit } from '../../../../shared/trade-catalog/TradeCatalog.js';
-import { getResourceBaseValue, getTransportWeight } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { TRADE_IMPORT, getTradeCatalogEntry, transportPerUnit } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { getTransportWeight } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { worldUnitPrice } from './WorldPricePolicy.js';
 
 const centimes = (amount) => Math.round(amount * 100) / 100;
 
@@ -9,19 +10,21 @@ const centimes = (amount) => Math.round(amount * 100) / 100;
  * merchants' margin on the whole cost (earned inside Anoria, so outside the duty's base). Amounts are rounded to the
  * centime; the sale is the sum of the rounded parts, so the lines of a delivery always add up to what the warehouse pays.
  *
- * @param {{ cityId: string, offer: { good: string, baseMultiplier: number }, quantity: number, dutyRate: number, worldIndex: number }} delivery `worldIndex`: the world price index of the good that month (WorldMarket.js)
+ * @param {{ cityId: string, offer: { good: string, baseMultiplier: number }, quantity: number, dutyRate: number, worldIndex: number, referencePrice: number }} delivery `worldIndex`: the world price index of the good that month (WorldMarket.js); `referencePrice`: the world's reference price of the good (createWorldReferencePrices.js)
  * @returns {{
  *   quantity: number,
  *   foreign: number, transport: number, customsValue: number, duty: number, cost: number, margin: number, sale: number,
  *   unit: { foreign: number, transport: number, duty: number, margin: number, sale: number },
  * }}
  */
-export function priceImportDelivery({ cityId, offer, quantity, dutyRate, worldIndex }) {
+export function priceImportDelivery({ cityId, offer, quantity, dutyRate, worldIndex, referencePrice }) {
   if (!(worldIndex > 0)) throw new Error(`[trade] the world price index of ${offer.good} must be above 0, got ${worldIndex}`);
   if (!(quantity > 0)) throw new Error(`[trade] a delivery of ${offer.good} from ${cityId} has no quantity (${quantity})`);
   if (!Number.isFinite(dutyRate) || dutyRate < 0) throw new Error(`[trade] the import duty of ${offer.good} must be a rate >= 0, got ${dutyRate}`);
-  // The city's price is the good's value, at the city's multiplier, at the world's price of the month.
-  const foreignUnit = getResourceBaseValue(offer.good) * offer.baseMultiplier * worldIndex;
+  // The city's price is the world's price of the good in that city (its level and its premium), at the world's price index of the month.
+  const entry = getTradeCatalogEntry(cityId);
+  if (!entry) throw new Error(`[trade] "${cityId}" is not in the trade catalog`);
+  const foreignUnit = worldUnitPrice({ referencePrice, entry, multiplier: offer.baseMultiplier }) * worldIndex;
   const transportUnit = transportPerUnit({ cityId, quantity, weight: getTransportWeight(offer.good) });
   const foreign = centimes(quantity * foreignUnit);
   const transport = centimes(quantity * transportUnit);

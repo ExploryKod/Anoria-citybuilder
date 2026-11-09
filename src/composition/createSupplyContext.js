@@ -32,6 +32,7 @@ import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import { getNaturalSources, getQuantityConsumerEntries, getSuppliedCategories, getTotalKeyForCategory } from '../shared/building-catalog/resourceRoleQueries.js';
 import { YearClimate } from '../contexts/supply/application/services/YearClimate.js';
+import { cropHarvestFactor } from '../shared/climate/ClimatePolicy.js';
 import { ClimateRepository } from '../contexts/supply/infrastructure/dexie/ClimateRepository.js';
 import { coverOf, scarcityFactorOf } from '../contexts/supply/domain/policies/ScarcityPolicy.js';
 import { SCARCE_NEEDS } from '../shared/resource-catalog/ScarcityCatalog.js';
@@ -126,8 +127,22 @@ export function createSupplyContext({
       })
     );
   }
+  // What a lot costs at the hub, so the cheapest is served first: the price its producer sells at (the price book), or the landed price of an import (the trade context
+  // registers how an import is priced, as it does the open-deal check). A producer that no longer stands, or an import nobody prices, leaves its lot without a price: served last.
+  let importLotPricer = null;
+  const lotUnitPrice = async ({ lotKey, category, turn }) => {
+    const { producerId } = lotOrigin(lotKey);
+    if (!producerId) return null;
+    if (producerId.startsWith('city:')) return importLotPricer ? importLotPricer({ cityId: producerId.slice('city:'.length), good: category, turn }) : null;
+    const producer = await supplyBuildingRepositoryImpl.findById(producerId);
+    if (!producer) return null;
+    const period = getTimeInfo(turn);
+    await priceBook.ensure(period);
+    return priceBook.sellingPrice(producer, category, period);
+  };
   const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
     listExternalClients: listExternalClientsForCategory,
+    lotUnitPrice,
   });
   const rebalanceHubAllocations = new RebalanceHubAllocations(
     supplyBuildingRepositoryImpl
@@ -244,7 +259,10 @@ export function createSupplyContext({
     dealGate,
     recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
     removeBuilding: (params) => syncRemovedBuilding(params),
-    yearClimate,
+    // A crop yields what the year lets it: the climate of the year, as much as the crop feels it (ClimatePolicy.js).
+    yieldFactors: {
+      climate: async ({ category, period }) => cropHarvestFactor({ category, yearFactor: (await yearClimate.of(period?.year ?? 0)).harvestFactor }),
+    },
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
@@ -388,6 +406,11 @@ export function createSupplyContext({
 
   return {
     /** @param {(dealCategory: string) => Promise<boolean>} check whether the merchants may make this deal now */
+    /** The trade context says how a lot of imported goods is priced at the hub (its landed price), so it competes with the goods made here. @param {(lot: { cityId: string, good: string, turn: number }) => Promise<number | null>} pricer */
+    setImportLotPricer(pricer) {
+      importLotPricer = pricer;
+    },
+
     setOpenDealCheck(check) {
       openDealCheck = check;
     },

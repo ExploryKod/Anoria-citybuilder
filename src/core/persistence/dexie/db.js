@@ -197,6 +197,11 @@ db.version(23).stores({
   citizens: 'id, houseId, hamletId',
 });
 
+// v24: the journal of a trade relation's events (the memory between two States, RelationMemoryPolicy.js) — appended, never edited, never purged; the relation is read from it.
+db.version(24).stores({
+  relationEvents: '++id, cityId, turn',
+});
+
 // The residents of a house are its citizens (residentsProjection.js): `pop` is not stored on the house row, it is served on every read of the table from the count the
 // citizens make. The citizens' hooks keep that count: a change moves it at once (what the code reads right after writing is true), and a transaction that fails gives
 // back what it moved.

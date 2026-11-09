@@ -141,9 +141,10 @@ gameplay's random events, or a script for a scenario. The map only shows; the ef
 
 ### 4.4 What the player could answer (candidates)
 
-Decided: **answering raises the city's satisfaction; doing nothing lowers it**, review after review while the event holds; a satisfaction too low makes the
-city **cease the relation** (the existing reason `satisfaction_too_low`, `TradeCeasePolicy.js`). How: the satisfaction of a relation is the sum of the
-factors its catalog entry declares, and `SATISFACTION_FACTORS` (`TradeSatisfactionPolicy.js`) is open to extension, one pure function per factor. Two
+Decided: **answering raises the city's satisfaction; doing nothing lowers it**, review after review while the event holds. (Superseded in part by
+`docs/gameplay/PLAN_TRADE_RELATIONS.md`: the commercial satisfaction is now per good and never ends a relation, the reason `satisfaction_too_low` is gone; a
+world event that concerns a city now belongs to the **relation's memory** — a kind of `RELATION_EVENT_KINDS` — more than to the satisfaction.) How: the
+satisfaction of a good is the sum of the factors its catalog entry declares, and `SATISFACTION_FACTORS` (`TradeSatisfactionPolicy.js`) is open to extension, one pure function per factor. Two
 new factors, read from the world events that concern the city, carry this: points for the events the player answered, a loss for each event left
 unanswered at the review. The world-event catalog declares the points; no rule is coded in the map. The review's context gains those two facts, derived
 from the events and the journal, never stored on the side.

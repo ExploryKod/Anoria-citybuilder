@@ -4,11 +4,11 @@
  * reset every month, so nothing could move a sale's price.
  */
 
-import { importCapabilities, openRelationRow } from './importCapabilities.js';
+import { importCapabilities, openRelationRow, referencePriceOf } from './importCapabilities.js';
 import { describe, test, expect } from '@jest/globals';
 import { RunMonthlyCityTradeCycle } from '../../../src/contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
+import { worldUnitPrice } from '../../../src/contexts/geography/domain/policies/WorldPricePolicy.js';
 import { takeCategoryAmount } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
@@ -47,8 +47,8 @@ async function unitPriceSold({ draw, bias }) {
 
 describe('trade sale price — drawn in the catalog range, moved by events', () => {
   const entry = getTradeCatalogEntry('silvania');
-  const bookBase = getResourceBaseValue('book');
-  const centre = bookBase * entry.wants.find((want) => want.good === 'book').baseMultiplier;
+  // The centre of the range: the world's price of the book in Silvania (its reference price, the level of its class, its premium).
+  const centre = worldUnitPrice({ referencePrice: referencePriceOf('book'), entry, multiplier: entry.wants.find((want) => want.good === 'book').baseMultiplier });
 
   test('an unbiased draw stays within baseMultiplier ± spread', async () => {
     const low = await unitPriceSold({ draw: 0, bias: 0 });

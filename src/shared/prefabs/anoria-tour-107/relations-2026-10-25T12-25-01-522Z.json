@@ -4,7 +4,8 @@
     {
       "cityId": "briga",
       "status": "active",
-      "satisfactionScore": -14,
+      "goodSatisfaction": { "export": { "wheat": 0, "carrot": 0 }, "import": { "coal": 0 } },
+      "goodReview": { "export": {}, "import": {} },
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 20,
@@ -23,7 +24,8 @@
     {
       "cityId": "maris",
       "status": "active",
-      "satisfactionScore": -65,
+      "goodSatisfaction": { "export": { "gold": 0, "gildedPlate": 0, "iron": 0, "carrotCake": 0 }, "import": { "petrol": 0 } },
+      "goodReview": { "export": {}, "import": {} },
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 21,
@@ -53,7 +55,8 @@
     {
       "cityId": "olivea",
       "status": "active",
-      "satisfactionScore": -40,
+      "goodSatisfaction": { "export": { "wood": 0, "rock": 0, "iron": 0 }, "import": {} },
+      "goodReview": { "export": {}, "import": {} },
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 21,
@@ -77,7 +80,8 @@
     {
       "cityId": "piceta",
       "status": "active",
-      "satisfactionScore": -10,
+      "goodSatisfaction": { "export": { "wheat": 0 }, "import": { "uranium": 0 } },
+      "goodReview": { "export": {}, "import": {} },
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 20,
@@ -96,7 +100,8 @@
     {
       "cityId": "silvania",
       "status": "active",
-      "satisfactionScore": -15,
+      "goodSatisfaction": { "export": { "gold": 0, "book": 0, "decoratedPot": 0, "decoratedPlate": 0, "gildedPot": 0 }, "import": { "exoticWood": 0 } },
+      "goodReview": { "export": {}, "import": {} },
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 20,

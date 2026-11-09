@@ -28,6 +28,7 @@ import { getEditorMapRepository } from '../../composition/editorMapRepository.js
 import { createScene } from './scene.js';
 import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
+import { isEmploymentWorkplaceType } from '../../composition/employmentOps.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { isConfirmedBeforeDemolition, previewDemolitionLiquidation } from '../../composition/constructionTreasuryBridge.js';
 import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
@@ -187,6 +188,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
   let time = 0;
   let isPause;
+  /** @type {{ resumeOnExit: boolean } | null} set while the construction mode pauses the game */
+  let constructionPause = null;
   let isOver;
   let infos = {};
   /** @type {GameLoop | null} */
@@ -532,21 +535,27 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     await scene.update(city, time);
     if (isLimitedBuilding(buildingType)) syncLimitedBuildingButtons();
-    await runSimulationPass(time);
-    await syncEmploymentAfterBuildingChange(scene, city, buildingType);
-    void advanceTutorialAfterPlacement();
-    await syncSupplyLinksAfterBuildingChange({
-      supply,
-      construction: constructionApi,
-      city,
-      event: 'placed',
-      buildingType,
-      instanceId: result.instanceId,
-      x: placeX,
-      y: placeY,
-    });
-    await refreshPlacementPresentation();
-    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    if (constructionPause) {
+      await noteChangesInConstructionMode([
+        { event: 'placed', buildingType, instanceId: result.instanceId, x: placeX, y: placeY },
+      ]);
+    } else {
+      await runSimulationPass(time);
+      await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+      void advanceTutorialAfterPlacement();
+      await syncSupplyLinksAfterBuildingChange({
+        supply,
+        construction: constructionApi,
+        city,
+        event: 'placed',
+        buildingType,
+        instanceId: result.instanceId,
+        x: placeX,
+        y: placeY,
+      });
+      await refreshPlacementPresentation();
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    }
     const multiplayerManager = getMultiplayerManager();
     if (multiplayerManager?.isMultiplayer) {
       try {
@@ -863,6 +872,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     isTraveling = true;
     const wasPaused = Boolean(isPause);
     try {
+      // What was built in construction mode belongs to the hamlet being left: it is digested before the city is replaced
+      await settlePendingChanges();
       loaderManager.show();
       if (!wasPaused) {
         game?.pause?.();
@@ -1061,6 +1072,48 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const rows = await constructionApi.listAllBuildingRows();
     refreshSupplyPlacementIndex(rows);
     await refreshHudReminders();
+  }
+
+  /**
+   * What the construction mode has built or demolished and the city has not digested yet (people placed, links to a hub, reminders, the tutorial), in order.
+   * Only the part the player needs at once is done as they build; the rest is digested together when the mode ends (`settlePendingChanges`).
+   * @type {Array<{ event: 'placed' | 'bulldozed', buildingType: string, instanceId: string | null, x?: number, y?: number }>}
+   */
+  const pendingChanges = [];
+
+  /**
+   * The part of a change made in construction mode that cannot wait: the placement rules read the supply index (a hub just placed must count for the
+   * next building), and the player reads their funds. The rest is kept for the end of the mode.
+   */
+  async function noteChangesInConstructionMode(changes) {
+    pendingChanges.push(...changes);
+    refreshSupplyPlacementIndex(await constructionApi.listAllBuildingRows());
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: false });
+  }
+
+  /** The work a placement or a demolition does after it, once for everything built in the mode (the simulation pass is the next day's, the game is paused). */
+  async function digestBuildingChanges(changes) {
+    const workplace = changes.find((change) => isEmploymentWorkplaceType(change.buildingType));
+    await syncEmploymentAfterBuildingChange(scene, city, (workplace ?? changes[changes.length - 1]).buildingType);
+    for (const change of changes) {
+      if (change.event !== 'placed' || !change.instanceId) continue;
+      await syncSupplyLinksAfterBuildingChange({ supply, construction: constructionApi, city, ...change });
+    }
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    void advanceTutorialAfterPlacement();
+  }
+
+  /** Digest what the construction mode built, with the discreet loader on the date pill. Nothing pending: nothing happens. */
+  async function settlePendingChanges() {
+    const changes = pendingChanges.splice(0);
+    if (changes.length === 0) return;
+    gameUI.setConstructionSettling(true);
+    try {
+      await digestBuildingChanges(changes);
+    } finally {
+      gameUI.setConstructionSettling(false);
+    }
   }
 
   bindGameUIDeps({ getScene: () => scene });
@@ -1281,10 +1334,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
       await scene.update(city, time);
-      await runSimulationPass(time);
-      await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
-      void advanceTutorialAfterPlacement();
-      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      if (constructionPause) {
+        await noteChangesInConstructionMode([{ event: 'placed', buildingType: activeToolId, instanceId: null }]);
+      } else {
+        await runSimulationPass(time);
+        await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+        void advanceTutorialAfterPlacement();
+        await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      }
       if (game?.play) {
         game.play();
       }
@@ -1461,28 +1518,35 @@ export function createGame(gameStore, assetManager, citySize = null) {
       playPlaceBuildingSound();
       await scene.update(city, time);
       timer.step('scene.update (the houses appear)');
-      await runSimulationPass(time);
-      timer.step('simulation pass');
-      await syncEmploymentAfterBuildingChange(scene, city, buildingType);
-      timer.step('employment');
-      void advanceTutorialAfterPlacement();
-      for (const { plot, instanceId } of placed) {
-        await syncSupplyLinksAfterBuildingChange({
-          supply,
-          construction: constructionApi,
-          city,
-          event: 'placed',
-          buildingType,
-          instanceId,
-          x: plot.x,
-          y: plot.y,
-        });
+      if (constructionPause) {
+        await noteChangesInConstructionMode(
+          placed.map(({ plot, instanceId }) => ({ event: 'placed', buildingType, instanceId, x: plot.x, y: plot.y })),
+        );
+        timer.step('noted for the end of the construction mode');
+      } else {
+        await runSimulationPass(time);
+        timer.step('simulation pass');
+        await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+        timer.step('employment');
+        void advanceTutorialAfterPlacement();
+        for (const { plot, instanceId } of placed) {
+          await syncSupplyLinksAfterBuildingChange({
+            supply,
+            construction: constructionApi,
+            city,
+            event: 'placed',
+            buildingType,
+            instanceId,
+            x: plot.x,
+            y: plot.y,
+          });
+        }
+        timer.step('supply links');
+        await refreshPlacementPresentation();
+        timer.step('placement refresh + reminders');
+        await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+        timer.step('HUD');
       }
-      timer.step('supply links');
-      await refreshPlacementPresentation();
-      timer.step('placement refresh + reminders');
-      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
-      timer.step('HUD');
       placementGhostSession.sync(scene.focusedObject);
       if (game?.play) {
         game.play();
@@ -1674,6 +1738,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     const asked = buildings.filter((building) => isConfirmedBeforeDemolition(building.type));
+    // What was built in construction mode is not digested yet (links to a hub, people placed): a demolition that cascades through the hubs, or that
+    // asks what it brings down, reads the city as it is once they are.
+    const touchesSupply = buildings.some(
+      (building) => supply.hasResourceRole(building.type, 'hub') || supply.getPlacementRequirements(building.type).length > 0,
+    );
+    if (pendingChanges.length > 0 && (asked.length > 0 || touchesSupply)) {
+      await settlePendingChanges();
+    }
     if (asked.length > 0) {
       const entries = [];
       for (const building of asked) {
@@ -1687,6 +1759,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     let lastBuildingId = null;
     let demolished = 0;
     let limitedDemolished = false;
+    const demolishedChanges = [];
     for (const { x, y, instanceId: removedInstanceId } of buildings) {
       const tile = city.tiles[x][y];
       if (!tile?.buildingId) {
@@ -1735,6 +1808,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (buildingId) {
         demolished += 1;
         lastBuildingId = buildingId;
+        demolishedChanges.push({ event: 'bulldozed', buildingType: buildingId, instanceId: removedInstanceId, x, y });
         if (isLimitedBuilding(buildingId)) limitedDemolished = true;
         await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
       }
@@ -1749,6 +1823,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
     playBulldozeSound();
     await scene.update(city, time);
     if (limitedDemolished) syncLimitedBuildingButtons();
+    if (constructionPause) {
+      await noteChangesInConstructionMode(demolishedChanges);
+      return;
+    }
     await syncEmploymentAfterBuildingChange(scene, city, lastBuildingId);
     await refreshPlacementPresentation();
     await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
@@ -2471,7 +2549,45 @@ export function createGame(gameStore, assetManager, citySize = null) {
       gameUI.setPaused(true);
     },
 
+    /**
+     * Construction mode: the game is paused (without the pause overlay) and stays paused while the player builds; the many `play()` calls that end a
+     * placement do nothing until the mode ends. Whether the game ran before is remembered, so a game the player had paused stays paused.
+     */
+    enterConstructionPause() {
+      if (constructionPause) {
+        return;
+      }
+      constructionPause = { resumeOnExit: !isPause };
+      isPause = true;
+      gameUI.setPaused(true);
+      gameUI.setConstructionPause(true);
+    },
+
+    async leaveConstructionPause() {
+      if (!constructionPause) {
+        return;
+      }
+      // The game stays paused while what was built is digested (the pause is only lifted below), so no day starts on a half-synchronised city
+      let digested = true;
+      try {
+        await settlePendingChanges();
+      } catch (error) {
+        digested = false;
+        console.error('[game] What the construction mode built could not be digested:', error);
+        showErrorToast(`La construction n'a pas pu être finalisée : ${error.message}. Le jeu reste en pause.`, { timeout: 10000 });
+      }
+      const { resumeOnExit } = constructionPause;
+      constructionPause = null;
+      gameUI.setConstructionPause(false);
+      if (resumeOnExit && digested) {
+        await game.play();
+      }
+    },
+
     async play() {
+      if (constructionPause) {
+        return;
+      }
       isPause = false;
       gameUI.setPaused(false);
       if (objectivesTracker.enabled) {

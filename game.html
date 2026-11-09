@@ -2373,6 +2373,12 @@
                                         <td class="this-year-col finances-value-negative" data-field="repairsThisYear" id="repairs-this-year">0</td>
                                     </tr>
                                     <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Dons aux villes partenaires</td>
+                                        <td class="last-year-col finances-value-negative" data-field="diplomaticGiftsLastYear" id="diplomatic-gifts-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="diplomaticGiftsThisYear" id="diplomatic-gifts-this-year">0</td>
+                                    </tr>
+                                    <tr>
                                         <td class="indicator-col">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ship">
                                                 <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path>
@@ -2695,11 +2701,7 @@
                             <p class="commerce-empty-state">Aucune relation commerciale active.</p>
                         </div>
 
-                        <!-- Budget impact -->
-                        <div class="commerce-budget-impact" id="commerce-budget-impact">
-                            <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
-                            <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
-                        </div>
+                        <!-- The customs revenue and the balance of the trade are read in the Economy panel, "Commerce extérieur" tab -->
                     </div>
                 </div>
             </div>
@@ -3369,11 +3371,13 @@
                 <button type="button" class="eco-tab active" role="tab" id="economy-tab-production" data-tab="production" aria-selected="true" aria-controls="economy-production-tab">Production</button>
                 <button type="button" class="eco-tab" role="tab" id="economy-tab-debts" data-tab="debts" aria-selected="false" aria-controls="economy-debts-tab">Dettes</button>
                 <button type="button" class="eco-tab" role="tab" id="economy-tab-development" data-tab="development" aria-selected="false" aria-controls="economy-development-tab">Développement</button>
+                <button type="button" class="eco-tab" role="tab" id="economy-tab-trade" data-tab="trade" aria-selected="false" aria-controls="economy-trade-tab">Commerce extérieur</button>
             </div>
             <div class="eco-panels" id="economy-container">
                 <div class="eco-tab-content active" id="economy-production-tab" role="tabpanel" aria-labelledby="economy-tab-production"></div>
                 <div class="eco-tab-content" id="economy-debts-tab" role="tabpanel" aria-labelledby="economy-tab-debts"></div>
                 <div class="eco-tab-content" id="economy-development-tab" role="tabpanel" aria-labelledby="economy-tab-development"></div>
+                <div class="eco-tab-content" id="economy-trade-tab" role="tabpanel" aria-labelledby="economy-tab-trade"></div>
             </div>
         </div>
     </div>
@@ -3772,6 +3776,20 @@
                         </label>
                         <p id="touch-mode-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
                             Pose en deux temps : ancrage du bâtiment, rotation, puis validation.
+                        </p>
+                    </div>
+                    <div class="parameters-control-group" style="margin-top: 12px;">
+                        <label class="parameters-control-label" for="construction-pause-toggle">
+                            <span class="parameters-control-text">Pause en construction</span>
+                            <input
+                                type="checkbox"
+                                id="construction-pause-toggle"
+                                class="parameters-switch"
+                                aria-describedby="construction-pause-hint"
+                            >
+                        </label>
+                        <p id="construction-pause-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
+                            Ouvrir la construction met le jeu en pause : vous pouvez construire et démolir sans que les jours passent. La route et la gomme ne sont disponibles que dans ce mode.
                         </p>
                     </div>
                     <div class="parameters-control-group" style="margin-top: 12px;">

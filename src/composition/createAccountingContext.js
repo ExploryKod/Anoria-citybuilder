@@ -16,6 +16,7 @@ import { ForceReinitializeTreasury } from '../contexts/accounting/application/co
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetCityStatements } from '../contexts/accounting/application/queries/city-ledger/GetCityStatements.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
+import { GetTradeBalance } from '../contexts/accounting/application/queries/journal/GetTradeBalance.js';
 import { FlushJournalSession } from '../contexts/accounting/application/commands/journal/FlushJournalSession.js';
 import { ExportJournalJson } from '../contexts/accounting/application/queries/journal/ExportJournalJson.js';
 import { ExportJournalPdf } from '../contexts/accounting/application/queries/journal/ExportJournalPdf.js';
@@ -325,6 +326,7 @@ export function createAccountingContext(deps = {}) {
     gameTimePort
   );
   const getCityStatementsQuery = new GetCityStatements(journalRepository, getTreasurySnapshotQuery, gameTimePort);
+  const getTradeBalanceQuery = new GetTradeBalance(journalRepository, gameTimePort, () => requireActiveHamletId());
   const getGeneralLedgerQuery = new GetGeneralLedger(
     journalRepository,
     getTreasurySnapshotQuery,
@@ -1140,6 +1142,14 @@ export function createAccountingContext(deps = {}) {
 
     async getGeneralLedger(filters) {
       return getGeneralLedgerQuery.execute(filters);
+    },
+
+    /**
+     * The trade balance of the active hamlet for a year (TradeBalancePolicy.js), read from the journal when the player asks; kept until the month turns.
+     * @param {{ year?: number | null }} [options]
+     */
+    getTradeBalance(options) {
+      return getTradeBalanceQuery.execute(options);
     },
 
     /** @param {{ fiscalYear?: number|null }} [options] */

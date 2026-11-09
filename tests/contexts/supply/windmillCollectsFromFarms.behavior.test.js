@@ -60,10 +60,10 @@ function farm(id, type, stocks, roadCount = 1) {
 
 describe('Supply — windmill collection', () => {
   describe('domain policies', () => {
-    test('the granary collects in the months its crops are sold in: october (the cabbage, which keeps two months) and december', () => {
+    test('the granary collects in the months its goods are sold in: the crops (october for the cabbage, which keeps two months, and december) and every second month for what the cooperative makes of them', () => {
       const schedule = getCollectionSchedule('Windmill-001');
       // Declared once, on each farm's sale window: the granary only follows them.
-      expect(schedule).toEqual({ unit: 'month', values: ['october', 'december'] });
+      expect(schedule).toEqual({ unit: 'month', values: ['february', 'april', 'june', 'august', 'october', 'december'] });
       expect(matchesSchedule(schedule, { month: 'december' })).toBe(true);
       expect(matchesSchedule(schedule, { month: 'october' })).toBe(true);
       expect(matchesSchedule(schedule, { month: 'november' })).toBe(false);

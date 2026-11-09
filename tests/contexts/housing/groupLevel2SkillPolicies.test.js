@@ -14,6 +14,7 @@ describe('Housing — GroupSkillPolicy', () => {
     expect(getCitizenSkillsForHouse({ level: 1, residentialGroup: 'merchants' })).toEqual([
       'vente-alimentaire',
       'stockage-alimentaire',
+      'negoce',
     ]);
     expect(getCitizenSkillsForHouse({ level: 1, residentialGroup: 'scholars' })).toEqual(['hydraulique', 'medecine-proximite', 'instruction']);
   });

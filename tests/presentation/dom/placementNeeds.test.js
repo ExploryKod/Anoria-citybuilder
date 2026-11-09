@@ -3,9 +3,9 @@ import { describePlacementNeeds, describeActivitySupplyGap } from '../../../src/
 
 // What the player is told when picking a building to place, read from that building's own catalog entry.
 describe('describePlacementNeeds', () => {
-  test('a building that needs another in reach says which, how far, and that it needs room', () => {
+  test('a building that needs another in reach says which, how far, and how many may stand for each', () => {
     expect(describePlacementNeeds('Market-Stall-Red')).toBe(
-      'Marché requiert : Grenier à moins de 5 cases (avec de la place libre).'
+      'Marché requiert : Grenier (1 marché au plus pour chacun).'
     );
   });
 

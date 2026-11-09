@@ -21,7 +21,7 @@ import { INSURANCE_COMPANIES } from './insuranceCompanies.js';
  * adding a good is one edit here — never a name written in code.
  * Crops are supplied through the farm → silo → market → house chain: a house eats nothing it did not receive.
  */
-const SUPPLIED_GOODS = ['wheat', 'carrot', 'cabbage'];
+const SUPPLIED_GOODS = ['wheat', 'carrot', 'cabbage', 'bread', 'cabbageSoup'];
 /** Aggregate stock field summing every good a citizen can eat. */
 const DIET_TOTAL_KEY = 'food';
 
@@ -46,6 +46,10 @@ const MERCHANT_ACTIVITY_GOODS = [
   'dealWood', 'dealRock', 'dealIron', 'dealGold',
   'dealDecoratedPot', 'dealDecoratedPlate', 'dealGildedPot', 'dealGildedPlate',
   'dealBook', 'dealCarrotCake',
+  // The surplus of the fields, sold abroad: apart from the import deal of the same crop (dealWheat), whose direction is the other.
+  'dealWheatExport', 'dealCarrotExport',
+  // What the cooperative makes of the harvest and of the water, sold abroad.
+  'dealBread', 'dealCabbageSoup',
 ];
 /**
  * Goods bought from trade cities (see TradeCatalog `offers`): they arrive by import, never from a producer here, so
@@ -54,7 +58,11 @@ const MERCHANT_ACTIVITY_GOODS = [
 const IMPORTED_GOODS = ['coal', 'petrol', 'uranium', 'exoticWood'];
 // Wheat is imported too, but it is a good the city makes: it is filed in the granaries that hold it, from where the markets sell it (its deal is in the list below).
 /** The merchants' deals waiting for those imports (one per imported good): see ResourceCategoryCatalog `importGood`. */
-const MERCHANT_IMPORT_DEAL_GOODS = ['dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood', 'dealWheat'];
+const MERCHANT_IMPORT_DEAL_GOODS = [
+  'dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood', 'dealWheat',
+  // Goods the city makes too, bought abroad when they are cheaper there: they are filed where such goods are kept (a granary, a warehouse).
+  'dealCarrot', 'dealCabbage', 'dealPot', 'dealPlate', 'dealAmphora', 'dealWoodImport',
+];
 const STORED_GOODS = [
   'wood', 'rock', 'iron', 'gold', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
@@ -69,15 +77,13 @@ const GOODS_TOTAL_KEY = 'goods';
 /** Manhattan tiles around a warehouse from which it collects goods, and from which a workshop draws its supplies. */
 const WAREHOUSE_RANGE = 12;
 const WAREHOUSE_MAX_STOCK = 500;
-/** Markets a warehouse can supply at once. */
-const WAREHOUSE_LINK_CAPACITY = 4;
 /** Units of a good a hub gives to the others per tick when ordered to empty it. */
 const HUB_EMPTY_RATE = 20;
 /** How far a house's own business reaches for its raw material — any warehouse in the city, like the
  * market's own reach: what matters is what it can get, not how far it walks. */
 const ACTIVITY_RANGE = Infinity;
-/** Tiles between a market and the warehouse it draws its goods from (enforced when the market is placed and linked). */
-const MARKET_WAREHOUSE_RANGE = 8;
+/** Tiles between a market and the warehouses it draws its goods from: none (Infinity), like the granaries: the nearest first (HubPriorityPolicy.js), no cost for the distance. */
+const MARKET_WAREHOUSE_RANGE = Infinity;
 /** Goods one market stall can hold at once. */
 const MARKET_GOODS_MAX_STOCK = 120;
 /** Units of goods a citizen uses up per month (a quarter: one unit per four citizens). */
@@ -119,6 +125,7 @@ const STEP_LABELS = Object.freeze({
   shaping: stepEntry('Façonnage', '🤲'),
   firing: stepEntry('Cuisson', '🔥'),
   baking: stepEntry('Cuisson', '🥧'),
+  simmering: stepEntry('Mijotage', '🍲'),
   pressing: stepEntry('Pressage', '🫒'),
   settling: stepEntry('Décantation', '💧'),
   melting: stepEntry('Fonte', '♨️'),
@@ -185,6 +192,8 @@ const activityRecipe = (output, steps, inputs, clients) => ({
 
 /** One input, drawn from any warehouse in the city. */
 const fromWarehouse = (category, amount) => ({ category, amount, from: { role: 'hub', range: ACTIVITY_RANGE } });
+/** One input taken from the house's own stock: the water the tank delivered to it, shared with the household (what the cooperative takes, the home does not have). */
+const fromHouseStock = (category, amount) => ({ category, amount });
 
 /**
  * Artisans' business: they buy a plain pot and decorate it, or buy the makings of a cake and bake it — two
@@ -200,8 +209,11 @@ const ARTISAN_ACTIVITY_ROLES = [
   activityRecipe('carrotCake', { first: 'sourcing', second: 'baking' }, [
     fromWarehouse('wheat', 4),
     fromWarehouse('carrot', 4),
-    fromWarehouse('oil', 2),
   ], ['House-Blue']),
+  // Bread and cabbage soup: the harvest from a granary, and a share of the clean water the tank delivered to the house (the household's own). They are food: they go to the
+  // granaries and the markets sell them to the citizens (the diet, so the variety of what they eat), the citizens first and the merchants' export after.
+  activityRecipe('bread', { first: 'sourcing', second: 'baking' }, [fromWarehouse('wheat', 4), fromHouseStock('water', 4)], ['Market-Stall-Red', 'House-Blue']),
+  activityRecipe('cabbageSoup', { first: 'sourcing', second: 'simmering' }, [fromWarehouse('cabbage', 4), fromHouseStock('water', 4)], ['Market-Stall-Red', 'House-Blue']),
 ];
 
 /**
@@ -248,6 +260,11 @@ const MERCHANT_ACTIVITY_ROLES = [
   dealRecipe('gildedPlate', 'dealGildedPlate'),
   dealRecipe('book', 'dealBook'),
   dealRecipe('carrotCake', 'dealCarrotCake'),
+  dealRecipe('bread', 'dealBread'),
+  dealRecipe('cabbageSoup', 'dealCabbageSoup'),
+  // The surplus of the fields: the merchants buy it from the granary, after the citizens and the artisans (the farm's `clients`), so only what is left goes abroad.
+  dealRecipe('wheat', 'dealWheatExport'),
+  dealRecipe('carrot', 'dealCarrotExport'),
 ];
 
 /*
@@ -435,8 +452,18 @@ const HOUSE_RESOURCE_ROLES = [
 
 /** Stock ceiling of every market stall: one month of the citizens the farms of one hub feed. */
 const MARKET_MAX_STOCK = FARMS_PER_HUB * CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED;
-/** Tiles between a market and the silo feeding it (placement gate, not service reach). */
-const MARKET_SILO_PLACEMENT_RANGE = 5;
+/**
+ * Tiles between a market and the silos it draws on: none (Infinity). Any granary of the hamlet can feed any market, the nearest first (HubPriorityPolicy.js); what limits the markets
+ * is how many there are of them (`MARKETS_PER_SILO`), not how far they stand.
+ */
+const MARKET_SILO_PLACEMENT_RANGE = Infinity;
+/**
+ * Among granaries equally near a market, the one lying in the first of these orientations (seen from the market, north toward smaller `y`, east toward larger `x`) is drawn on
+ * first (HubPriorityPolicy.js). Every orientation, once: a catalog that forgets one throws.
+ */
+const MARKET_HUB_DIRECTION_ORDER = ['south-east', 'south-west', 'north-east', 'north-west', 'south', 'east', 'west', 'north'];
+/** Markets that may stand for each granary, however far apart: one granary feeds a market, and a market may draw on every granary in reach. */
+const MARKETS_PER_SILO = 1;
 
 const MARKET_RESOURCE_ROLES = [{
   role: 'distributor',
@@ -445,8 +472,9 @@ const MARKET_RESOURCE_ROLES = [{
   totalKey: DIET_TOTAL_KEY,
   maxStock: MARKET_MAX_STOCK,
   schedule: { unit: 'always' },
-  // Which hub it draws on: any hub of these goods within this range (and its own field to remember it).
-  hubLink: { sourceLinkField: 'supplyHubId', range: MARKET_SILO_PLACEMENT_RANGE },
+  // Which hubs it draws on: every hub of these goods within this range, the nearest first (then by `directionOrder`), the next when the nearest is empty; its own field remembers
+  // the first of them. `selection: 'nearest'` makes the link capacity-free: a granary is not limited to a number of markets.
+  hubLink: { sourceLinkField: 'supplyHubId', range: MARKET_SILO_PLACEMENT_RANGE, selection: 'nearest', directionOrder: MARKET_HUB_DIRECTION_ORDER },
 },
 // The goods it also stocks and hands out, drawn from a warehouse: one more entry, nothing more. Give a
 // market other `categories`, a different `hubTypes` (catalog ids of the only hubs it may use) or drop this
@@ -458,7 +486,7 @@ const MARKET_RESOURCE_ROLES = [{
   totalKey: GOODS_TOTAL_KEY,
   maxStock: MARKET_GOODS_MAX_STOCK,
   schedule: { unit: 'always' },
-  hubLink: { sourceLinkField: 'goodsHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
+  hubLink: { sourceLinkField: 'goodsHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'], selection: 'nearest', directionOrder: MARKET_HUB_DIRECTION_ORDER },
 },
 // What keeps the houses warm, drawn from a warehouse like the goods above (its own hub link, ceiling, total).
 {
@@ -468,7 +496,7 @@ const MARKET_RESOURCE_ROLES = [{
   totalKey: HEAT_TOTAL_KEY,
   maxStock: MARKET_HEAT_MAX_STOCK,
   schedule: { unit: 'always' },
-  hubLink: { sourceLinkField: 'heatHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
+  hubLink: { sourceLinkField: 'heatHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'], selection: 'nearest', directionOrder: MARKET_HUB_DIRECTION_ORDER },
 },
 // What lights the houses, drawn from a warehouse the same way.
 {
@@ -478,10 +506,10 @@ const MARKET_RESOURCE_ROLES = [{
   totalKey: LIGHT_TOTAL_KEY,
   maxStock: MARKET_LIGHT_MAX_STOCK,
   schedule: { unit: 'always' },
-  hubLink: { sourceLinkField: 'lightHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
+  hubLink: { sourceLinkField: 'lightHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'], selection: 'nearest', directionOrder: MARKET_HUB_DIRECTION_ORDER },
 }];
 const MARKET_PLACEMENT_REQUIRES = [
-  { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, requiresCapacity: true },
+  { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, maxPerHub: MARKETS_PER_SILO, directionOrder: MARKET_HUB_DIRECTION_ORDER },
 ];
 
 export const BUILDING_ECONOMY = {
@@ -598,9 +626,10 @@ export const BUILDING_ECONOMY = {
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
+      yieldFactor: 'climate',
       periodLock: { field: 'lastProductionYear', unit: 'year' },
-      // Citizens eat first; the cake business (House-Red) only gets what is left over.
-      clients: ['Market-Stall-Red', 'House-Red'],
+      // Citizens eat first; the cake business (House-Red) gets what is left over, then the merchants' export deals (House-Blue) what the cakes leave.
+      clients: ['Market-Stall-Red', 'House-Red', 'House-Blue'],
     }],
   },
   'Farm-Carrot': {
@@ -614,8 +643,9 @@ export const BUILDING_ECONOMY = {
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
+      yieldFactor: 'climate',
       periodLock: { field: 'lastProductionYear', unit: 'year' },
-      clients: ['Market-Stall-Red', 'House-Red'],
+      clients: ['Market-Stall-Red', 'House-Red', 'House-Blue'],
     }],
   },
   'Farm-Cabbage': {
@@ -629,7 +659,10 @@ export const BUILDING_ECONOMY = {
       schedule: { unit: 'season', values: ['autumn'] },
       sale: CABBAGE_SALE,
       amount: FARM_ANNUAL_YIELD,
+      yieldFactor: 'climate',
       periodLock: { field: 'lastProductionYear', unit: 'year' },
+      // Citizens eat first; the cooperative's soup (House-Red) gets what is left over.
+      clients: ['Market-Stall-Red', 'House-Red'],
     }],
   },
 
@@ -646,6 +679,7 @@ export const BUILDING_ECONOMY = {
       schedule: { unit: 'season', values: ['autumn'] },
       sale: OLIVE_SALE,
       amount: OLIVE_ANNUAL_YIELD,
+      yieldFactor: 'climate',
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
@@ -826,8 +860,8 @@ export const BUILDING_ECONOMY = {
   'TradeWarehouse': {
     displayName: 'Entrepôt commercial',
     construction: { price: 120, category: 'industry' },
-    // Same sector and manutention skill as the regular warehouse — deal goods still need handlers.
-    employment: { sector: 2, workerNeed: 4, requiredSkill: 'manutention' },
+    // The merchants' own trade: its handlers have the 'negoce' skill, which the merchants hold from their first level (the regular warehouse keeps 'manutention', their second).
+    employment: { sector: 2, workerNeed: 4, requiredSkill: 'negoce' },
     accounting: { maintenance: 5 },
     resourceRoles: [
       {
@@ -881,7 +915,6 @@ export const BUILDING_ECONOMY = {
         role: 'hub',
         categories: [...STORED_GOODS],
         totalKey: GOODS_TOTAL_KEY,
-        linkCapacity: WAREHOUSE_LINK_CAPACITY,
         emptyRate: HUB_EMPTY_RATE,
         maxStock: WAREHOUSE_MAX_STOCK,
         shelfLifeFactor: WAREHOUSE_SHELF_LIFE_FACTOR,
@@ -910,7 +943,6 @@ export const BUILDING_ECONOMY = {
         role: 'hub',
         categories: [...SUPPLIED_GOODS],
         totalKey: DIET_TOTAL_KEY,
-        linkCapacity: 2,
         emptyRate: HUB_EMPTY_RATE,
         maxStock: HUB_MAX_STOCK,
         shelfLifeFactor: GRANARY_SHELF_LIFE_FACTOR,

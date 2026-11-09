@@ -1,6 +1,6 @@
 # Plan — les relations commerciales : personnalités, mémoire, deux barres, contrats, traités, embargos
 
-Écrit le 2026-11-08 à partir des demandes du joueur. **Rien n'est construit.** Le périmètre est économique : la politique (étrangère, intérieure) viendra ensuite, et ce plan lui laisse des prises. Le but premier est la **visibilité** : le joueur doit voir, ville par ville et bien par bien, ce que le commerce international lui apporte, ce qu'il lui coûte, et pourquoi.
+Écrit le 2026-11-08 à partir des demandes du joueur. **Construit** : les étapes 1 et 2 (la lecture unique `describeTradeRelation`, les cartes par ville et la fiche, la balance commerciale et son commentaire), l'étape 3 (la satisfaction commerciale par bien et par sens) et, de l'étape 4, la personnalité et la mémoire (voir « État de l'étape 3 et de l'étape 4 » plus bas). **Pas encore construit** : tout le reste. Le périmètre est économique : la politique (étrangère, intérieure) viendra ensuite, et ce plan lui laisse des prises. Le but premier est la **visibilité** : le joueur doit voir, ville par ville et bien par bien, ce que le commerce international lui apporte, ce qu'il lui coûte, et pourquoi.
 
 ## Ce qui existe, et ce qui ne va pas
 
@@ -232,6 +232,52 @@ Le commentaire prévient dans deux cas, en deux niveaux, pour chaque sens :
 - **L'alimentation importée** : de 30 % de ce que mangent les habitants, un avertissement ; de 50 %, un avertissement fort (la sécurité alimentaire dépend d'un tiers).
 
 Pourquoi ces seuils : à 50 % un seul acteur pèse plus que tous les autres ensemble ; à 70 %, la perte de cet acteur désorganise l'économie. L'alimentation a un seuil plus bas parce qu'une rupture y a des conséquences immédiates (la famine).
+
+## État de l'étape 3 et de l'étape 4
+
+### Étape 3 — la satisfaction commerciale (construite)
+
+- **Par bien et par sens** : `relation.goodSatisfaction[flow][good]` (−100 à +100, départ 0) et les apports du dernier bilan dans `relation.goodReview`. Celle d'une ville est **lue** (`relationSatisfaction`), pondérée par la quantité d'une commande ; elle n'est plus stockée. Le prefab de départ a été corrigé à la main (chaque bien à 0).
+- **Facteurs déclarés** : la **fiabilité des commandes** (`sales`, propre à chaque ville : son gain et sa perte), la **disponibilité** (les accords en attente face à la commande) et les **barrières** (notre douane sur le bien). Le **prix**, le **besoin du partenaire** et les **contrats** ne sont **pas mesurés** : ils demandent les contrats (étape 8) et une demande propre du partenaire (étape 10).
+- **Effets** : en dessous de zéro le partenaire commande moins (jusqu'à 40 % de la quantité à −100) ; le centre de la fourchette de prix d'un export suit la barre (±0,5 de la fourchette). Valeurs dans `SATISFACTION_EFFECTS`, à régler en jouant.
+- **Plus de rupture par refroidissement** : les raisons `satisfaction_too_low` et `contract_ended` sont retirées (la seconde ne s'appliquait jamais). Une ville froide commande moins et paie moins, mais le commerce ne s'arrête que par les raisons des marchands.
+- **À voir** : la fiche montre le palier (glaciale… florissante), le chiffre et, par bien, ce que chaque facteur a donné au dernier bilan ; un « ? » explique la barre.
+
+### Étape 4 — personnalité et mémoire (construites en partie)
+
+- **La personnalité** : sept traits à trois niveaux (`PARTNER_TRAITS`), chaque ville nomme le niveau de chacun (`entry.personality`, lu strictement par `personalityOf`) ; le **caractère en mots** est affiché sur la fiche. Lus aujourd'hui : la **mémoire** (l'oubli) et la **sensibilité aux douanes** (le seuil de tolérance). Les autres sont déclarés pour les étapes qui les utilisent (gestes, embargos, contrats, traité).
+- **La mémoire** : un journal des événements de la relation (`relationEvents`, Dexie v24, ajout seul, jamais purgé). Le poids de départ est figé à l'écriture, avec l'année et le mois ; la relation est la somme des poids **estompés** par l'âge (`RelationMemoryPolicy`), jamais stockée, avec ses paliers (hostile… amie) et sa chronologie sur la fiche.
+- **Les seuls événements écrits aujourd'hui** : nos **droits de douane** qui franchissent le seuil de tolérance du partenaire (`customs_hostile`) puis redescendent (`customs_relieved`), une fois au franchissement. Chaque nouveau genre est une entrée de `RELATION_EVENT_KINDS`.
+- **Pas encore fait, volontairement** : les **effets des paliers** (biens négociables, traités, risque d'embargo), la **rupture par une cause** et le **renouement** : ils n'ont pas encore de cause ni de geste (embargo, gestes, contrats : étapes 5 à 8). La sensibilité d'un genre à un trait (aide non rendue, geste) viendra avec le premier événement qui en a besoin. Les champs `relation.*Threshold` du catalogue ne sont lus par rien en attendant.
+
+### Étape 5 — les gestes (construite en partie)
+
+- **Le don** : la ville offre au moins 100 € à un partenaire (`DIPLOMATIC_GESTURES.gift`). Le coût est une écriture du journal, `diplomatic_gift` (M57 6568, ligne « Dons aux villes partenaires » du livret de la ville) ; l'événement `gift_received` n'est écrit qu'une fois l'écriture prise. Il pèse 3 points par 100 €, 20 au plus, multiplié par la **reconnaissance** du partenaire (premier usage de ce trait). Un même geste se refait après 3 mois. Refus dits en clair : sous le minimum, trop récent, trésorerie insuffisante.
+- **Où** : un formulaire en bas de la fiche d'une ville (section Commerce). Cas de refus testés dans `makeDiplomaticGift.test.js`.
+- **Pas fait** : la **mission de renouement** (rien ne rompt encore une relation, elle n'aurait rien à rouvrir) et **honorer une aide** (les prêts des villes partenaires ne sont pas encore reliés à la relation).
+
+## À garder pour plus tard : l'indice de qualité d'un bien (idée seulement, rien de construit)
+
+Aujourd'hui, un bien fabriqué ici et le même bien importé se concurrencent **sur le prix seul** : le lot le moins cher est servi d'abord (`HubClientAllocationPolicy`, `lotUnitPrice`), et un bien fabriqué ici n'est importé que s'il est moins cher que chez nous. Un bien n'a qu'**une qualité**, celle du catalogue.
+
+L'idée : donner à un bien un **indice de qualité**, qui dépend de son origine (qui l'a fabriqué : une ferme d'ici, une ville partenaire), pour que le prix ne soit pas le seul critère. Ce qu'elle permettrait, à décider le moment venu :
+- le cas d'une ville comme « Ateli » (grande productrice à bas prix) : moins cher, mais de moindre qualité, donc un vrai arbitrage pour le joueur au lieu d'un gagnant automatique ;
+- une concurrence qui ne se joue plus au centime près (le lot le moins cher n'est plus toujours servi d'abord) ;
+- un effet possible sur ce que les habitants en tirent (la variété et la santé pour la nourriture, la satisfaction pour les biens) et sur le prix qu'ils acceptent de payer ;
+- un prix d'export qui dépend de la qualité que nos producteurs livrent.
+
+Rien n'est décidé : où se déclare l'indice (le bien, la ville, le bâtiment), comment il se compare au prix, ce qu'il change, et s'il évolue. À traiter avec la ville « Ateli » et le scénario (étape E de la concurrence import/local), pas avant.
+
+**Ateli existe** (catalogue des échanges et carte du monde) : une cité-atelier lointaine, par mer, qui vend à bas prix blé, carotte, chou, pot, plat et amphore (moins cher que notre coût de revient réel), et qui achète, bien payés, les livres, les pots et plats décorés ou sertis d'or, et les carrot cakes, qu'elle ne fabrique pas. Son prix d'achat des produits de luxe est au-dessus du coût des négociants ; ses prix de vente sont au-dessous de ceux de nos fermes et de nos ateliers : c'est le choix du joueur. Le meuble a été retiré de son offre : notre propre meuble coûte moins cher (7,8 €) que le sien ne pourrait l'être (20 €), son prix de base est à revoir. Il n'y a pas encore de scénario ni d'indice de qualité.
+
+## Un vrai marché mondial : prix de référence et niveau de développement (construit)
+
+Les prix des villes ne partent plus de la valeur de base du bien (écrite avant les salaires) : ils partent du **prix mondial de référence** du bien, ce qu'un producteur le vend au **salaire de référence du monde** (les salaires de départ du marché du travail), avec la même formule que le prix de revient (`createWorldReferencePrices`, `StandardUnitCostPolicy`). Le prix d'une ville = prix de référence × **niveau de prix de sa classe** × **prime** (`baseMultiplier` : au-dessus de 1 pour ce qu'elle manque, en dessous pour ce qu'elle fait mieux que le monde) × indice du mois (`WorldPricePolicy`).
+
+- **Classes** (`DEVELOPMENT_CLASSES`) : sous-développée 0,5 ; en développement 0,8 ; développée 1,25 ; très développée 1,6. Une ville développée paie plus que notre coût, une ville en développement vend moins cher que nous ne pouvons.
+- **Conséquence pour nos décisions** : nos salaires ne sont plus ceux du monde. S'ils montent, nos biens coûtent plus cher que ceux du monde (exports moins rentables, imports plus compétitifs) ; s'ils baissent, l'inverse. Le plafond d'un import sans prix local est un multiple du prix de référence (`TRADE_IMPORT.marketCeiling`).
+- **Les 32 exports** du catalogue passent le seuil de rentabilité au prix de revient aux salaires de référence (audit), alors qu'avant la plupart des matières premières étaient déficitaires.
+- **Pas encore fait** : la classe d'Anoria elle-même, lue de ses salaires, et ses effets sur ce que les partenaires nous font payer ou nous proposent ; l'affichage de l'écart avec le monde.
 
 ## Ce que ce plan prépare pour la politique
 

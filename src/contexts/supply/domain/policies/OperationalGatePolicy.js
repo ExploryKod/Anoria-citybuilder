@@ -17,3 +17,17 @@ export function isOperational({ type, roadCount = 0, worker = 0, workerNeed = 0 
 
   return true;
 }
+
+/**
+ * The share of its full output a building makes with the staff it has: the workers present (the sick are not) over the workers it needs, at most 1. A building that needs
+ * nobody makes it all. Once `isOperational` lets it work, this is how much it makes: a farm with one fieldhand of three yields a third of its harvest.
+ *
+ * @param {{ worker?: number, workerNeed?: number }} staffing
+ * @returns {number} 0..1
+ */
+export function staffingShare({ worker = 0, workerNeed = 0 } = {}) {
+  const need = Number.isFinite(workerNeed) ? workerNeed : 0;
+  if (!(need > 0)) return 1;
+  const have = Number.isFinite(worker) ? Math.max(0, worker) : 0;
+  return Math.min(1, have / need);
+}

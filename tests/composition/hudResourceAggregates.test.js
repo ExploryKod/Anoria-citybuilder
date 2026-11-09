@@ -34,6 +34,8 @@ describe('hudResourceAggregates', () => {
       wheat: 10,
       carrot: 4,
       cabbage: 2,
+      bread: 0,
+      cabbageSoup: 0,
     });
   });
 
@@ -60,10 +62,10 @@ describe('hudResourceAggregates', () => {
     const country = await getHudResourceScopeSnapshot('country');
     const active = await getHudResourceScopeSnapshot('active');
 
-    expect(country.city).toEqual({ wheat: 8, carrot: 1, cabbage: 0 });
+    expect(country.city).toEqual({ wheat: 8, carrot: 1, cabbage: 0, bread: 0, cabbageSoup: 0 });
     expect(country.cityTotal).toBe(9);
 
-    expect(active.city).toEqual({ wheat: 5, carrot: 0, cabbage: 0 });
+    expect(active.city).toEqual({ wheat: 5, carrot: 0, cabbage: 0, bread: 0, cabbageSoup: 0 });
     expect(active.cityTotal).toBe(5);
   });
 

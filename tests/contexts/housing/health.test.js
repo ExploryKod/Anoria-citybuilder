@@ -59,7 +59,7 @@ describe('health environment — the parts add up to the level', () => {
   test('a served house: each factor gives its points, and base plus parts is exactly the level', () => {
     const environment = describeHealthEnvironment(wellServed, PERIOD, around());
     expect(environment.parts.map((part) => [part.id, part.points])).toEqual([
-      ['foodVariety', 16], ['prevention', 12], ['water', 12], ['primaryEducation', 6], ['pollution', 0], ['hunger', 0], ['contagion', 0],
+      ['foodVariety', 12], ['prevention', 12], ['water', 12], ['primaryEducation', 6], ['pollution', 0], ['hunger', 0], ['contagion', 0],
     ]);
     expect(environment.base + environment.parts.reduce((sum, part) => sum + part.points, 0)).toBe(environment.level);
   });
@@ -105,7 +105,7 @@ describe('a citizen\'s environment — the histogram is the breakdown of his rea
     const citizenEnvironment = describeCitizenEnvironment(describeHealthEnvironment(wellServed, PERIOD, around()), { sensitivity });
     expect(citizenEnvironment.base + citizenEnvironment.parts.reduce((sum, part) => sum + part.points, 0)).toBeCloseTo(citizenEnvironment.level, 9);
     expect(citizenEnvironment.level).toBeLessThanOrEqual(100);
-    expect(citizenEnvironment.level).toBeCloseTo(Math.min(100, 40 + sensitivity * 46), 9);
+    expect(citizenEnvironment.level).toBeCloseTo(Math.min(100, 40 + sensitivity * 42), 9);
   });
 });
 
@@ -116,7 +116,7 @@ describe('health evolution — settles towards the environment, never past it', 
   test.each([
     [10, 0.5, 1], [95, 0.5, 1], [60, 0.1, 1.5], [60, 1, 0.5], [0, 0.3, 1.5],
   ])('from %d (convergence %d, sensitivity %d) it stays in [0, 100] and ends at its target', (start, convergence, sensitivity) => {
-    const target = Math.min(100, 40 + sensitivity * 46);
+    const target = Math.min(100, 40 + sensitivity * 42);
     let current = citizen(start, convergence, sensitivity);
     for (let month = 0; month < 200; month += 1) {
       const next = nextHealthOf(current, environment);

@@ -213,3 +213,247 @@
     font-weight: 700;
     color: #155724;
 }
+
+/* ---- One card per partner city, and the sheet of a relation (CommerceSectionPresenter.js). Narrow first: the cards stack, the sheet drops its minor columns. ---- */
+.commerce-cities {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.commerce-city-card {
+    width: 100%;
+    min-height: 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: var(--border-radius-small);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
+    color: var(--primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+.commerce-city-card:hover,
+.commerce-city-card:focus-visible {
+    box-shadow: 0 2px 8px rgba(29, 34, 40, 0.18);
+}
+
+.commerce-city-card--expired,
+.commerce-city-card--none {
+    opacity: 0.65;
+}
+
+.commerce-city-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.commerce-city-card__name {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.commerce-city-card__facts {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-pill {
+    flex: none;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #d4edda;
+    color: #155724;
+}
+
+.commerce-pill--suspended,
+.commerce-pill--expired {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.commerce-pill--none {
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.commerce-sheet__back {
+    align-self: flex-start;
+    min-height: 40px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.commerce-sheet__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.commerce-sheet__head h4 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.commerce-sheet__culture {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.commerce-sheet__ceased {
+    margin: 0;
+    font-size: 13px;
+    color: #b91c1c;
+}
+
+.commerce-sheet__table-wrap {
+    overflow-x: auto;
+}
+
+.commerce-sheet__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.commerce-sheet__table th,
+.commerce-sheet__table td {
+    padding: 8px 6px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: left;
+    vertical-align: top;
+}
+
+.commerce-sheet__table thead th {
+    border-top: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.commerce-sheet__table tr.is-stopped td {
+    color: #b91c1c;
+}
+
+/* The partner's character in words, and the chronology of the relation: one line per event, wrapping on a phone (date above, then the text, then the weight). */
+.commerce-sheet__character {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.commerce-sheet__subtitle {
+    margin: 16px 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-sheet__events {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+.commerce-sheet__events li {
+    display: grid;
+    grid-template-columns: 9em 1fr auto;
+    gap: 4px 12px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.commerce-sheet__event-date {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.commerce-sheet__event-weight {
+    white-space: nowrap;
+}
+
+.commerce-sheet__event-weight small {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 640px) {
+    .commerce-sheet__events li {
+        grid-template-columns: 1fr auto;
+    }
+
+    .commerce-sheet__event-date {
+        grid-column: 1 / -1;
+    }
+}
+
+/* The gift form: a sum and a button on one row, wrapping on a phone; touch targets of 44px. */
+.commerce-gift__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 12px;
+}
+
+.commerce-gift__label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-gift__label input,
+.commerce-gift__button {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+}
+
+.commerce-gift__note {
+    margin: 6px 0 0;
+    font-size: 13px;
+    min-height: 1.2em;
+}
+
+/* What the last review gave, under the step of the climate: a quiet line that wraps. */
+.commerce-sheet__factors {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.5);
+    overflow-wrap: anywhere;
+}
+
+/* A phone keeps the good, the way, the state, the climate and the balance; the duty and the price are on the wider screens. */
+@media (max-width: 640px) {
+    .commerce-sheet__minor {
+        display: none;
+    }
+}

@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { buildPriceWaterfall } from '../../../src/contexts/geography/domain/policies/PriceWaterfallPolicy.js';
 import { priceImportDelivery } from '../../../src/contexts/geography/domain/policies/ImportPricePolicy.js';
+import { referencePriceOf } from './importCapabilities.js';
 import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
 
 // A price shown step by step must add up: what the house pays is the reference plus every step, and the duty is the one the import rule charges.
@@ -18,7 +19,7 @@ describe('buildPriceWaterfall', () => {
   test('an imported good carries the freight, the duty and the merchants\' margin the import rule charges, and the duty is its share of the price', () => {
     const entry = getTradeCatalogEntry('briga');
     const offer = entry.offers[0];
-    const delivery = priceImportDelivery({ cityId: 'briga', offer, quantity: offer.quantityPerOrder, dutyRate: 0.2, worldIndex: 1 });
+    const delivery = priceImportDelivery({ cityId: 'briga', offer, quantity: offer.quantityPerOrder, dutyRate: 0.2, worldIndex: 1, referencePrice: referencePriceOf(offer.good) });
     const waterfall = buildPriceWaterfall({
       good: offer.good,
       reference: 1.2,

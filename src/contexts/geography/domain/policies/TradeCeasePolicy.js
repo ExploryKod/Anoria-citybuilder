@@ -6,39 +6,26 @@ import { TRADE_EXPORT, TRADE_IMPORT } from '../../../../shared/trade-catalog/Tra
  * reason is one entry here (and its words in the catalog). The player's wording of each id is read from the catalog,
  * never written in the UI.
  *
- * Three scopes. A CITY's reason ends the whole relation (it stops buying our exports as well): `scope: 'relation'`. Our
+ * Three scopes. A CITY's reason would end the whole relation (it stops buying our exports as well): `scope: 'relation'`; none is declared since the commercial
+ * satisfaction stopped ending relations (it cools, it never cuts), the relation's own causes (embargo, rupture) come with its memory. Our
  * MERCHANTS' reason pauses only the imports of one good, the exports go on: `scope: 'import'`; it is lifted when the
  * reason no longer holds. Exports have their own reasons (`scope: 'export'`, ids starting `export_`), so what stops an
  * export is never confused with what stops an import of the same good.
  *
  * @typedef {{
- *   relation: { satisfactionScore: number, contractEndMonth: number | null },
- *   entry: { relation: { breakThreshold: number, renewalThreshold: number } },
- *   orderMonth: number,
  *   pricing?: { unit: { sale: number } },
  *   exportPricing?: { unitNet: number, unitCost: number },
- *   baseValue?: number,
+ *   referencePrice?: number, // the world's reference price of the good (the ceiling of an import is a multiple of it)
  *   homePrice?: number | null, // the market's price at home for a good the city makes itself: the ceiling an import must stay under; null for any other good
  *   failures?: Record<string, number>,
  * }} CeaseContext
  */
 export const CEASE_REASONS = Object.freeze({
-  satisfaction_too_low: Object.freeze({
-    by: 'city',
-    scope: 'relation',
-    applies: ({ relation, entry }) => relation.satisfactionScore <= entry.relation.breakThreshold,
-  }),
-  contract_ended: Object.freeze({
-    by: 'city',
-    scope: 'relation',
-    applies: ({ relation, entry, orderMonth }) =>
-      relation.contractEndMonth !== null && orderMonth >= relation.contractEndMonth && relation.satisfactionScore < entry.relation.renewalThreshold,
-  }),
   unprofitable: Object.freeze({
     by: 'merchants',
     scope: 'import',
-    // The most the market pays: a multiple of the good's value, or what it charges at home for a good the city makes itself (dearer in a shortage).
-    applies: ({ pricing, baseValue, homePrice = null }) => pricing.unit.sale > (homePrice ?? baseValue * TRADE_IMPORT.marketCeiling),
+    // The most the market pays: a multiple of the good's world reference price, or what it charges at home for a good the city makes itself (dearer in a shortage).
+    applies: ({ pricing, referencePrice, homePrice = null }) => pricing.unit.sale > (homePrice ?? referencePrice * TRADE_IMPORT.marketCeiling),
   }),
   no_warehouse: Object.freeze({
     by: 'merchants',

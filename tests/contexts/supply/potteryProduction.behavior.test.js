@@ -69,7 +69,7 @@ const day = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, y
 describe('Supply — a workshop is a cycle: a base, then a multiplier, credited when complete', () => {
   test('pottery makes 2 in the first month, x5 in the second, and credits 10 only then', async () => {
     const repo = new InMemorySupplyBuildingRepository([workshop('plate', 'Factory-Plate')]);
-    const produce = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+    const produce = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
 
     const first = await produce.execute({ buildingId: 'plate', period: day(0) });
     expect(first.produced).toBe(false);
@@ -94,7 +94,7 @@ describe('Supply — a workshop is a cycle: a base, then a multiplier, credited 
       workshop('pot', 'Factory-Pot'),
       workshop('idle', 'Factory-Amphora', { worker: 0 }),
     ]);
-    const produce = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+    const produce = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
     const runProducers = new RunResourceCommandForRole(repo, produce);
 
     for (const monthIndex of [0, 1]) {
@@ -112,7 +112,7 @@ describe('Supply — a workshop is a cycle: a base, then a multiplier, credited 
 
   test('a first step that comes late is still done (wait), and the cycle goes on', async () => {
     const repo = new InMemorySupplyBuildingRepository([workshop('plate', 'Factory-Plate')]);
-    const produce = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+    const produce = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
 
     // Unstaffed while its first window is open...
     await repo.updateBuildingFields('plate', { worker: 0 });

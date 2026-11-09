@@ -3,45 +3,32 @@
  */
 
 import { TimeManager } from '../shared/time/TimeManager.js';
+import { MONTHS, MONTH_IDS, SEASONS, SEASON_IDS } from '../shared/time/TimeCalendar.js';
 
-const LEGACY_SEASON_TO_SUPPLY = Object.freeze({
-  Printemps: 'spring',
-  Été: 'summer',
-  Automne: 'autumn',
-  Hiver: 'winter',
-});
-
-const LEGACY_MONTH_TO_SUPPLY = Object.freeze({
-  Janvier: 'january',
-  Février: 'february',
-  Mars: 'march',
-  Avril: 'april',
-  Mai: 'may',
-  Juin: 'june',
-  Juillet: 'july',
-  Août: 'august',
-  Septembre: 'september',
-  Octobre: 'october',
-  Novembre: 'november',
-  Décembre: 'december',
-});
+// Both maps are derived from the calendar's own lists (TimeCalendar.js), index-aligned: no second copy of the names.
+const LEGACY_SEASON_TO_SUPPLY = Object.freeze(Object.fromEntries(SEASONS.map((name, index) => [name, SEASON_IDS[index]])));
+const LEGACY_MONTH_TO_SUPPLY = Object.freeze(Object.fromEntries(MONTHS.map((name, index) => [name, MONTH_IDS[index]])));
 
 /**
- * @param {string | null | undefined} legacySeason
- * @returns {'spring' | 'summer' | 'autumn' | 'winter' | null}
+ * The id of a season the calendar names. Strict: a name the calendar does not have is a defect (the schedules would silently never match), not "no season".
+ * @param {string} legacySeason
+ * @returns {'spring' | 'summer' | 'autumn' | 'winter'}
  */
 export function toSupplySeason(legacySeason) {
-  if (!legacySeason || typeof legacySeason !== 'string') return null;
-  return LEGACY_SEASON_TO_SUPPLY[legacySeason] ?? null;
+  const id = LEGACY_SEASON_TO_SUPPLY[legacySeason];
+  if (!id) throw new Error(`[calendar] "${legacySeason}" is not a season of the calendar (${SEASONS.join(', ')})`);
+  return id;
 }
 
 /**
- * @param {string | null | undefined} legacyMonth
- * @returns {'january' | 'february' | 'march' | 'april' | 'may' | 'june' | 'july' | 'august' | 'september' | 'october' | 'november' | 'december' | null}
+ * The id of a month the calendar names. Strict, like the season's.
+ * @param {string} legacyMonth
+ * @returns {'january' | 'february' | 'march' | 'april' | 'may' | 'june' | 'july' | 'august' | 'september' | 'october' | 'november' | 'december'}
  */
 export function toSupplyMonth(legacyMonth) {
-  if (!legacyMonth || typeof legacyMonth !== 'string') return null;
-  return LEGACY_MONTH_TO_SUPPLY[legacyMonth] ?? null;
+  const id = LEGACY_MONTH_TO_SUPPLY[legacyMonth];
+  if (!id) throw new Error(`[calendar] "${legacyMonth}" is not a month of the calendar (${MONTHS.join(', ')})`);
+  return id;
 }
 
 /**

@@ -162,12 +162,13 @@ export const SOCIAL_CATEGORY = Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
-        skills: Object.freeze({ 'vente-alimentaire': 1, 'stockage-alimentaire': 1 }),
+        // 'negoce': the trade warehouse, where the deals for the trade cities are held: open to the merchants from their first level.
+        skills: Object.freeze({ 'vente-alimentaire': 1, 'stockage-alimentaire': 1, negoce: 1 }),
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
         requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
-        // 'manutention' (the warehouses, the trade warehouse), 'finance' (the bank) and 'assurance' (the insurance companies): the group's own Commerces sector.
+        // 'manutention' (the warehouses), 'finance' (the bank) and 'assurance' (the insurance companies): the group's own Commerces sector.
         skills: Object.freeze({ finance: 1, manutention: 1, assurance: 1 }),
       }),
       3: Object.freeze({

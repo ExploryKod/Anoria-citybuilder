@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import { createMapsApiPlugin, createMapsIndexPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
 import { createDevLogPlugin } from './scripts/dev/devLogPlugin.mjs'
 
@@ -21,7 +21,13 @@ const cleanRoutes = [
 ]
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // A worktree (scripts/claude-worktree-create.sh) pins its own dev port in .env.local so it runs beside the main checkout (5173).
+  // Unset = Vite's default. Set = strict: a busy port fails instead of silently moving to another one.
+  const devPort = loadEnv(mode, __dirname, 'VITE_').VITE_DEV_PORT
+  return {
+  server: devPort ? { port: Number(devPort), strictPort: true } : {},
+
   base: '/',
 
   build: {
@@ -98,4 +104,5 @@ export default defineConfig({
     // package.json, re-import `VitePWA` here, and paste the removed plugin
     // config back (kept in git history on this commit).
   ],
+  }
 })

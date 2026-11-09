@@ -19,6 +19,11 @@ function placedCountsOf(city) {
   return counts;
 }
 
+/** Whether the type's placement requirement limits how many may stand for each hub (`maxPerHub`): only then is the hamlet scanned for how many stand. */
+function limitedPerHub(buildingType) {
+  return (getBuildingDefinition(buildingType)?.placementRequires ?? []).some((requirement) => requirement.maxPerHub != null);
+}
+
 /**
  * Two facts of the catalog about how many of a building the hamlet holds: `requiresPlaced` (other types that must be there first: every
  * house waits for the mayor's house) and `maxPerHamlet` (the mayor's house is unique). The hamlet is scanned only for a type that declares one.
@@ -66,6 +71,7 @@ export function canPlaceBuildingAtTileWithSupplyRules(params) {
     buildingType: params.buildingType,
     candidates: getSupplyPlacementHubs(),
     naturalCandidates: getSupplyPlacementNaturalResources(),
+    placedCount: limitedPerHub(params.buildingType) ? (placedCountsOf(params.city).get(params.buildingType) ?? 0) : undefined,
   });
 
   if (!requirementCheck.ok) {

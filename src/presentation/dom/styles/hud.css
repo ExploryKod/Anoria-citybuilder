@@ -339,6 +339,56 @@
   overflow: hidden;
 }
 
+/* Construction mode: the game is paused so the player can build; the date pill pulses green (the pause icon shows beside the date). */
+.info-panel > .info-box.infos-time.infos-time--construction {
+  animation: infos-time-construction-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes infos-time-construction-pulse {
+  0%, 100% { background-color: rgba(46, 160, 90, 0.35); }
+  50% { background-color: rgba(46, 160, 90, 0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-panel > .info-box.infos-time.infos-time--construction {
+    animation: none;
+    background-color: rgba(46, 160, 90, 0.7);
+  }
+}
+
+/* What the construction mode built is being digested: a small spinner at the end of the date pill, nothing hidden. */
+.info-panel > .info-box.infos-time.infos-time--settling::after {
+  content: "";
+  flex: 0 0 auto;
+  align-self: center;
+  width: 14px;
+  height: 14px;
+  margin: 0 10px 0 4px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: infos-time-settling-spin 0.8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes infos-time-settling-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-panel > .info-box.infos-time.infos-time--settling::after {
+    animation: none;
+    border-top-color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* The road and the eraser outside construction mode */
+.toolbar-toggle-btn:disabled {
+  opacity: 0.4;
+  filter: grayscale(70%);
+  cursor: not-allowed;
+}
+
 .hud-season {
   display: inline-flex;
   align-items: center;

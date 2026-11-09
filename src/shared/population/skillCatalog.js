@@ -29,6 +29,7 @@ export const SKILL_CATALOG = Object.freeze({
   manutention: Object.freeze({ label: 'Manutention', emoji: '📦' }),
   telecoms: Object.freeze({ label: 'Télécommunications', emoji: '📡' }),
   'vente-alimentaire': Object.freeze({ label: 'Vente alimentaire', emoji: '🏪' }),
+  negoce: Object.freeze({ label: 'Négoce', emoji: '🤝' }),
   finance: Object.freeze({ label: 'Finance', emoji: '🏦' }),
   assurance: Object.freeze({ label: 'Assurance', emoji: '🛡️' }),
   'stockage-alimentaire': Object.freeze({ label: 'Stockage alimentaire', emoji: '🥫' }),

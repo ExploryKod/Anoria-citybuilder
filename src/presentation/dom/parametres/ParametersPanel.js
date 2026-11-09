@@ -3,6 +3,7 @@ import { getFocusableElements } from '../shell/modalFocus.js';
 import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
+import { isConstructionPauseEnabled, setConstructionPauseEnabled } from '../../../config/constructionPause.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 import { DEFAULT_TICK_MS, TICK_MS_MIN, TICK_MS_MAX, clampTickMs } from '../../../shared/gameplay/SimulationDefaults.js';
 
@@ -70,6 +71,7 @@ class ParametersPanel {
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
         this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
+        this.constructionPauseToggle = this.panel.querySelector('#construction-pause-toggle');
 
         this.setupEventListeners();
         this.loadValues();
@@ -169,6 +171,12 @@ class ParametersPanel {
             });
         }
 
+        if (this.constructionPauseToggle) {
+            this.constructionPauseToggle.addEventListener('change', (e) => {
+                setConstructionPauseEnabled(e.target.checked);
+            });
+        }
+
         const cookiesBtn = document.getElementById('parameters-cookies-btn');
         if (cookiesBtn) {
             cookiesBtn.addEventListener('click', (event) => {
@@ -218,6 +226,10 @@ class ParametersPanel {
 
             if (this.cameraDpadToggle) {
                 this.cameraDpadToggle.checked = isCameraDpadEnabled();
+            }
+
+            if (this.constructionPauseToggle) {
+                this.constructionPauseToggle.checked = isConstructionPauseEnabled();
             }
         } catch (error) {
             console.error('[ParametersPanel] Error loading values:', error);

@@ -28,6 +28,7 @@
  * @property {number} repairs
  * @property {number} commercialRoutes
  * @property {number} contributions
+ * @property {number} diplomaticGifts
  * @property {number} imports
  * @property {number} loanInterest
  * @property {number} loanRepayment
@@ -69,6 +70,7 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     repairs: 0,
     commercialRoutes: 0,
     contributions: 0,
+    diplomaticGifts: 0,
     imports: 0,
     loanInterest: 0,
     loanRepayment: 0,

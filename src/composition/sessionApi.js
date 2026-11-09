@@ -122,6 +122,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getBenefactorGift: () => accounting.getBenefactorGift(),
     getCityBorrowing: () => accounting.getCityBorrowing(),
     getBankHelpFigures: () => accounting.getBankHelpFigures(),
+    getTradeBalance: (options) => accounting.getTradeBalance(options),
     getOwnershipRegister: () => accounting.getOwnershipRegister(),
     answerBenefactorGift: (params) => accounting.answerBenefactorGift(params),
     getSicknessCover: () => accounting.getSicknessCover(),

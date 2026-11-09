@@ -1,8 +1,10 @@
-import { getTradeCatalogEntry } from '../../../../shared/trade-catalog/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getTradeCatalogEntry, personalityOf, COMMON_SATISFACTION_FACTORS, RELATION_EVENT_KINDS } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { customsMove } from '../../domain/policies/RelationMemoryPolicy.js';
+import { goodSatisfactionOf, orderShare } from '../../../../shared/trade-catalog/satisfaction.js';
 import { unitPriceAtStage } from '../../../../shared/resource-catalog/ValueChainCatalog.js';
 import { reviewSatisfaction } from '../../domain/policies/TradeSatisfactionPolicy.js';
 import { priceImportDelivery } from '../../domain/policies/ImportPricePolicy.js';
+import { worldUnitPrice } from '../../domain/policies/WorldPricePolicy.js';
 import { findCeaseReason } from '../../domain/policies/TradeCeasePolicy.js';
 
 const centimes = (amount) => Math.round(amount * 100) / 100;
@@ -36,8 +38,9 @@ function splitByWeight(total, weights) {
  * `customs_import_<good>`), and sells the goods to the warehouse at that cost plus its margin (the month's settlement
  * turns the traceability row into the sale and the purchase). See ImportPricePolicy for the price.
  *
- * Both flows stop on declared reasons (TradeCeasePolicy): the city's end the whole relation, our merchants' pause one
- * good of one flow, with the reason kept on the relation (`exportCeased`, `importCeased`) and lifted when it no longer holds.
+ * Both flows stop on declared reasons (TradeCeasePolicy): our merchants' pause one good of one flow, with the reason kept on the relation
+ * (`exportCeased`, `importCeased`) and lifted when it no longer holds. Each good also has its commercial satisfaction, reviewed with its order
+ * (`#review`): it sets the share of the order a partner places and, for an export, where the price range is centred (`saleBias`), but it never ends anything.
  *
  * A trade city is a client of the TradeWarehouse hub exactly like a market or workshop is a client
  * of a goods warehouse: goods are taken through `hubServing` (id `city:<cityId>`), so a merchant
@@ -63,15 +66,21 @@ export class RunMonthlyCityTradeCycle {
    *   hubSellingPrice: (hub: object, good: string, period: { year: number, monthIndex: number }) => Promise<number>, // what a warehouse sells a good at this month
    *   producerOfLot: (lotKey: string) => string | null, // the building that made the goods of a hub's lot
    *   hubHolds: (hub: object, category: string) => boolean, // the hub's catalog entry lists this good
-   *   hubRoom: (hub: object) => number, // units the hub can still take
+   *   hubRoom: (hub: object, good: string) => number | Promise<number>, // units the hub can still take of this good (what the coming harvest needs is kept)
    *   addHubStock: (hub: object, category: string, amount: number) => object, // the hub's next stock after receiving
    *   random: () => number, // a draw in [0, 1): the sale's position in its range
    *   saleBias: (sale: { cityId: string, good: string, relation: object }) => number, // [-1, 1]: where the range is centred
    * }} deps
    */
-  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, worldIndexOf, homePriceOf, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias }) {
+  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, worldIndexOf, homePriceOf, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias, relationEvents, referencePriceOf }) {
     if (typeof hubSellingPrice !== 'function') throw new Error('[trade] the cycle needs the warehouses\' selling price (hubSellingPrice): it prices what the merchants export');
     this.hubSellingPrice = hubSellingPrice;
+    // The journal of the relation's events: the cycle writes the ones our customs make against the partner's tolerance (RelationMemoryPolicy).
+    if (typeof relationEvents?.record !== 'function' || typeof relationEvents?.lastCustoms !== 'function') throw new Error('[trade] the cycle needs the relation\'s journal (relationEvents: record, lastCustoms)');
+    this.relationEvents = relationEvents;
+    // The world's reference price of a good (createWorldReferencePrices.js): the cities' prices are built on it, so they do not follow our own wages.
+    if (typeof referencePriceOf !== 'function') throw new Error('[trade] the cycle needs the world\'s reference prices (referencePriceOf): without them the cities\' prices ignore the cost of the goods');
+    this.referencePriceOf = referencePriceOf;
     this.repo = cityTradeRepository;
     this.supplyRepo = supplyBuildingRepository;
     this.hubServing = hubServing;
@@ -144,35 +153,54 @@ export class RunMonthlyCityTradeCycle {
       const entry = getTradeCatalogEntry(relation.cityId);
       if (!entry) continue;
 
-      // The city itself stops dealing (its confidence is gone, or the contract ran out): the whole relation ends.
-      const cityCeases = findCeaseReason('relation', { relation, entry, orderMonth });
-      if (cityCeases) {
-        relation.status = 'expired';
-        relation.ceased = { ...cityCeases, turn };
-        await this.repo.saveRelation(relation);
-        continue;
-      }
-
       const lastOrder = relation.lastOrderMonth ?? (orderMonth - entry.trade.frequencyMonths);
       if (orderMonth - lastOrder < entry.trade.frequencyMonths) continue;
 
-      let anySold = false;
+      // Each good has its own satisfaction, reviewed with its own order (#review): a cold good never ends the relation, it only orders less and pays less.
       for (const want of entry.wants) {
         if (!want.merchantGood) continue;
-        if (await this.#runWant({ relation, entry, hubs, want, turn, monthIndex, year })) anySold = true;
+        await this.#runWant({ relation, entry, hubs, want, turn, monthIndex, year });
       }
 
       // What the city sells us, against the deals our merchants hold.
-      let anyBought = false;
       for (const offer of entry.offers) {
-        if (await this.#runOffer({ relation, entry, hubs, offer, turn, monthIndex, year })) anyBought = true;
+        await this.#runOffer({ relation, entry, hubs, offer, turn, monthIndex, year });
       }
 
-      // Satisfaction: +2 if a trade took place (a sale or a purchase), -5 if order month but nothing happened
-      relation.satisfactionScore = reviewSatisfaction(relation.satisfactionScore, entry.satisfaction, { sold: anySold || anyBought });
       relation.lastOrderMonth = orderMonth;
       await this.repo.saveRelation(relation);
     }
+  }
+
+  /**
+   * Our duty on a good against the partner's tolerance (its personality): crossing above it, or back under it, is an event of the relation, written once at the crossing.
+   * @param {{ relation: object, entry: object, flow: 'export' | 'import', good: string, dutyRate: number, turn: number, monthIndex: number, year: number }} watch
+   */
+  async #watchCustoms({ relation, entry, flow, good, dutyRate, turn, monthIndex, year }) {
+    const { tolerance } = personalityOf(entry).customsSensitivity;
+    const last = await this.relationEvents.lastCustoms(relation.cityId, good, flow);
+    const kind = customsMove({ dutyRate, tolerance, wasAbove: last?.kind === 'customs_hostile' });
+    if (!kind) return;
+    await this.relationEvents.record({
+      cityId: relation.cityId, kind, good, flow, turn, year, monthIndex, weight: RELATION_EVENT_KINDS[kind].weight, cause: { dutyRate, tolerance },
+    });
+  }
+
+  /**
+   * The review of one good's commercial satisfaction after its order (TradeSatisfactionPolicy): the new score and what each factor gave are kept on the relation.
+   * @param {{ relation: object, entry: object, flow: 'export' | 'import', good: string, sold: boolean, ready: number, dutyRate: number }} review
+   * @returns {boolean} `sold`, so a caller can end on it
+   */
+  #review({ relation, entry, flow, good, sold, ready, dutyRate }) {
+    if (!relation.goodReview) throw new Error(`[trade] the relation with ${relation.cityId} holds no goodReview: it was not opened by this version`);
+    const { score, contributions } = reviewSatisfaction(
+      goodSatisfactionOf(relation, flow, good),
+      [...entry.satisfaction, ...COMMON_SATISFACTION_FACTORS],
+      { sold, ready, dutyRate },
+    );
+    relation.goodSatisfaction = { ...relation.goodSatisfaction, [flow]: { ...relation.goodSatisfaction[flow], [good]: score } };
+    relation.goodReview = { ...relation.goodReview, [flow]: { ...relation.goodReview[flow], [good]: contributions } };
+    return sold;
   }
 
   /**
@@ -200,6 +228,8 @@ export class RunMonthlyCityTradeCycle {
     relation.exportFailures = { ...relation.exportFailures, [good]: failures };
 
     const dutyRate = await this.getCustomsDuty('anoria', 'export', good, turn);
+    await this.#watchCustoms({ relation, entry, flow: 'export', good, dutyRate, turn, monthIndex, year });
+    const review = (sold) => this.#review({ relation, entry, flow: 'export', good, sold, ready: Math.min(1, waiting / entry.trade.quantityPerOrder), dutyRate });
     // What our merchants paid for a unit (the warehouse's price), against what the city pays at the centre of its range,
     // duty taken off. The freight is the buying city's.
     // The warehouse's price is built on what its stock cost it (the average price of its deliveries, plus its margin), so a dearer import
@@ -210,22 +240,24 @@ export class RunMonthlyCityTradeCycle {
       ? Math.min(...(await Promise.all(holders.map((hub) => this.hubSellingPrice(hub, good, { year, monthIndex })))))
       : unitPriceAtStage('hub', good);
     const exportPricing = {
-      unitNet: getResourceBaseValue(good) * want.baseMultiplier * (await this.worldIndexOf(good, { year, monthIndex })) * (1 - dutyRate),
+      unitNet: worldUnitPrice({ referencePrice: this.referencePriceOf(good), entry, multiplier: want.baseMultiplier }) * (await this.worldIndexOf(good, { year, monthIndex })) * (1 - dutyRate),
       unitCost: cost,
     };
     const ceases = findCeaseReason('export', { exportPricing, failures });
     const ceasedBefore = relation.exportCeased[good] ?? null;
     if (ceases) {
       if (ceasedBefore?.reason !== ceases.reason) relation.exportCeased = { ...relation.exportCeased, [good]: { ...ceases, turn } };
-      return false;
+      return review(false);
     }
     if (ceasedBefore) {
       const { [good]: _lifted, ...stillCeased } = relation.exportCeased;
       relation.exportCeased = stillCeased;
     }
-    if (waiting <= 0) return false;
+    if (waiting <= 0) return review(false);
 
-    return this.#sell({ relation, entry, hubs, want, dutyRate, quantity: Math.min(entry.trade.quantityPerOrder, waiting), turn, monthIndex, year });
+    // A cold partner orders less: the order is the entry's quantity times the share its satisfaction allows.
+    const ordered = Math.ceil(entry.trade.quantityPerOrder * orderShare(goodSatisfactionOf(relation, 'export', good)));
+    return review(await this.#sell({ relation, entry, hubs, want, dutyRate, quantity: Math.min(ordered, waiting), turn, monthIndex, year }));
   }
 
   /**
@@ -239,7 +271,7 @@ export class RunMonthlyCityTradeCycle {
     if (taken <= 0) return false;
 
     const saleRatio = this.#drawSaleRatio(entry, want, relation) * (await this.worldIndexOf(good, { year, monthIndex }));
-    const unitPrice = getResourceBaseValue(good) * saleRatio;
+    const unitPrice = worldUnitPrice({ referencePrice: this.referencePriceOf(good), entry, multiplier: 1 }) * saleRatio;
     const gross = centimes(taken * unitPrice);
     const duty = centimes(gross * dutyRate);
 
@@ -310,7 +342,8 @@ export class RunMonthlyCityTradeCycle {
     // a catalog defect, guarded by the catalog's integrity test, not something to find out in a player's game.
     const receiving = hubs.filter((hub) => this.hubHolds(hub, good));
     const waiting = dealHubs.reduce((sum, hub) => sum + (hub.stocks[offer.merchantGood] ?? 0), 0);
-    const room = receiving.reduce((sum, hub) => sum + this.hubRoom(hub), 0);
+    let room = 0;
+    for (const hub of receiving) room += await this.hubRoom(hub, good);
 
     // Consecutive order months a reason held, so one bad month does not stop the merchants. Without a deal waiting,
     // the reason is the warehouse when none can take the good (none built, or no room left: the deals could not even
@@ -325,23 +358,28 @@ export class RunMonthlyCityTradeCycle {
     relation.importFailures = { ...relation.importFailures, [good]: failures };
 
     // A deal sits in the warehouse and becomes the real good in it: the room it takes is the room the good takes.
-    const planned = Math.min(offer.quantityPerOrder, waiting);
+    // A cold partner delivers less: the order is the offer's quantity times the share its satisfaction allows.
+    const ordered = Math.ceil(offer.quantityPerOrder * orderShare(goodSatisfactionOf(relation, 'import', good)));
+    const planned = Math.min(ordered, waiting);
+    const dutyRate = await this.getCustomsDuty('anoria', 'import', good, turn);
+    await this.#watchCustoms({ relation, entry, flow: 'import', good, dutyRate, turn, monthIndex, year });
+    const review = (delivered) => this.#review({ relation, entry, flow: 'import', good, sold: delivered, ready: Math.min(1, waiting / offer.quantityPerOrder), dutyRate });
     const pricing = priceImportDelivery({
-      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn), worldIndex: await this.worldIndexOf(good, { year, monthIndex }),
+      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate, worldIndex: await this.worldIndexOf(good, { year, monthIndex }), referencePrice: this.referencePriceOf(good),
     });
-    const ceases = findCeaseReason('import', { pricing, baseValue: getResourceBaseValue(good), homePrice: await this.homePriceOf(good, { year, monthIndex }), failures });
+    const ceases = findCeaseReason('import', { pricing, referencePrice: this.referencePriceOf(good), homePrice: await this.homePriceOf(good, { year, monthIndex }), failures });
     const ceasedBefore = relation.importCeased[good] ?? null;
     if (ceases) {
       if (ceasedBefore?.reason !== ceases.reason) relation.importCeased = { ...relation.importCeased, [good]: { ...ceases, turn } };
-      return false;
+      return review(false);
     }
     if (ceasedBefore) {
       const { [good]: _lifted, ...stillCeased } = relation.importCeased;
       relation.importCeased = stillCeased;
     }
-    if (planned <= 0) return false;
+    if (planned <= 0) return review(false);
 
-    return this.#deliver({ relation, offer, hubs, quantity: planned, turn, monthIndex, year });
+    return review(await this.#deliver({ relation, offer, hubs, quantity: planned, turn, monthIndex, year }));
   }
 
   /**
@@ -357,7 +395,7 @@ export class RunMonthlyCityTradeCycle {
     // The hubs just lost their deals: the room and the stocks to file the goods on are the ones they hold now.
     const receiving = hubs.filter((hub) => this.hubHolds(hub, good));
 
-    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn), worldIndex: await this.worldIndexOf(good, { year, monthIndex }) });
+    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn), worldIndex: await this.worldIndexOf(good, { year, monthIndex }), referencePrice: this.referencePriceOf(good) });
 
     // Each merchant house is the importer of the deals it made, in proportion.
     const unitsByHouse = new Map();
@@ -407,7 +445,7 @@ export class RunMonthlyCityTradeCycle {
     let remaining = taken;
     for (const hub of receiving) {
       if (remaining <= 0) break;
-      const amount = Math.min(remaining, this.hubRoom(hub));
+      const amount = Math.min(remaining, await this.hubRoom(hub, good));
       if (amount <= 0) continue;
       const nextStock = this.addHubStock(hub, good, amount);
       await this.supplyRepo.saveStocks(hub.id, nextStock);
