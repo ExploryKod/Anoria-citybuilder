@@ -34,6 +34,7 @@ import {
 import { getDevelopmentReading, getHudPopulationScopeSnapshot } from './hudPopulationAggregates.js';
 import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
+import { isEmploymentWorkplaceType } from './employmentOps.js';
 
 /**
  * @param {ReturnType<import('./createConstructionContext.js').createConstructionContext>} construction
@@ -247,6 +248,8 @@ export function createEmploymentSessionApi(employment) {
     getStaffingGroups: (buildingType) => employment.getStaffingGroups(buildingType),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
     getLabourMarket: () => employment.getLabourMarket(),
+    /** Whether a building of this type takes workers (a house, a road or a building with no worker need does not). */
+    isWorkplaceType: (buildingType) => isEmploymentWorkplaceType(buildingType),
   });
 }
 

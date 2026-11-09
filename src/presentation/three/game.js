@@ -28,7 +28,6 @@ import { getEditorMapRepository } from '../../composition/editorMapRepository.js
 import { createScene } from './scene.js';
 import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
-import { isEmploymentWorkplaceType } from '../../composition/employmentOps.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { isConfirmedBeforeDemolition, previewDemolitionLiquidation } from '../../composition/constructionTreasuryBridge.js';
 import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
@@ -1093,7 +1092,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   /** The work a placement or a demolition does after it, once for everything built in the mode (the simulation pass is the next day's, the game is paused). */
   async function digestBuildingChanges(changes) {
-    const workplace = changes.find((change) => isEmploymentWorkplaceType(change.buildingType));
+    const workplace = changes.find((change) => sessionApi.employment.isWorkplaceType(change.buildingType));
     await syncEmploymentAfterBuildingChange(scene, city, (workplace ?? changes[changes.length - 1]).buildingType);
     for (const change of changes) {
       if (change.event !== 'placed' || !change.instanceId) continue;
