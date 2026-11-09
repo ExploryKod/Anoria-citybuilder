@@ -1,5 +1,6 @@
-import { getTradeCatalogEntry, personalityOf, COMMON_SATISFACTION_FACTORS, RELATION_EVENT_KINDS } from '../../../../shared/trade-catalog/TradeCatalog.js';
-import { customsMove } from '../../domain/policies/RelationMemoryPolicy.js';
+import { getTradeCatalogEntry, personalityOf, COMMON_SATISFACTION_FACTORS, RELATION_EVENT_KINDS, PARTNER_EMBARGO } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { customsMove, embargoKey, partnerEmbargoesIn, readRelation } from '../../domain/policies/RelationMemoryPolicy.js';
+import { breakDue, retaliationDue, spontaneousEmbargoChance, tradedGoodsOf } from '../../domain/policies/PartnerPolicy.js';
 import { goodSatisfactionOf, orderShare } from '../../../../shared/trade-catalog/satisfaction.js';
 import { unitPriceAtStage } from '../../../../shared/resource-catalog/ValueChainCatalog.js';
 import { reviewSatisfaction } from '../../domain/policies/TradeSatisfactionPolicy.js';
@@ -70,14 +71,24 @@ export class RunMonthlyCityTradeCycle {
    *   addHubStock: (hub: object, category: string, amount: number) => object, // the hub's next stock after receiving
    *   random: () => number, // a draw in [0, 1): the sale's position in its range
    *   saleBias: (sale: { cityId: string, good: string, relation: object }) => number, // [-1, 1]: where the range is centred
+   *   volumeLimitOf: (flow: 'import' | 'export', good: string) => Promise<number | null>, // the city's law: units a month of this good in this flow, whoever the partner; null: none
+   *   daysPerMonth: () => number, turnsPerYear: () => number, // the calendar (a game's own, frozen at its creation)
    * }} deps
    */
-  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, worldIndexOf, homePriceOf, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias, relationEvents, referencePriceOf }) {
+  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordMerchantSale, getCustomsDuty, recordMerchantLine, recordCityLine, recordImportDelivery, worldIndexOf, homePriceOf, hubSellingPrice, producerOfLot, hubHolds, hubRoom, addHubStock, random, saleBias, relationEvents, referencePriceOf, volumeLimitOf, daysPerMonth, turnsPerYear }) {
     if (typeof hubSellingPrice !== 'function') throw new Error('[trade] the cycle needs the warehouses\' selling price (hubSellingPrice): it prices what the merchants export');
     this.hubSellingPrice = hubSellingPrice;
-    // The journal of the relation's events: the cycle writes the ones our customs make against the partner's tolerance (RelationMemoryPolicy).
-    if (typeof relationEvents?.record !== 'function' || typeof relationEvents?.lastCustoms !== 'function') throw new Error('[trade] the cycle needs the relation\'s journal (relationEvents: record, lastCustoms)');
+    // The journal of the relation's events: the cycle writes the ones our customs make against the partner's tolerance, and the partner's own decisions (RelationMemoryPolicy, PartnerPolicy).
+    if (['record', 'listOf', 'lastCustoms', 'embargoesOf'].some((method) => typeof relationEvents?.[method] !== 'function')) {
+      throw new Error('[trade] the cycle needs the relation\'s journal (relationEvents: record, listOf, lastCustoms, embargoesOf)');
+    }
     this.relationEvents = relationEvents;
+    for (const [name, capability] of Object.entries({ volumeLimitOf, daysPerMonth, turnsPerYear })) {
+      if (typeof capability !== 'function') throw new Error(`[trade] the cycle needs ${name}: the law's volume limits and the partner's decisions read it`);
+    }
+    this.volumeLimitOf = volumeLimitOf;
+    this.daysPerMonth = daysPerMonth;
+    this.turnsPerYear = turnsPerYear;
     // The world's reference price of a good (createWorldReferencePrices.js): the cities' prices are built on it, so they do not follow our own wages.
     if (typeof referencePriceOf !== 'function') throw new Error('[trade] the cycle needs the world\'s reference prices (referencePriceOf): without them the cities\' prices ignore the cost of the goods');
     this.referencePriceOf = referencePriceOf;
@@ -125,7 +136,9 @@ export class RunMonthlyCityTradeCycle {
   }
 
   /**
+   * What the partners did on their own this month (PartnerPolicy), for the caller to tell the player: a mirror or spontaneous embargo, a relation cut.
    * @param {{ turn: number, monthIndex: number, monthNumber: number, year: number }} timeInfo
+   * @returns {Promise<Array<{ milestoneId: string, occurrence: string, params: object }>>} the dépêches to announce
    */
   async execute(timeInfo) {
     const { monthIndex, monthNumber, year } = timeInfo;
@@ -141,17 +154,23 @@ export class RunMonthlyCityTradeCycle {
     // trade). `monthNumber` (TimeCalendar.js) is the same clock's ever-increasing absolute month
     // count and does not have this wraparound.
     const orderMonth = Number.isFinite(monthNumber) ? monthNumber : monthIndex;
+    const announcements = [];
     const relations = await this.repo.getActiveRelations();
-    if (relations.length === 0) return;
+    if (relations.length === 0) return announcements;
 
     // Deal goods are only accepted by TradeWarehouse (regular Warehouse excludes them),
     // so querying all hubs is safe: only TradeWarehouse buildings will hold these goods.
     const hubs = await this.supplyRepo.findByResourceRole('hub');
+    // What the law lets through is a monthly figure: the units traded this month by good and flow, whoever the partner, filled in the order the relations place their orders.
+    const used = new Map();
 
     // Rhythm check: is this an order month?
     for (const relation of relations) {
       const entry = getTradeCatalogEntry(relation.cityId);
       if (!entry) continue;
+
+      // The partner acts on its own every month, whatever its order rhythm: it may answer an embargo of ours, decree one, or cut the relation.
+      if ((await this.#partnerPolicy({ relation, entry, turn, monthIndex, year, announcements })).broken) continue;
 
       const lastOrder = relation.lastOrderMonth ?? (orderMonth - entry.trade.frequencyMonths);
       if (orderMonth - lastOrder < entry.trade.frequencyMonths) continue;
@@ -159,17 +178,74 @@ export class RunMonthlyCityTradeCycle {
       // Each good has its own satisfaction, reviewed with its own order (#review): a cold good never ends the relation, it only orders less and pays less.
       for (const want of entry.wants) {
         if (!want.merchantGood) continue;
-        await this.#runWant({ relation, entry, hubs, want, turn, monthIndex, year });
+        await this.#runWant({ relation, entry, hubs, want, turn, monthIndex, year, used });
       }
 
       // What the city sells us, against the deals our merchants hold.
       for (const offer of entry.offers) {
-        await this.#runOffer({ relation, entry, hubs, offer, turn, monthIndex, year });
+        await this.#runOffer({ relation, entry, hubs, offer, turn, monthIndex, year, used });
       }
 
       relation.lastOrderMonth = orderMonth;
       await this.repo.saveRelation(relation);
     }
+    return announcements;
+  }
+
+  /**
+   * What one partner does on its own this month (PartnerPolicy), read from the journal of the relation: it cuts the relation when its reaction is to break and the relation has
+   * fallen under its threshold; otherwise it answers an embargo of ours with a mirror one (its reaction is to retaliate), or, with none on us in force, may decree one of its own
+   * (PARTNER_EMBARGO). What it does is written as an event of the relation and handed back as a dépêche to announce.
+   * @returns {Promise<{ broken: boolean }>} `broken`: the relation is cut, no order is placed
+   */
+  async #partnerPolicy({ relation, entry, turn, monthIndex, year, announcements }) {
+    const cityId = relation.cityId;
+    const events = await this.relationEvents.listOf(cityId);
+    const { score, tier } = readRelation({ events, entry, nowTurn: turn, turnsPerYear: this.turnsPerYear() });
+    const write = (kind, fields) => this.relationEvents.record({ cityId, kind, turn, year, monthIndex, weight: RELATION_EVENT_KINDS[kind].weight, ...fields });
+    const embargoOnUs = async ({ flow, good, reason, months, answers = null }) => {
+      await write('partner_embargo_started', { good, flow, cause: { untilTurn: turn + months * this.daysPerMonth(), reason, ...(answers ? { answers } : {}) } });
+      announcements.push({ milestoneId: 'trade-partner-embargo', occurrence: `${cityId}:${flow}:${good}:${turn}`, params: { cityId, good, flow, months, reason } });
+    };
+
+    if (breakDue({ entry, score })) {
+      relation.status = 'expired';
+      relation.ceased = { by: 'partner', reason: 'relation_broken', turn };
+      await this.repo.saveRelation(relation);
+      await write('relation_broken', {});
+      announcements.push({ milestoneId: 'trade-relation-broken', occurrence: `${cityId}:${turn}`, params: { cityId } });
+      return { broken: true };
+    }
+
+    const retaliation = retaliationDue({ events, entry, nowTurn: turn, daysPerMonth: this.daysPerMonth() });
+    if (retaliation) {
+      await embargoOnUs({ flow: retaliation.flow, good: retaliation.good, reason: 'retaliation', months: retaliation.durationMonths, answers: retaliation.answers });
+      return { broken: false };
+    }
+
+    // One embargo of its own at a time: the draw is made only while none is in force on us.
+    if (partnerEmbargoesIn(events, turn).size === 0) {
+      const draw = this.random();
+      if (!(draw >= 0 && draw < 1)) throw new Error(`[trade] random() returned ${draw}, expected a number in [0, 1)`);
+      if (draw < spontaneousEmbargoChance({ tier, events })) {
+        const targets = ['export', 'import'].flatMap((flow) => tradedGoodsOf(entry, flow).map((good) => ({ flow, good })));
+        const target = targets[Math.floor(this.random() * targets.length)];
+        if (target) await embargoOnUs({ ...target, reason: 'spontaneous', months: PARTNER_EMBARGO.durationMonths });
+      }
+    }
+    return { broken: false };
+  }
+
+  /** What the law still lets through this month of a good in a flow, whoever the partner (Infinity: no limit). */
+  async #roomUnderLimit(used, flow, good) {
+    const limit = await this.volumeLimitOf(flow, good);
+    if (limit === null) return Infinity;
+    return Math.max(0, limit - (used.get(embargoKey(flow, good)) ?? 0));
+  }
+
+  /** What was really traded counts against the month's limit. */
+  #useUnderLimit(used, flow, good, units) {
+    used.set(embargoKey(flow, good), (used.get(embargoKey(flow, good)) ?? 0) + units);
   }
 
   /**
@@ -210,7 +286,7 @@ export class RunMonthlyCityTradeCycle {
    * first order month it no longer holds.
    * @returns {Promise<boolean>} Whether anything was sold.
    */
-  async #runWant({ relation, entry, hubs, want, turn, monthIndex, year }) {
+  async #runWant({ relation, entry, hubs, want, turn, monthIndex, year, used }) {
     const cityId = relation.cityId;
     const good = want.good;
     if (!relation.exportCeased || !relation.exportFailures) {
@@ -243,7 +319,9 @@ export class RunMonthlyCityTradeCycle {
       unitNet: worldUnitPrice({ referencePrice: this.referencePriceOf(good), entry, multiplier: want.baseMultiplier }) * (await this.worldIndexOf(good, { year, monthIndex })) * (1 - dutyRate),
       unitCost: cost,
     };
-    const ceases = findCeaseReason('export', { exportPricing, failures });
+    const embargoed = (await this.relationEvents.embargoesOf(cityId)).has(embargoKey('export', good));
+    const partnerEmbargoed = partnerEmbargoesIn(await this.relationEvents.listOf(cityId), turn).has(embargoKey('export', good));
+    const ceases = findCeaseReason('export', { exportPricing, failures, embargoed, partnerEmbargoed });
     const ceasedBefore = relation.exportCeased[good] ?? null;
     if (ceases) {
       if (ceasedBefore?.reason !== ceases.reason) relation.exportCeased = { ...relation.exportCeased, [good]: { ...ceases, turn } };
@@ -257,7 +335,12 @@ export class RunMonthlyCityTradeCycle {
 
     // A cold partner orders less: the order is the entry's quantity times the share its satisfaction allows.
     const ordered = Math.ceil(entry.trade.quantityPerOrder * orderShare(goodSatisfactionOf(relation, 'export', good)));
-    return review(await this.#sell({ relation, entry, hubs, want, dutyRate, quantity: Math.min(ordered, waiting), turn, monthIndex, year }));
+    // The city's law may leave less room this month than the partner orders: the orders placed first fill it.
+    const quantity = Math.min(ordered, waiting, await this.#roomUnderLimit(used, 'export', good));
+    if (quantity <= 0) return review(false);
+    const soldUnits = await this.#sell({ relation, entry, hubs, want, dutyRate, quantity, turn, monthIndex, year });
+    this.#useUnderLimit(used, 'export', good, soldUnits);
+    return review(soldUnits > 0);
   }
 
   /**
@@ -268,7 +351,7 @@ export class RunMonthlyCityTradeCycle {
     const cityId = relation.cityId;
     const good = want.good;
     const { taken, byHub, lots } = await this.#takeFromHubsForClient(hubs, want.merchantGood, `city:${cityId}`, quantity, turn);
-    if (taken <= 0) return false;
+    if (taken <= 0) return 0;
 
     const saleRatio = this.#drawSaleRatio(entry, want, relation) * (await this.worldIndexOf(good, { year, monthIndex }));
     const unitPrice = worldUnitPrice({ referencePrice: this.referencePriceOf(good), entry, multiplier: 1 }) * saleRatio;
@@ -321,7 +404,7 @@ export class RunMonthlyCityTradeCycle {
         grossRevenue: gross * share, netRevenue: (gross - duty) * share, customsCollected: duty * share, customsRate: dutyRate,
       });
     }
-    return true;
+    return taken;
   }
 
   /**
@@ -331,7 +414,7 @@ export class RunMonthlyCityTradeCycle {
    * and lifted the first order month the reason no longer holds.
    * @returns {Promise<boolean>} Whether anything was delivered.
    */
-  async #runOffer({ relation, entry, hubs, offer, turn, monthIndex, year }) {
+  async #runOffer({ relation, entry, hubs, offer, turn, monthIndex, year, used }) {
     const cityId = relation.cityId;
     const good = offer.good;
     if (!relation.importCeased || !relation.importFailures) {
@@ -360,14 +443,17 @@ export class RunMonthlyCityTradeCycle {
     // A deal sits in the warehouse and becomes the real good in it: the room it takes is the room the good takes.
     // A cold partner delivers less: the order is the offer's quantity times the share its satisfaction allows.
     const ordered = Math.ceil(offer.quantityPerOrder * orderShare(goodSatisfactionOf(relation, 'import', good)));
-    const planned = Math.min(ordered, waiting);
+    // The city's law may leave less room this month than the partner delivers: the orders placed first fill it.
+    const planned = Math.min(ordered, waiting, await this.#roomUnderLimit(used, 'import', good));
     const dutyRate = await this.getCustomsDuty('anoria', 'import', good, turn);
     await this.#watchCustoms({ relation, entry, flow: 'import', good, dutyRate, turn, monthIndex, year });
     const review = (delivered) => this.#review({ relation, entry, flow: 'import', good, sold: delivered, ready: Math.min(1, waiting / offer.quantityPerOrder), dutyRate });
     const pricing = priceImportDelivery({
       cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate, worldIndex: await this.worldIndexOf(good, { year, monthIndex }), referencePrice: this.referencePriceOf(good),
     });
-    const ceases = findCeaseReason('import', { pricing, referencePrice: this.referencePriceOf(good), homePrice: await this.homePriceOf(good, { year, monthIndex }), failures });
+    const embargoed = (await this.relationEvents.embargoesOf(cityId)).has(embargoKey('import', good));
+    const partnerEmbargoed = partnerEmbargoesIn(await this.relationEvents.listOf(cityId), turn).has(embargoKey('import', good));
+    const ceases = findCeaseReason('import', { pricing, referencePrice: this.referencePriceOf(good), homePrice: await this.homePriceOf(good, { year, monthIndex }), failures, embargoed, partnerEmbargoed });
     const ceasedBefore = relation.importCeased[good] ?? null;
     if (ceases) {
       if (ceasedBefore?.reason !== ceases.reason) relation.importCeased = { ...relation.importCeased, [good]: { ...ceases, turn } };
@@ -379,7 +465,9 @@ export class RunMonthlyCityTradeCycle {
     }
     if (planned <= 0) return review(false);
 
-    return review(await this.#deliver({ relation, offer, hubs, quantity: planned, turn, monthIndex, year }));
+    const deliveredUnits = await this.#deliver({ relation, offer, hubs, quantity: planned, turn, monthIndex, year });
+    this.#useUnderLimit(used, 'import', good, deliveredUnits);
+    return review(deliveredUnits > 0);
   }
 
   /**
@@ -391,7 +479,7 @@ export class RunMonthlyCityTradeCycle {
     const cityId = relation.cityId;
     const good = offer.good;
     const { taken, lots } = await this.#takeFromHubsForClient(hubs, offer.merchantGood, `city:${cityId}`, quantity, turn);
-    if (taken <= 0) return false;
+    if (taken <= 0) return 0;
     // The hubs just lost their deals: the room and the stocks to file the goods on are the ones they hold now.
     const receiving = hubs.filter((hub) => this.hubHolds(hub, good));
 
@@ -465,7 +553,7 @@ export class RunMonthlyCityTradeCycle {
       remaining -= amount;
     }
     if (remaining > 0) throw new Error(`[trade] ${remaining} ${good} from ${cityId} fit in no warehouse although the room was counted`);
-    return true;
+    return taken;
   }
 
   /**

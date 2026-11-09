@@ -12,6 +12,7 @@
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { SOCIAL_CATEGORY, OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../../../../shared/population/socialCategoryCatalog.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
+import { DIPLOMATIC_GESTURES, TRADE_FLOW_WORDING } from '../../../../shared/trade-catalog/TradeCatalog.js';
 
 /**
  * @typedef {object} CityNewsSignals
@@ -272,6 +273,44 @@ const MILESTONE_DRAFTS = {
       teaser: `${cityName} tend la main…`,
       action: { kind: 'acceptGift', cityName, amount },
       choices: [{ label: 'Refuser', action: { kind: 'refuseGift' }, page: { body: `Vous remerciez ${cityName} et déclinez son offre. Elle n'en tiendra pas rigueur.` } }],
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // A partner city decrees an embargo on us (PartnerPolicy): to answer an embargo of ours, or of its own initiative. `flow` is ours (`export`: it stops buying our good, `import`: it stops selling us its own).
+  'trade-partner-embargo': ({ cityName, goodName, flow, months, reason }) => {
+    if (!cityName || !goodName || !TRADE_FLOW_WORDING[flow] || !Number.isFinite(months)) throw new Error(`[news] a partner embargo needs the city, the good, the flow and its length, got ${cityName}, ${goodName}, ${flow}, ${months}`);
+    if (!['retaliation', 'spontaneous'].includes(reason)) throw new Error(`[news] "${reason}" is not a reason of a partner embargo`);
+    const why = reason === 'retaliation'
+      ? `C'est la **réponse** à l'embargo que vous avez décrété : ${cityName} ne laisse pas passer.`
+      : `Ses marchands jugent la relation **dégradée** : un climat tendu, des **droits de douane** trop hauts ou vos propres **embargos** pèsent sur la décision.`;
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: `${cityName} décrète un embargo`,
+      body: [
+        `**${cityName}** a décrété un embargo sur **${goodName}** (${TRADE_FLOW_WORDING[flow]}) pour **${months} mois**.`,
+        `## Pourquoi ?\n${why}`,
+        '## Que faire ?\n- **lever vos propres embargos** sur cette ville\n- **faire un don** pour apaiser la relation\n- **attendre** : l\'embargo se lève à son terme',
+      ].join('\n\n'),
+      teaser: `${cityName} ferme sa porte à ${goodName}…`,
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // A partner city cuts the relation (its `embargoReaction` is to break, and the relation fell under its threshold): no more exchange until a mission renews it.
+  'trade-relation-broken': ({ cityName }) => {
+    if (!cityName) throw new Error('[news] a broken relation needs the partner\'s name');
+    const { cooldownMonths, cost } = DIPLOMATIC_GESTURES.renewal;
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: `${cityName} rompt la relation`,
+      body: [
+        `**${cityName}** met fin à toutes ses relations commerciales avec vous : **plus aucun échange** tant que la relation n'est pas renouée.`,
+        `## Que faire ?\nAttendez **${cooldownMonths} mois**, puis envoyez une **mission de renouement** (**${cost.toLocaleString('fr-FR')} €**) depuis la fiche de la ville, dans la section Commerce du panneau d'administration.`,
+      ].join('\n\n'),
+      teaser: `${cityName} tourne le dos…`,
       reliability: 'trusted',
       revelation: 'free',
     };

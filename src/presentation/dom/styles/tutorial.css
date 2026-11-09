@@ -377,6 +377,7 @@
 
 /* The tutorial points at the house-shaped button that opens the build bar (tutorialHighlight.js): yellow, and pulsing until the player clicks it. */
 /* A toast points through an attribute of the body (data-tutorial-highlight) */
+body[data-tutorial-highlight="constructionMode"] #toolbar-construction-mode-btn,
 body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
 body[data-tutorial-highlight="road"] #toolbar-road-btn,
 body[data-tutorial-highlight="history"] #tutorial-history-btn,
@@ -387,10 +388,15 @@ body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category=
 /* A button on the way to a toast's target (the toggle of a folded group, a paging arrow) pulses the same, until pressed; and every button of the way to the
    objective of the step pulses at once, for as long as it is not reached */
 body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) {
-    background: #ffd43b;
-    color: #3d2f00;
-    border-color: #f59f00;
+    /* !important: the construction mode's buttons carry their own colors (compact-toolbar.css, by id and by state), which the pulse must beat */
+    background: #ffd43b !important;
+    color: #3d2f00 !important;
+    border-color: #f59f00 !important;
     animation: tutorial-highlight-pulse 1.1s ease-in-out infinite;
+}
+
+body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) svg {
+    stroke: currentColor !important;
 }
 
 @keyframes tutorial-highlight-pulse {
@@ -399,6 +405,7 @@ body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    body[data-tutorial-highlight="constructionMode"] #toolbar-construction-mode-btn,
     body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
     body[data-tutorial-highlight="road"] #toolbar-road-btn,
     body[data-tutorial-highlight="history"] #tutorial-history-btn,

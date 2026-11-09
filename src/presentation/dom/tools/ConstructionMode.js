@@ -3,12 +3,14 @@ import { RANGE_TOOL_ID } from '../../../shared/gameplay/behaviorMode.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 
 /**
- * Construction mode: the game is paused, the road and the eraser are available, and everything the player builds or demolishes happens
- * without the day running. It starts when the construction button opens the bar and ends when that button is closed.
+ * Construction mode: the game is paused, and the house, road and eraser buttons are shown; everything the player builds or demolishes happens
+ * without the day running. It starts when the construction mode button (the hammer) is hit and ends when it is hit again.
+ * With the setting off there is no mode: the hammer is hidden and the three buttons are always shown.
  */
 
-/** The buttons only construction mode lights: the road, the eraser (the portrait fab and the left-toolbar stub). */
-const MODE_ONLY_BUTTONS = ['toolbar-road-btn', 'mobile-portrait-bulldoze-btn', 'bulldoze-btn'];
+const MODE_BUTTON_ID = 'toolbar-construction-mode-btn';
+/** The wrappers of the buttons only the mode shows: the house (opens the build bar), the road and the eraser. */
+const MODE_TOOLS_SELECTOR = '.construction-tool-fab';
 
 let active = false;
 /** The game the mode paused: a mode left running when that game was left belongs to a game that no longer exists. */
@@ -24,30 +26,36 @@ function dropModeOfGoneGame() {
     active = false;
     pausedGame = null;
     document.querySelector('.info-panel .info-box.infos-time')?.classList.remove('infos-time--construction');
-    syncModeOnlyButtons();
+    syncModeButtons();
   }
 }
 
-/** The road and the eraser are greyed out outside the mode, when the setting asks for the mode. */
-function syncModeOnlyButtons() {
-  const available = !isConstructionPauseEnabled() || active;
-  for (const id of MODE_ONLY_BUTTONS) {
-    const button = document.getElementById(id);
-    if (!button) continue;
-    button.disabled = !available;
-    button.setAttribute('aria-disabled', available ? 'false' : 'true');
-  }
+/** The hammer shows the mode (hidden when the setting is off); the house, road and eraser are shown while the mode runs, or always when the setting is off. */
+function syncModeButtons() {
+  const modeEnabled = isConstructionPauseEnabled();
+  const hammer = document.getElementById(MODE_BUTTON_ID);
+  if (!hammer) throw new Error(`[ConstructionMode] #${MODE_BUTTON_ID} is missing from game.html`);
+  hammer.closest('.legend-btns').hidden = !modeEnabled;
+  hammer.classList.toggle('active', active);
+  hammer.setAttribute('aria-pressed', active ? 'true' : 'false');
+  const toolsShown = !modeEnabled || active;
+  for (const wrapper of document.querySelectorAll(MODE_TOOLS_SELECTOR)) wrapper.hidden = !toolsShown;
 }
 
-export function initConstructionMode() {
-  syncModeOnlyButtons();
+/** Wires the hammer: `onToggle` runs on each click (the caller decides what entering and leaving also do, e.g. closing the build bar). */
+export function initConstructionMode({ onToggle }) {
+  syncModeButtons();
+  document.getElementById(MODE_BUTTON_ID).addEventListener('click', (e) => {
+    e.stopPropagation();
+    onToggle();
+  });
   window.addEventListener('anoria:construction-pause-setting', () => {
     if (!isConstructionPauseEnabled()) exitConstructionMode();
-    syncModeOnlyButtons();
+    syncModeButtons();
   });
 }
 
-/** Called when the construction bar opens. Nothing happens when the setting is off or the mode already runs. */
+/** Called when the hammer is hit. Nothing happens when the setting is off or the mode already runs. */
 export function enterConstructionMode() {
   dropModeOfGoneGame();
   if (!isConstructionPauseEnabled() || active) return;
@@ -56,10 +64,10 @@ export function enterConstructionMode() {
   active = true;
   pausedGame = game;
   game.enterConstructionPause();
-  syncModeOnlyButtons();
+  syncModeButtons();
 }
 
-/** Called when the construction button is closed: the tool in hand is put down, the buttons grey out, the game goes back to what it was. */
+/** Called when the hammer is hit again: the tool in hand is put down, the buttons hide, the game goes back to what it was. */
 export function exitConstructionMode() {
   dropModeOfGoneGame();
   if (!active) return;
@@ -72,5 +80,5 @@ export function exitConstructionMode() {
     game.scene?.onEnterSelectMode?.();
   }
   void game.leaveConstructionPause();
-  syncModeOnlyButtons();
+  syncModeButtons();
 }

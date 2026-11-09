@@ -537,6 +537,57 @@
   stroke: #fff;
 }
 
+/* The construction mode has its own color set (main.css, --build-mode-*), as a background only: the hammer at rest, the hammer while the mode runs, and the
+   tools it shows (house, road, eraser). The tool in hand keeps its own lit state. */
+#toolbar-construction-mode-btn {
+  background: var(--build-mode-rest);
+  color: var(--build-mode-ink);
+}
+
+#toolbar-construction-mode-btn:hover {
+  background: var(--build-mode-rest-hover);
+}
+
+#toolbar-construction-mode-btn.active {
+  background: var(--build-mode-on);
+}
+
+#toolbar-construction-mode-btn.active:hover {
+  background: var(--build-mode-on-hover);
+}
+
+#toolbar-construction-mode-btn svg {
+  stroke: var(--build-mode-ink);
+}
+
+/* The tools: a brown at rest, lighter on hover, the road's orange while selected (the house while its bar is open, the road or the eraser while in hand) */
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn {
+  background: var(--build-mode-tool);
+  border-color: var(--build-mode-tool);
+  color: var(--build-mode-ink);
+}
+
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn:hover {
+  background: var(--build-mode-tool-hover);
+  border-color: var(--build-mode-tool-hover);
+}
+
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn.active,
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn.selected {
+  background: var(--build-mode-selected);
+  border-color: var(--build-mode-selected);
+}
+
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn.active:hover,
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn.selected:hover {
+  background: var(--build-mode-selected-hover);
+  border-color: var(--build-mode-selected-hover);
+}
+
+.legend-btns-container--mobile .construction-tool-fab .toolbar-toggle-btn svg {
+  stroke: var(--build-mode-ink);
+}
+
 /* A tool with its own button beside the construction opener (the road): lit while it is the tool in hand */
 .toolbar-tool-fab.selected {
   background: var(--cta);

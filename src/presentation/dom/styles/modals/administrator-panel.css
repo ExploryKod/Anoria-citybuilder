@@ -22,6 +22,8 @@
     border-radius: var(--border-radius);
     width: 90%;
     max-width: 1200px;
+    /* A fixed height, not a maximum: the panel keeps its size whatever the section shown or its loading (the content area scrolls inside it) */
+    height: 85vh;
     max-height: 85vh;
     overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -269,6 +271,7 @@
 @media screen and (max-width: 1024px) and (orientation: landscape) {
     .administrator-panel-wrapper {
         width: 95%;
+        height: 90vh;
         max-height: 90vh;
     }
 
@@ -312,6 +315,7 @@
 @media screen and (max-width: 768px) and (orientation: portrait) {
     .administrator-panel-wrapper {
         width: 95%;
+        height: 90vh;
         max-height: 90vh;
     }
 
@@ -387,4 +391,63 @@
     background-color: rgba(0, 0, 0, 0.06);
     color: rgba(0, 0, 0, 0.38);
     cursor: not-allowed;
+}
+
+/* The bar at the foot of a long list (pagination.js): previous, the page numbers, next. Round 40px buttons, the current page filled; on a phone the neighbours of the
+   current page are hidden so that the bar stays on one line. */
+.pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 16px;
+}
+
+.pager__button {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.pager__button:hover:not(:disabled) {
+    background: rgba(29, 34, 40, 0.08);
+}
+
+.pager__button:focus-visible {
+    outline: 3px solid var(--cta);
+    outline-offset: 1px;
+}
+
+.pager__button--current,
+.pager__button--current:hover:not(:disabled) {
+    background: var(--primary);
+    color: #fff;
+    cursor: default;
+}
+
+.pager__button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.pager__gap {
+    min-width: 20px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 520px) {
+    .pager__near {
+        display: none;
+    }
 }

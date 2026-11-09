@@ -4,7 +4,6 @@ import {
   open as openMobileBuildBar,
   toggle as toggleMobileBuildBar,
 } from '../tools/CompactToolbar.js';
-import { isConstructionModeActive } from '../tools/ConstructionMode.js';
 import { isCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 
@@ -99,8 +98,8 @@ export function initMobileToolbar() {
     toolbarMobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       // The compact construction bar is the construction menu (left toolbar is retired): the house button opens it, and closes it again.
-      // The button is the construction mode's switch: while the mode runs (the bar may have stepped aside on a small screen) a click ends it
-      if (isMobileBuildBarOpen() || isConstructionModeActive()) {
+      // The construction mode itself belongs to the hammer button (ConstructionMode.js).
+      if (isMobileBuildBarOpen()) {
         closeMobileBuildBar();
       } else {
         openMobileBuildBar();

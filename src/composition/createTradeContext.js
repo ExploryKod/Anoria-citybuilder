@@ -2,7 +2,11 @@ import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/d
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { DexieRelationEventRepository } from '../contexts/geography/infrastructure/dexie/DexieRelationEventRepository.js';
 import { MakeDiplomaticGift } from '../contexts/geography/application/workflows/MakeDiplomaticGift.js';
-import { readRelation } from '../contexts/geography/domain/policies/RelationMemoryPolicy.js';
+import { SetTradeEmbargo } from '../contexts/geography/application/workflows/SetTradeEmbargo.js';
+import { RenewRelation } from '../contexts/geography/application/workflows/RenewRelation.js';
+import { DexieTradeVolumeLimitRepository } from '../contexts/geography/infrastructure/dexie/DexieTradeVolumeLimitRepository.js';
+import { tradedGoodsOf } from '../contexts/geography/domain/policies/PartnerPolicy.js';
+import { embargoKey, embargoesIn, partnerEmbargoesIn, readRelation } from '../contexts/geography/domain/policies/RelationMemoryPolicy.js';
 import { getDaysPerMonth } from '../config/events.js';
 import { turnsPerYear } from '../shared/time/TimeCalendar.js';
 import { WorldMarket } from '../contexts/geography/application/services/WorldMarket.js';
@@ -34,21 +38,40 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
 export function createTradeContext({ supply, accounting }) {
   const cityTradeRepository = new DexieCityTradeRepository();
   const relationEventRepository = new DexieRelationEventRepository();
+  const volumeLimits = new DexieTradeVolumeLimitRepository();
+  /** The running turn with the year and the month it falls in (the events and the écritures are stamped with them). */
+  const gameNow = () => {
+    const turn = getSessionGameTime();
+    const { year, monthIndex } = resolveGetTimeInfo()(turn);
+    return { turn, year, monthIndex };
+  };
+  const nameOfCity = (cityId) => {
+    const name = getWorldCityById(cityId)?.name;
+    if (!name) throw new Error(`[trade] the world has no city "${cityId}" to name`);
+    return name;
+  };
   // The gifts the city makes to a partner (a gesture of the relation): paid by the State's own journal line, then written in the relation's journal.
   const diplomaticGift = new MakeDiplomaticGift({
     relationEvents: relationEventRepository,
     recordCityLine: (line) => accounting.recordLedgerEntry(line),
-    now: () => {
-      const turn = getSessionGameTime();
-      const { year, monthIndex } = resolveGetTimeInfo()(turn);
-      return { turn, year, monthIndex };
-    },
+    now: gameNow,
     daysPerMonth: getDaysPerMonth,
-    cityName: (cityId) => {
-      const name = getWorldCityById(cityId)?.name;
-      if (!name) throw new Error(`[trade] the world has no city "${cityId}" to name in a gift`);
-      return name;
-    },
+    cityName: nameOfCity,
+  });
+  // The mission that renews a relation the partner broke: paid by the State's own journal line, then the relation reopens.
+  const relationRenewal = new RenewRelation({
+    cityTradeRepository,
+    relationEvents: relationEventRepository,
+    recordCityLine: (line) => accounting.recordLedgerEntry(line),
+    now: gameNow,
+    daysPerMonth: getDaysPerMonth,
+    cityName: nameOfCity,
+  });
+
+  // The embargoes the city decrees (or lifts) on a good with a partner: events of the relation's journal, from which the embargo in force is read.
+  const tradeEmbargo = new SetTradeEmbargo({
+    relationEvents: relationEventRepository,
+    now: gameNow,
   });
 
   // The world's prices (WorldMarket.js): what the cities pay and ask moves with them, and a harvest of the world's own sets the crops'.
@@ -67,6 +90,10 @@ export function createTradeContext({ supply, accounting }) {
     homePriceOf: (good, period) => homePriceOf(good, period),
     cityTradeRepository,
     relationEvents: relationEventRepository,
+    // The law's volume limits and the calendar the partners' decisions are timed by.
+    volumeLimitOf: (flow, good) => volumeLimits.limitOf(flow, good),
+    daysPerMonth: getDaysPerMonth,
+    turnsPerYear: () => turnsPerYear(getDaysPerMonth()),
     supplyBuildingRepository: supply.supplyBuildingRepository,
     hubServing: supply.hubServing,
     // A hub's `goods` field is a shared total across every deal good it stores (see
@@ -164,19 +191,35 @@ export function createTradeContext({ supply, accounting }) {
       throw new Error(`[trade] no city of the trade catalog offers or wants the good that "${dealGood}" is a deal for`);
     }
     const relations = new Map((await cityTradeRepository.getActiveRelations()).map((relation) => [relation.cityId, relation]));
-    let perOrder = 0;
+    // An embargo, the city's or the partner's, is read live (the cease marker only follows at the next order month): no deal is prepared for a good it forbids.
+    const turn = getSessionGameTime();
+    const forbids = async (cityId, flow, good) => {
+      const events = await relationEventRepository.listOf(cityId);
+      return embargoesIn(events).has(embargoKey(flow, good)) || partnerEmbargoesIn(events, turn).has(embargoKey(flow, good));
+    };
+    // What the cities take in one order, by good and flow: the law's volume limit (a month's figure) caps what is worth preparing of each.
+    const perGood = new Map();
+    const add = (flow, good, quantity) => perGood.set(embargoKey(flow, good), { flow, good, quantity: (perGood.get(embargoKey(flow, good))?.quantity ?? 0) + quantity });
     for (const entry of importCities) {
       const offer = entry.offers.find((candidate) => candidate.merchantGood === dealGood);
       const ceased = relations.get(entry.cityId)?.importCeased[offer.good];
       if (!relations.has(entry.cityId) || ceased?.reason === 'unprofitable') continue;
+      if (await forbids(entry.cityId, 'import', offer.good)) continue;
       // What the city makes itself is imported only when the home price is dearer (a shortage, a dear harvest); coal and the like have no home price to beat.
       if (!(await importIsWorthwhile(entry, offer))) continue;
-      perOrder += offer.quantityPerOrder;
+      add('import', offer.good, offer.quantityPerOrder);
     }
     for (const entry of exportCities) {
       const want = entry.wants.find((candidate) => candidate.merchantGood === dealGood);
       const ceased = relations.get(entry.cityId)?.exportCeased[want.good];
-      if (relations.has(entry.cityId) && ceased?.reason !== 'export_unprofitable') perOrder += entry.trade.quantityPerOrder;
+      if (!relations.has(entry.cityId) || ceased?.reason === 'export_unprofitable') continue;
+      if (await forbids(entry.cityId, 'export', want.good)) continue;
+      add('export', want.good, entry.trade.quantityPerOrder);
+    }
+    let perOrder = 0;
+    for (const { flow, good, quantity } of perGood.values()) {
+      const limit = await volumeLimits.limitOf(flow, good);
+      perOrder += limit === null ? quantity : Math.min(quantity, limit);
     }
     if (perOrder === 0) return false;
     const rows = await supply.supplyBuildingRepository.listAllBuildingRows();
@@ -339,6 +382,10 @@ export function createTradeContext({ supply, accounting }) {
         const satisfaction = goodSatisfactionOf(relation, flow, good);
         return { satisfaction, satisfactionTier: satisfactionTier(satisfaction), review: relation.goodReview[flow][good] ?? null };
       };
+      // The embargoes of this relation, the city's and the partner's, read from its journal (a city with no relation has none: its journal is empty).
+      const relationJournal = relation ? await relationEventRepository.listOf(cityId) : [];
+      const embargoes = embargoesIn(relationJournal);
+      const partnerEmbargoes = partnerEmbargoesIn(relationJournal, turn);
       const goods = [];
       for (const want of entry?.wants ?? []) {
         // A good the city wants but that no merchant house deals in (no `merchantGood`) is never traded: it is not an exchange to show.
@@ -347,6 +394,8 @@ export function createTradeContext({ supply, accounting }) {
         goods.push({
           good: want.good,
           flow: 'export',
+          embargoed: embargoes.has(embargoKey('export', want.good)),
+          partnerEmbargoed: partnerEmbargoes.has(embargoKey('export', want.good)),
           ceased: relation?.exportCeased[want.good] ?? null,
           ourDuty: await accounting.getCustomsDutyInForce('anoria', 'export', want.good, turn),
           priceRange: { low: centre * (1 - entry.sale.spread), high: centre * (1 + entry.sale.spread) },
@@ -357,6 +406,8 @@ export function createTradeContext({ supply, accounting }) {
         goods.push({
           good: offer.good,
           flow: 'import',
+          embargoed: embargoes.has(embargoKey('import', offer.good)),
+          partnerEmbargoed: partnerEmbargoes.has(embargoKey('import', offer.good)),
           ceased: relation?.importCeased[offer.good] ?? null,
           ourDuty: await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn),
           priceRange: null,
@@ -365,14 +416,17 @@ export function createTradeContext({ supply, accounting }) {
       }
       // The memory of the relation: read from the journal of its events at the running turn, faded by the partner's memory. Nothing is stored.
       const memory = relation
-        ? readRelation({ events: await relationEventRepository.listOf(cityId), entry, nowTurn: turn, turnsPerYear: turnsPerYear(getDaysPerMonth()) })
+        ? readRelation({ events: relationJournal, entry, nowTurn: turn, turnsPerYear: turnsPerYear(getDaysPerMonth()) })
         : null;
       // The gift gesture: its rule, and how many months to wait before it can be made again (null: now).
       const giftReadyAt = relation ? await diplomaticGift.readyAtTurn(cityId) : null;
+      // The mission that renews a broken relation: its rule, and how many months to wait (null: now); null while the relation is not broken.
+      const renewalReadyAt = relation?.status === 'expired' ? await relationRenewal.readyAtTurn(cityId) : null;
       return {
         ...base,
         goods,
         gift: relation ? { ...DIPLOMATIC_GESTURES.gift, readyInMonths: giftReadyAt === null ? null : Math.ceil((giftReadyAt - turn) / getDaysPerMonth()) } : null,
+        renewal: relation?.status === 'expired' ? { ...DIPLOMATIC_GESTURES.renewal, readyInMonths: renewalReadyAt === null ? null : Math.ceil((renewalReadyAt - turn) / getDaysPerMonth()) } : null,
         character: entry ? characterWordsOf(entry) : [],
         relationScore: memory?.score ?? null,
         relationTier: memory?.tier ?? null,
@@ -388,6 +442,64 @@ export function createTradeContext({ supply, accounting }) {
       const entry = getTradeCatalogEntry(cityId);
       if (!entry || !(await cityTradeRepository.getRelation(cityId))) throw new Error(`[trade] no relation is open with "${cityId}": nothing to give a gift to`);
       return diplomaticGift.execute({ entry, amount });
+    },
+
+    /**
+     * The city decrees (or lifts) an embargo on a good it trades with a partner, in one flow (SetTradeEmbargo.js). `good` null covers the whole flow. A refusal comes back with
+     * its reason; a city with no open relation throws (the panel only offers it on an open relation).
+     * @param {string} cityId @param {{ flow: 'export' | 'import', good: string | null, decreed: boolean }} measure
+     */
+    async setEmbargo(cityId, { flow, good, decreed }) {
+      const entry = getTradeCatalogEntry(cityId);
+      if (!entry || !(await cityTradeRepository.getRelation(cityId))) throw new Error(`[trade] no relation is open with "${cityId}": no embargo can be set on it`);
+      return tradeEmbargo.execute({ entry, flow, good, decreed });
+    },
+
+    /**
+     * The mission that renews a relation the partner broke (RenewRelation.js). A refusal comes back with its reason; a city with no relation throws.
+     * @param {string} cityId
+     */
+    async renewRelation(cityId) {
+      const entry = getTradeCatalogEntry(cityId);
+      if (!entry || !(await cityTradeRepository.getRelation(cityId))) throw new Error(`[trade] no relation exists with "${cityId}": nothing to renew`);
+      return relationRenewal.execute({ entry });
+    },
+
+    /** Every exchange the catalog's cities trade with us, one per good and flow: where a volume limit can be set. @returns {Array<{ flow: 'export' | 'import', good: string }>} */
+    listTradedExchanges() {
+      const seen = new Set();
+      const exchanges = [];
+      for (const entry of TRADE_CATALOG) {
+        for (const flow of ['export', 'import']) {
+          for (const good of tradedGoodsOf(entry, flow)) {
+            if (seen.has(embargoKey(flow, good))) continue;
+            seen.add(embargoKey(flow, good));
+            exchanges.push({ flow, good });
+          }
+        }
+      }
+      return exchanges;
+    },
+
+    /** The volume limits the city has set (units a month, whoever the partner). @returns {Promise<Array<{ flow: 'export' | 'import', good: string, perMonth: number }>>} */
+    listVolumeLimits() {
+      return volumeLimits.list();
+    },
+
+    /**
+     * Sets (or, with `perMonth` null, removes) the law's limit on a good in a flow. A figure that is not a whole number of units, at least 1, is refused with its reason.
+     * @param {'export' | 'import'} flow @param {string} good @param {number | null} perMonth
+     * @returns {Promise<{ done: true } | { done: false, reason: string }>}
+     */
+    async setVolumeLimit(flow, good, perMonth) {
+      if (!this.listTradedExchanges().some((exchange) => exchange.flow === flow && exchange.good === good)) throw new Error(`[trade] no city trades "${good}" in the flow "${flow}": no limit can be set on it`);
+      if (perMonth === null) {
+        await volumeLimits.remove(flow, good);
+        return { done: true };
+      }
+      if (!Number.isInteger(perMonth) || perMonth < 1) return { done: false, reason: 'invalid_limit' };
+      await volumeLimits.set(flow, good, perMonth);
+      return { done: true };
     },
 
     /** The reading of every city of the trade catalog (the cards of the admin panel). */

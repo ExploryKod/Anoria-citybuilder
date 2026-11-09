@@ -42,6 +42,11 @@
   display: block !important;
 }
 
+/* The house, road and eraser buttons exist only while the construction mode runs (ConstructionMode.js sets `hidden`) */
+.legend-btns.construction-tool-fab[hidden] {
+  display: none !important;
+}
+
 /* Circular construction FABs at all breakpoints */
 .legend-btns-container--mobile .toolbar-toggle-btn {
   min-width: 48px;

@@ -56,7 +56,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'road',
     delay: 0,
     unlocks: [primaryRoadType()],
-    counter: { after: null, label: 'Routes', items: [{ roads: true, atLeast: 4 }], highlight: 'road' },
+    counter: { after: null, label: 'Routes', items: [{ roads: true, atLeast: 4 }], highlight: ['constructionMode', 'road'] },
     done: [{ roadBuilt: 4 }],
     reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer quatre routes : cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris.` },
     news: {
@@ -80,7 +80,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'artisans',
     delay: 0,
     unlocks: ['House-Red'],
-    counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }], highlight: ['construction', 'houses', 'tool:House-Red'] },
+    counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }], highlight: ['constructionMode', 'construction', 'houses', 'tool:House-Red'] },
     done: [{ built: { type: 'House-Red', atLeast: 3 } }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Il vous reste à bâtir des maisons « {building:House-Red} » : trois en tout.` },
     news: {
@@ -98,7 +98,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'farms',
     delay: 0,
     unlocks: ['Farm-Wheat'],
-    counter: { after: null, label: 'Champs « {building:Farm-Wheat} »', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }], highlight: ['construction', 'artisans', 'tool:Farm-Wheat'] },
+    counter: { after: null, label: 'Champs « {building:Farm-Wheat} »', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }], highlight: ['constructionMode', 'construction', 'artisans', 'tool:Farm-Wheat'] },
     done: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Vos habitants ont besoin de champs : posez des « {building:Farm-Wheat} ».` },
     news: {
@@ -120,7 +120,7 @@ export const TUTORIAL_STEPS = Object.freeze([
       after: { news: 'trade-chain' },
       label: '{building:Market-Stall-Red} et {building:Windmill-001}',
       items: [{ type: 'Market-Stall-Red', atLeast: 1 }, { type: 'Windmill-001', atLeast: 1 }],
-      highlight: ['construction', 'merchants', 'tool:Market-Stall-Red', 'tool:Windmill-001'],
+      highlight: ['constructionMode', 'construction', 'merchants', 'tool:Market-Stall-Red', 'tool:Windmill-001'],
     },
     done: [{ built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
     reminder: {
@@ -430,7 +430,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
     kind: 'info',
     step: 'road',
     until: [{ roadBuilt: 1 }],
-    highlight: 'road',
+    highlight: ['constructionMode', 'road'],
     text: `Pour tracer une route, cliquez sur le bouton de route, à côté du bouton en forme de maison.`,
   },
   {
@@ -442,7 +442,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
     when: [{ built: 'House-Red' }],
     delay: 0,
     until: [{ built: 'Market-Stall-Red' }],
-    highlight: 'construction',
+    highlight: ['constructionMode', 'construction'],
     text: `Pour construire un bâtiment, cliquez sur le bouton en forme de maison de la barre du bas.`,
   },
   {
@@ -455,7 +455,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
     when: [{ newsRead: 'trade-chain' }],
     unless: [{ built: 'Market-Stall-Red' }],
     delay: 0,
-    highlight: ['construction', 'merchants'],
+    highlight: ['constructionMode', 'construction', 'merchants'],
     text: `Pour les poser : cliquez sur le bouton en forme de maison, puis sur la pastille « {building:House-Blue} », où se trouvent « {building:Market-Stall-Red} » et « {building:Windmill-001} ».`,
   },
   {

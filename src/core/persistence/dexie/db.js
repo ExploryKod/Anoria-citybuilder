@@ -202,6 +202,11 @@ db.version(24).stores({
   relationEvents: '++id, cityId, turn',
 });
 
+// v25: the volume limits the city sets by law on a traded good — units a month, one row per flow and good (RunMonthlyCityTradeCycle reads it). A setting of the game, so no history.
+db.version(25).stores({
+  tradeVolumeLimits: '[flow+good]',
+});
+
 // The residents of a house are its citizens (residentsProjection.js): `pop` is not stored on the house row, it is served on every read of the table from the count the
 // citizens make. The citizens' hooks keep that count: a change moves it at once (what the code reads right after writing is true), and a transaction that fails gives
 // back what it moved.

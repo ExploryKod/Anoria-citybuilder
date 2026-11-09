@@ -1,6 +1,6 @@
 # Plan — les relations commerciales : personnalités, mémoire, deux barres, contrats, traités, embargos
 
-Écrit le 2026-11-08 à partir des demandes du joueur. **Construit** : les étapes 1 et 2 (la lecture unique `describeTradeRelation`, les cartes par ville et la fiche, la balance commerciale et son commentaire), l'étape 3 (la satisfaction commerciale par bien et par sens) et, de l'étape 4, la personnalité et la mémoire (voir « État de l'étape 3 et de l'étape 4 » plus bas). **Pas encore construit** : tout le reste. Le périmètre est économique : la politique (étrangère, intérieure) viendra ensuite, et ce plan lui laisse des prises. Le but premier est la **visibilité** : le joueur doit voir, ville par ville et bien par bien, ce que le commerce international lui apporte, ce qu'il lui coûte, et pourquoi.
+Écrit le 2026-11-08 à partir des demandes du joueur. **Construit** : les étapes 1 et 2 (la lecture unique `describeTradeRelation`, les cartes par ville et la fiche, la balance commerciale et son commentaire), l'étape 3 (la satisfaction commerciale par bien et par sens) et, de l'étape 4, la personnalité et la mémoire (voir « État de l'étape 3 et de l'étape 4 » plus bas), le don (étape 5), l'embargo décrété et la limitation en volume (étape 6), l'embargo subi, les réactions des partenaires, la rupture et le renouement (étape 7). **Pas encore construit** : tout le reste (aperçu avant de valider, douane préférentielle, contrats, traité). Le périmètre est économique : la politique (étrangère, intérieure) viendra ensuite, et ce plan lui laisse des prises. Le but premier est la **visibilité** : le joueur doit voir, ville par ville et bien par bien, ce que le commerce international lui apporte, ce qu'il lui coûte, et pourquoi.
 
 ## Ce qui existe, et ce qui ne va pas
 
@@ -255,6 +255,26 @@ Pourquoi ces seuils : à 50 % un seul acteur pèse plus que tous les autres ense
 - **Le don** : la ville offre au moins 100 € à un partenaire (`DIPLOMATIC_GESTURES.gift`). Le coût est une écriture du journal, `diplomatic_gift` (M57 6568, ligne « Dons aux villes partenaires » du livret de la ville) ; l'événement `gift_received` n'est écrit qu'une fois l'écriture prise. Il pèse 3 points par 100 €, 20 au plus, multiplié par la **reconnaissance** du partenaire (premier usage de ce trait). Un même geste se refait après 3 mois. Refus dits en clair : sous le minimum, trop récent, trésorerie insuffisante.
 - **Où** : un formulaire en bas de la fiche d'une ville (section Commerce). Cas de refus testés dans `makeDiplomaticGift.test.js`.
 - **Pas fait** : la **mission de renouement** (rien ne rompt encore une relation, elle n'aurait rien à rouvrir) et **honorer une aide** (les prêts des villes partenaires ne sont pas encore reliés à la relation).
+
+### Étape 6 — les leviers (construite en partie : l'embargo décrété)
+
+- **L'embargo décrété** : la ville coupe un bien avec un partenaire, dans un sens (nos ventes ou nos achats), ou tout un sens d'un coup. Il ne coûte rien. Il n'est **pas stocké** : c'est un événement de la relation (`embargo_decreed` −12, `embargo_lifted` +6, `RELATION_EVENT_KINDS`) et l'embargo en vigueur est **lu** du dernier événement de chaque bien et sens (`embargoesIn`). Écrit par `SetTradeEmbargo`.
+- **Ce qu'il arrête** : les raisons d'arrêt `embargo` (achats) et `export_embargo` (ventes), de la ville, en tête de `CEASE_REASONS` ; le cycle les lit en direct, et les marchands ne préparent plus d'accord pour un bien interdit. Les autres biens et l'autre sens continuent. Le bien embargoé se refroidit comme tout échange qui n'a pas lieu (pas de rupture).
+- **Où** : la fiche d'une ville (section Commerce) : un bouton par ligne du tableau, deux raccourcis « tout un sens », l'état dit tout de suite.
+- **La limitation en volume** : une loi de la ville, **globale** par bien et par sens, en unités par mois, quel que soit le partenaire (table Dexie `tradeVolumeLimits`, un réglage de la partie). Le cycle compte ce qui s'échange dans le mois (`used`, propre à un passage du cycle) : **les premières commandes remplissent la place**, les suivantes reçoivent le reste, puis rien. Les marchands ne préparent pas plus d'accords que la limite. Elle se fixe en bas de la liste des villes (section Commerce) ; un champ vide la retire. Une commande qui ne trouve plus de place compte comme un échange qui n'a pas eu lieu (le climat du bien se refroidit).
+- **Pas fait** : l'**aperçu avant de valider**, la **douane préférentielle par partenaire** (à faire avec le traité, étape 8), et la rupture d'un contrat par la limitation (pas de contrats encore).
+
+### Étape 7 — l'embargo subi et les réactions des partenaires (construite)
+
+Tout est lu du journal de la relation, rien n'est stocké à côté. Une fois par mois et par relation, avant les commandes (`RunMonthlyCityTradeCycle.#partnerPolicy`, décisions pures dans `PartnerPolicy`) :
+
+- **Rupture** (`embargoReaction: breaks`) : la relation passe sous le seuil propre à la ville (`relation.breakThreshold`) ; le partenaire la coupe : statut `expired`, `ceased { by: 'partner', reason: 'relation_broken' }`, événement `relation_broken`, plus aucun échange.
+- **Riposte** (`retaliates`) : pour un embargo décrété et encore en vigueur, un mois après (`delayMonths`), il décrète un embargo miroir dans l'**autre sens** sur le premier bien qu'il échange et n'a pas encore coupé, pour `durationMonths` ; une seule fois par embargo (`cause.answers`).
+- **Embargo spontané** : tant qu'aucun n'est en vigueur sur nous, un tirage par mois (`PARTNER_EMBARGO`) : chance selon le palier de la relation, plus un peu par douane au-dessus de sa tolérance et par embargo décrété par nous ; un bien au hasard, dans un sens ou l'autre, pour 6 mois.
+- **L'embargo du partenaire** (`partner_embargo_started`, −10) dure jusqu'à `cause.untilTurn` : il n'y a **pas d'événement de levée**, la fin se lit du temps. Il arrête l'échange (raisons `partner_embargo` / `export_partner_embargo`, `by: 'partner'`) et les marchands ne préparent plus d'accord pour ce bien.
+- **Le renouement** : une mission payée (`RenewRelation`, 300 €, écriture `diplomatic_mission`, M57 6568) possible 6 mois après la rupture, depuis la fiche de la ville ; elle rouvre la relation et écrit `relation_renewed` (+40, de quoi repasser au-dessus du seuil).
+- **Dites au joueur** : le cycle rend la liste des dépêches (`trade-partner-embargo`, `trade-relation-broken`, dans `NewsDraftCatalog`), annoncées par `createCityTradeMonthlySystem` ; la fiche dit l'état tout de suite.
+- **Valeurs de départ à régler en jouant** : tous les chiffres sont dans `TradeCatalog.js` (`PARTNER_TRAITS.embargoReaction`, `PARTNER_EMBARGO`, `DIPLOMATIC_GESTURES.renewal`, `RELATION_EVENT_KINDS`). Le poids de l'embargo décrété est encore le même pour tous les partenaires.
 
 ## À garder pour plus tard : l'indice de qualité d'un bien (idée seulement, rien de construit)
 

@@ -285,9 +285,21 @@
     color: #721c24;
 }
 
-.commerce-pill--none {
+.commerce-pill--none,
+.commerce-pill--merchants {
     background: rgba(0, 0, 0, 0.06);
     color: rgba(0, 0, 0, 0.6);
+}
+
+/* Who stopped an exchange: the city (its embargo) in orange, the partner (its embargo) in red; "in progress" keeps the green. */
+.commerce-pill--city {
+    background: #fdebd8;
+    color: #8a4b0f;
+}
+
+.commerce-pill--partner {
+    background: #f8d7da;
+    color: #721c24;
 }
 
 .commerce-sheet {
@@ -328,52 +340,307 @@
     color: rgba(0, 0, 0, 0.7);
 }
 
-.commerce-sheet__ceased {
-    margin: 0;
+/* The loader: a spinner and a sentence, centred, tall enough that the section does not collapse while it reads. */
+.commerce-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 240px;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-loader__spinner {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(29, 34, 40, 0.15);
+    border-top-color: var(--cta);
+    border-radius: 50%;
+    animation: commerce-loader-spin 0.8s linear infinite;
+}
+
+@keyframes commerce-loader-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .commerce-loader__spinner {
+        animation: none;
+    }
+}
+
+/* The two bars (relation, climate) stacked, close together. */
+.commerce-sheet__bars {
+    display: grid;
+    gap: 10px;
+}
+
+/* One frame per block of the sheet: a white surface with a title, its content separated by thin dividers (no frame inside the frame). */
+.commerce-panel {
+    padding: 16px;
+    border-radius: var(--border-radius-small);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
+}
+
+.commerce-cities + .commerce-panel {
+    margin-top: 16px;
+}
+
+.commerce-panel__title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.commerce-panel__lead {
+    margin: 0 0 8px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.commerce-note {
+    margin: 6px 0 0;
     font-size: 13px;
-    color: #b91c1c;
+    min-height: 1.2em;
 }
 
-.commerce-sheet__table-wrap {
-    overflow-x: auto;
-}
-
-.commerce-sheet__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-.commerce-sheet__table th,
-.commerce-sheet__table td {
-    padding: 8px 6px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    text-align: left;
-    vertical-align: top;
-}
-
-.commerce-sheet__table thead th {
-    border-top: none;
+/* The side of an exchange: sold (out) or bought (in). */
+.commerce-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e3f1f1;
+    color: #0b5f5f;
     font-size: 11px;
     font-weight: 600;
+}
+
+.commerce-chip--import {
+    background: #e5ecf9;
+    color: #233f8a;
+}
+
+.commerce-chip small {
+    font-weight: 500;
+}
+
+/* The buttons of the sheet: one shape (a pill of 40px), a color by meaning. */
+.commerce-action {
+    min-height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.commerce-action:hover {
+    background: rgba(29, 34, 40, 0.12);
+}
+
+.commerce-action:focus-visible {
+    outline: 3px solid var(--cta);
+    outline-offset: 2px;
+}
+
+.commerce-action:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.commerce-action--embargo {
+    background: #fdebd8;
+    color: #8a4b0f;
+}
+
+.commerce-action--embargo:hover {
+    background: #fbdcb8;
+}
+
+.commerce-action--lift {
+    background: #e3f1f1;
+    color: #0b5f5f;
+}
+
+.commerce-action--lift:hover {
+    background: #cfe8e8;
+}
+
+.commerce-action--primary {
+    background: var(--cta);
+    color: #fff;
+}
+
+.commerce-action--primary:hover {
+    background: #e06f12;
+}
+
+/* A message that asks for attention at the top of the sheet: the relation is broken (danger), the partner has an embargo on us (warning). */
+.commerce-callout {
+    padding: 12px 14px;
+    border-radius: var(--border-radius-small);
+    background: #f8d7da;
+    color: #5a1a20;
+}
+
+.commerce-callout--warning {
+    background: #fdebd8;
+    color: #6b3a0a;
+}
+
+.commerce-callout__title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.commerce-callout__text {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.commerce-callout__chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.commerce-callout .commerce-chip {
+    background: #fff;
+}
+
+.commerce-callout__form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* An exchange (a good, in one side of the trade): its name, its side, who stopped it if it is stopped, then its figures in a grid; the action sits at the end (under on a phone). */
+.commerce-exchanges {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.commerce-exchange {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.commerce-exchange:first-child {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.commerce-exchange__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+}
+
+.commerce-exchange__name {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.commerce-exchange__reason {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+/* The catalog's reasons read after "who stopped it :": they start in lower case, here they start a sentence. */
+.commerce-exchange__reason::first-letter {
+    text-transform: uppercase;
+}
+
+.commerce-exchange__figures {
+    grid-column: 1 / -1;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px 12px;
+}
+
+.commerce-exchange__figures div {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.commerce-exchange__figures dt {
+    font-size: 11px;
     color: rgba(0, 0, 0, 0.5);
 }
 
-.commerce-sheet__table tr.is-stopped td {
-    color: #b91c1c;
+.commerce-exchange__figures dd {
+    margin: 0;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.commerce-exchange__factors {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.5);
+    overflow-wrap: anywhere;
+}
+
+.commerce-exchange__action {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+}
+
+/* On a phone the action drops under the figures, at the start of the line. */
+@media (max-width: 520px) {
+    .commerce-exchange__action {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+}
+
+/* The shortcuts for a whole side of the trade, under the exchanges. */
+.commerce-sheet__bulk {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.commerce-sheet__bulk-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 /* The partner's character in words, and the chronology of the relation: one line per event, wrapping on a phone (date above, then the text, then the weight). */
 .commerce-sheet__character {
     margin: 4px 0;
     font-size: 13px;
-}
-
-.commerce-sheet__subtitle {
-    margin: 16px 0 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.6);
 }
 
 .commerce-sheet__events {
@@ -413,8 +680,8 @@
     }
 }
 
-/* The gift form: a sum and a button on one row, wrapping on a phone; touch targets of 44px. */
-.commerce-gift__row {
+/* The gift form: a sum and a button on one row, wrapping on a phone; touch targets of 44px for the field. */
+.commerce-gift {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
@@ -429,31 +696,137 @@
     color: rgba(0, 0, 0, 0.6);
 }
 
-.commerce-gift__label input,
-.commerce-gift__button {
+.commerce-gift__label input {
     min-height: 44px;
     padding: 0 12px;
+    border: 1px solid rgba(29, 34, 40, 0.2);
+    border-radius: var(--border-radius-small);
+    background: #fff;
+    font: inherit;
     font-size: 14px;
 }
 
-.commerce-gift__note {
-    margin: 6px 0 0;
-    font-size: 13px;
-    min-height: 1.2em;
+/* The volume limits: one row per good and side, its name and chip at the start, the field at the end; air between the rows, none inside the field. */
+.commerce-limits {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
 }
 
-/* What the last review gave, under the step of the climate: a quiet line that wraps. */
-.commerce-sheet__factors {
-    display: block;
-    margin-top: 2px;
-    font-size: 11px;
-    color: rgba(0, 0, 0, 0.5);
-    overflow-wrap: anywhere;
+.commerce-limits__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 14px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* A phone keeps the good, the way, the state, the climate and the balance; the duty and the price are on the wider screens. */
-@media (max-width: 640px) {
-    .commerce-sheet__minor {
-        display: none;
-    }
+.commerce-limits__row:first-child {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.commerce-limits__name {
+    flex: 1 1 110px;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* A stepper: − at the start, the figure and its unit in the middle, + at the end, in one soft pill. The buttons are round (40px to touch); the figure can also be typed. */
+.commerce-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(29, 34, 40, 0.06);
+}
+
+.commerce-stepper__button {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.commerce-stepper__button:hover {
+    background: rgba(29, 34, 40, 0.12);
+}
+
+.commerce-stepper__button:focus-visible {
+    outline: 3px solid var(--cta);
+    outline-offset: 1px;
+}
+
+.commerce-stepper__value {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    width: 7.5em;
+    padding: 0 6px;
+    cursor: text;
+}
+
+.commerce-stepper__input {
+    flex: 1 1 auto;
+    width: 3em;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--primary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    -moz-appearance: textfield;
+}
+
+.commerce-stepper__input::-webkit-outer-spin-button,
+.commerce-stepper__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.commerce-stepper__input:focus-visible {
+    text-decoration: underline;
+    text-decoration-color: var(--cta);
+    text-underline-offset: 4px;
+}
+
+.commerce-stepper__input::placeholder {
+    color: rgba(0, 0, 0, 0.45);
+    font-weight: 400;
+}
+
+/* No limit: the placeholder says it alone, centred, and the unit is not needed. */
+.commerce-stepper__input:placeholder-shown {
+    text-align: center;
+}
+
+.commerce-stepper__input:placeholder-shown + .commerce-stepper__unit {
+    display: none;
+}
+
+.commerce-stepper__unit {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
 }

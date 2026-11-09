@@ -232,6 +232,7 @@ const BY_TYPE = Object.freeze({
   // A gift of the city to a partner city (a diplomatic gesture, DIPLOMATIC_GESTURES in TradeCatalog.js): money that leaves for abroad, a charge of the State (M57 6568); the central
   // bank converts it against its foreign reserves with the rest of the money that goes abroad (BankRefinancing.centraliseExternal).
   diplomatic_gift: publicEntry(outflow('6568'), 'Autres secours, aides', 'external', 'Don à une ville partenaire'),
+  diplomatic_mission: publicEntry(outflow('6568'), 'Autres secours, aides', 'external', 'Mission de renouement avec une ville partenaire'),
   deposit_guarantee_premium: entry(outflow('616'), 'Primes d’assurances', 'financial', false, 'Prime de la garantie des dépôts payée à la ville'),
   deposit_guarantee_premium_received: publicEntry(inflow('7588'), 'Autres produits divers de gestion courante', 'sales', 'Primes de la garantie des dépôts payées par la banque'),
   deposit_guarantee_received: entry(inflow('275'), 'Dépôts et cautionnements versés', 'treasury', true, 'Épargne rendue par la garantie de la ville'),

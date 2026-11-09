@@ -237,7 +237,7 @@ columns (keep the essential ones) rather than shrinking everything. Add the `@me
 
 A text the player reads in a modal is written to be scanned, not read like a novel: short paragraphs that say one thing, **bold** on the words to catch first, a heading
 only when a part needs one, and lists for anything that enumerates. One convention for all of them, laid out by `src/presentation/dom/shell/richText.js`: a blank line
-starts a block, `## ` is a heading (h3 — the modal's own title is the h2, so the hierarchy is h2 then h3, never skipped), `- ` lines are a list (a quiet card per line,
+starts a block, `## ` is a heading (h3 — the modal's own title is the h2, so the hierarchy is h2 then h3, never skipped), `- ` lines are a list (a row of pills that wraps, one per line,
 no visible bullet), `**…**` is bold. It is built with the DOM (`renderRichText`, text nodes only), never with `innerHTML`: a text that holds markup (a name the player typed)
 stays text, so there is no escaping to forget. Do not put a text a player or a catalog wrote into `innerHTML`. Everything reads from the left edge (title, paragraphs, lists), never centred. A new modal reuses `ConfirmModal.js`
 (`confirmModal`, `noticeModal`) or the news modal and its classes; it does not write its own text styles. The explanations behind a "?" live in

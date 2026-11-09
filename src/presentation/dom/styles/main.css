@@ -9,6 +9,18 @@
     --darkblue:  #000235;
     --lightgreen: #009999;
 
+    /* Construction mode: the hammer at rest, the hammer while the mode runs, and the tools it shows (house, road, eraser) */
+    --build-mode-rest: #5c4033;
+    --build-mode-rest-hover: #6f4e3d;
+    --build-mode-on: #8b5a2b;
+    --build-mode-on-hover: #a06a35;
+    --build-mode-tool: #7a5c45;
+    --build-mode-tool-hover: #8f6e55;
+    /* The tool in hand (house with its bar open, road, eraser): the orange the road already wears when selected */
+    --build-mode-selected: var(--cta);
+    --build-mode-selected-hover: #e06f12;
+    --build-mode-ink: #ffffff;
+
     --danger: #9c2939;
     --warning: #ffc107;
     --info: #17a2b8;

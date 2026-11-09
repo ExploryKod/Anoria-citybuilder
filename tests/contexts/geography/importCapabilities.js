@@ -4,6 +4,7 @@ import { lotOrigin } from '../../../src/contexts/supply/domain/policies/HubLotsP
 import { referenceHubSellingPrice } from '../../helpers/referencePriceBook.js';
 import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
 import { openingGoodReview, openingGoodSatisfaction } from '../../../src/shared/trade-catalog/satisfaction.js';
+import { embargoesIn } from '../../../src/contexts/geography/domain/policies/RelationMemoryPolicy.js';
 import { createWorldReferencePrices } from '../../../src/composition/createWorldReferencePrices.js';
 
 /** The world's reference price of a good, as the game computes it (the cities' prices are built on it). */
@@ -32,9 +33,15 @@ export const openRelationRow = (fields) => ({
 export function importCapabilities({ merchantLines = [], cityLines = [], deliveries = [], relationEventLog = [] } = {}) {
   return {
     referencePriceOf,
+    // No limit by law, and the calendar of a 30-day month.
+    volumeLimitOf: async () => null,
+    daysPerMonth: () => 30,
+    turnsPerYear: () => 360,
     // The relation's journal, in memory: what the cycle writes in it is in `relationEventLog`.
     relationEvents: {
       record: async (event) => { relationEventLog.push(event); },
+      listOf: async (cityId) => relationEventLog.filter((event) => event.cityId === cityId),
+      embargoesOf: async (cityId) => embargoesIn(relationEventLog.filter((event) => event.cityId === cityId)),
       lastCustoms: async (cityId, good, flow) => relationEventLog.filter((event) => event.cityId === cityId && event.kind.startsWith('customs_') && event.good === good && event.flow === flow).at(-1) ?? null,
     },
     recordMerchantLine: async (line) => {

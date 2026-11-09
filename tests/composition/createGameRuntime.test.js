@@ -93,7 +93,7 @@ function baseRuntimeDeps(overrides = {}) {
     employment: fakeEmployment(),
     gameplay: fakeGameplay(),
     intelligence: fakeIntelligence(),
-    trade: { checkAndOpenNewRelations: async () => {}, runMonthlyCityTradeCycle: async () => {} },
+    trade: { checkAndOpenNewRelations: async () => {}, runMonthlyCityTradeCycle: async () => [] },
     land: { runMonthlyLandPurchases: async () => {}, runMonthlyForestGrowth: async () => {} },
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason: () => 'summer',

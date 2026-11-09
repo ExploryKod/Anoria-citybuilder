@@ -25,8 +25,13 @@ import { initHudTopRight } from '../shell/hudTopRight.js';
 import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
-import { initCompactToolbar } from '../tools/CompactToolbar.js';
-import { initConstructionMode } from '../tools/ConstructionMode.js';
+import { initCompactToolbar, close as closeBuildBar } from '../tools/CompactToolbar.js';
+import {
+  initConstructionMode,
+  enterConstructionMode,
+  exitConstructionMode,
+  isConstructionModeActive,
+} from '../tools/ConstructionMode.js';
 import { initHamletSwitcher } from '../hamlets/hamletSwitcher.js';
 import { initBottomModeRadio } from '../tools/BottomModeRadio.js';
 import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
@@ -76,7 +81,17 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
-  initConstructionMode();
+  initConstructionMode({
+    // The hammer starts the mode, or ends it (the build bar goes with it)
+    onToggle: () => {
+      if (isConstructionModeActive()) {
+        closeBuildBar();
+        exitConstructionMode();
+      } else {
+        enterConstructionMode();
+      }
+    },
+  });
   initHamletSwitcher({ getGame: getSessionGame });
   initBottomModeRadio({ getGame: getSessionGame });
   initBuildToolHoverPreview();

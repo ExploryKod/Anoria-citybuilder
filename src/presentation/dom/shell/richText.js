@@ -1,7 +1,7 @@
 /**
  * A text as the catalogs write it (a dépêche, an explanation of the help), turned into the structure a modal shows. One convention for all of them, so every text is laid
  * out the same way: a blank line starts a block; a line starting with `## ` is a heading (an h3: the modal's own title is the h2); lines starting with `- ` make a list
- * (a quiet card per line, no bullet); `**…**` is bold; anything else is a paragraph, a single line break kept inside it.
+ * (a row of pills that wraps, one per line, no bullet); `**…**` is bold; anything else is a paragraph, a single line break kept inside it.
  *
  * Built with the DOM (createElement, createTextNode), never with innerHTML: the text only ever becomes text nodes, so nothing in it, whatever it holds (a name the player typed,
  * a `<script>`), can become markup. There is no escaping to forget, because there is nothing to escape. Do not bring innerHTML back to "simplify" this.
