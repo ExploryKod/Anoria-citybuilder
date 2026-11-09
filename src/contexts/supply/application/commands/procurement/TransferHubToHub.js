@@ -1,4 +1,5 @@
 import { remainingHubCapacity } from '../../../domain/policies/HubCapacityPolicy.js';
+import { rankRequirementCandidates } from '../../../domain/policies/PlacementRequirementPolicy.js';
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import {
   createResourceStock,
@@ -61,9 +62,39 @@ export class TransferHubToHub {
    * }>}
    */
   async execute(params) {
-    const outcome = await this.#run(params);
+    const outcome = await this.#drawFromHubs(params);
     await this.#sayWhy(params.targetId, outcome, params);
     return outcome;
+  }
+
+  /**
+   * A target whose link selects the nearest hub (`hubLink.selection: 'nearest'`, a market and its granaries) draws on every hub in its reach, in priority order (the nearest,
+   * then the catalog's order of orientations: HubPriorityPolicy), the next one only for what the previous could not give. Any other link has its one hub (`sourceLinkField`).
+   */
+  async #drawFromHubs(params) {
+    const target = await this.supplyBuildingRepository.findById(params.targetId);
+    const link = target ? getHubLinkForRole(target.type, 'distributor', params.category) : null;
+    if (link?.selection !== 'nearest') return this.#run(params);
+
+    const hubs = await this.supplyBuildingRepository.findByResourceRole('hub', getCategoriesForRole(target.type, 'distributor', params.category));
+    const allowed = link.hubTypes ? hubs.filter((hub) => link.hubTypes.includes(hub.type)) : hubs;
+    const sources = rankRequirementCandidates(target, allowed, { role: 'hub', categories: getCategoriesForRole(target.type, 'distributor', params.category), range: link.range, directionOrder: link.directionOrder });
+    if (sources.length === 0) return { transferred: false, reason: 'no_source_link', transfers: [], totalUnits: 0 };
+
+    // What ends the whole draw, whichever hub is next: the target's own state, or its demand met.
+    const settled = new Set(['target_not_found', 'not_transfer_period', 'target_not_operational', 'no_demand', 'target_full']);
+    const transfers = [];
+    let firstRefusal = null;
+    for (const source of sources) {
+      const outcome = await this.#run({ ...params, sourceId: source.id });
+      if (outcome.transferred) transfers.push(...outcome.transfers);
+      else {
+        firstRefusal ??= outcome;
+        if (settled.has(outcome.reason)) break;
+      }
+    }
+    if (transfers.length > 0) return { transferred: true, transfers, totalUnits: transfers.reduce((sum, transfer) => sum + transfer.amount, 0) };
+    return firstRefusal;
   }
 
   /**
@@ -83,7 +114,7 @@ export class TransferHubToHub {
     await this.supplyBuildingRepository.updateBuildingFields(targetId, { transferRefusal: { reason: outcome.reason, category, turn: period?.turn ?? null } });
   }
 
-  async #run({ targetId, period, demand, category }) {
+  async #run({ targetId, period, demand, category, sourceId: drawnFrom }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
@@ -106,7 +137,7 @@ export class TransferHubToHub {
     }
 
     const targetHubLink = getHubLinkForRole(target.type, 'distributor', category);
-    const sourceId = targetHubLink ? target[targetHubLink.sourceLinkField] : undefined;
+    const sourceId = drawnFrom ?? (targetHubLink ? target[targetHubLink.sourceLinkField] : undefined);
     if (!sourceId) {
       return { transferred: false, reason: 'no_source_link', transfers: [], totalUnits: 0 };
     }
@@ -129,9 +160,10 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'source_not_operational', transfers: [], totalUnits: 0 };
     }
 
+    // A link that selects the nearest hub is not a list kept on the hub: any hub in range serves (HubPriorityPolicy), whether or not it is the one the target remembers.
     const links = [...(source[sourceHubLink.linksField] ?? [])];
     const linkIndex = links.findIndex((entry) => entry[sourceHubLink.linkTargetIdField] === targetId);
-    if (linkIndex < 0) {
+    if (linkIndex < 0 && targetHubLink.selection !== 'nearest') {
       return { transferred: false, reason: 'target_not_linked', transfers: [], totalUnits: 0 };
     }
 

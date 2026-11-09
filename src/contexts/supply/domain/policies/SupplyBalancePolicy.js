@@ -20,13 +20,15 @@ export function yearlyUnitsOf(entry) {
 }
 
 /**
- * What a new building adds to the need: the average yearly yield of the producer types the catalog declares for those goods.
+ * What a new building adds to the need: the average yearly yield of the producer types the catalog declares for those goods. A house's own business (it also consumes: the
+ * cooperative's bread) is not a building one places to close the gap, so it is left out of this average (it still counts in what the city makes).
  * @param {ReadonlyArray<string>} categories the goods of the need
  * @returns {number}
  */
 export function declaredYearlyYield(categories) {
   const yields = [];
-  for (const definition of Object.values(buildingCatalog)) {
+  for (const [type, definition] of Object.entries(buildingCatalog)) {
+    if (getQuantityConsumerEntries(type).length > 0) continue;
     for (const entry of definition.resourceRoles ?? []) {
       if (entry.role === 'producer' && entry.categories.some((category) => categories.includes(category))) yields.push(yearlyUnitsOf(entry));
     }

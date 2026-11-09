@@ -1,7 +1,7 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
 import { html } from '../shell/safeHtml.js';
 import { goodIcon, goodLabel } from '../shell/CatalogVocabulary.js';
-import { satisfactionOf,formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
+import { formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
 import {
   WORLD_CITY_CATEGORY_LABELS,
   getWorldCityById,
@@ -40,9 +40,9 @@ function renderCityPanel(cityId, tradeInfo = null) {
 }
 
 /**
- * @param {{ relation: object|null, entry: object|null, sales: object[] }} tradeInfo
+ * @param {{ relation: object|null, entry: object|null, sales: object[], satisfaction: number|null, satisfactionTier: string|null }} tradeInfo
  */
-function renderTradeBlock({ relation, entry, sales }) {
+function renderTradeBlock({ relation, entry, sales, satisfaction, satisfactionTier }) {
   if (!entry) return '';
 
   const status = relation?.status ?? null;
@@ -72,7 +72,7 @@ function renderTradeBlock({ relation, entry, sales }) {
       </div>
       ${status === 'active' ? html`
         <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
-        <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${formatSatisfaction(satisfactionOf(relation))}</strong></p>
+        <p class="trade-map-trade-satisfaction">Climat des affaires : <strong>${formatSatisfaction(satisfaction)} (${satisfactionTier})</strong></p>
         <div class="trade-map-trade-recent">
           <p class="trade-map-trade-recent-label">Dernières ventes :</p>
           <ul class="trade-map-trade-sales-list">${salesLines}</ul>

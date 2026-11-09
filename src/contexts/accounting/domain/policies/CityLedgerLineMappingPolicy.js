@@ -48,6 +48,8 @@ const LINES = Object.freeze({
   repairs: { out: ['615221'] },
   commercialRoutes: { out: ['622'] },
   contributions: { out: ['6281'] },
+  // The gifts the city makes to a partner city to mend a relation (DIPLOMATIC_GESTURES).
+  diplomaticGifts: { out: ['6568'] },
   imports: { out: ['607'] },
   loanInterest: { out: ['66111'] },
   loanRepayment: { out: ['1641'] },
@@ -58,7 +60,7 @@ const LINES = Object.freeze({
 const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'centralBankProfit', 'bankPremiums', 'benefactorGifts', 'loanCapital'];
 const EXPENSE_LINES = [
   'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'sicknessBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
-  'contributions', 'imports', 'loanInterest', 'loanRepayment', 'stateArrearsPaid',
+  'contributions', 'diplomaticGifts', 'imports', 'loanInterest', 'loanRepayment', 'stateArrearsPaid',
 ];
 
 /**
@@ -113,6 +115,7 @@ export function cityLedgerYearLinesFromCashFlows(year, flows, { balanceForYear, 
     repairs: euros('repairs'),
     commercialRoutes: euros('commercialRoutes'),
     contributions: euros('contributions'),
+    diplomaticGifts: euros('diplomaticGifts'),
     imports: euros('imports'),
     loanInterest: euros('loanInterest'),
     loanRepayment: euros('loanRepayment'),

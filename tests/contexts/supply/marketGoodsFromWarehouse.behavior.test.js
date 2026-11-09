@@ -65,7 +65,7 @@ describe('Supply — a market with two distributor entries', () => {
 
     expect(outcome.assigned).toBe(true);
     expect(repo.rows.get('stall').supplyHubId).toBe('mill');
-    expect(repo.rows.get('stall').goodsHubId).toBe('warehouse'); // not the far one, not the windmill
+    expect(repo.rows.get('stall').goodsHubId).toBe('warehouse'); // the nearest warehouse (the far one is no limit, only second), not the windmill
   });
 
   test('a goods pull takes goods from the warehouse and leaves the diet of the stall untouched', async () => {
@@ -83,7 +83,7 @@ describe('Supply — a market with two distributor entries', () => {
 
   test('a warehouse built after the market serves it too', async () => {
     repo.rows.get('warehouse').stocks = { plate: 10, goods: 10 };
-    const late = new InMemoryRepository([...repo.rows.values()].filter((row) => row.id !== 'warehouse'));
+    const late = new InMemoryRepository([...repo.rows.values()].filter((row) => row.type !== 'Warehouse'));
     await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
     expect(late.rows.get('stall').goodsHubId ?? null).toBeNull();
 
@@ -107,7 +107,8 @@ describe('Supply — a market with two distributor entries', () => {
     const bulldozed = [];
     await cascade.execute({ hubId: 'warehouse', city: {}, bulldozeBuildingAtTile: async (at) => bulldozed.push(at) });
     expect(bulldozed).toEqual([]);
-    expect(repo.rows.get('stall').goodsHubId).toBeNull();
+    // The market has no reach limit: with its nearest warehouse gone it remembers the next one, however far.
+    expect(repo.rows.get('stall').goodsHubId).toBe('far-warehouse');
     expect(repo.rows.get('stall').supplyHubId).toBe('mill');
   });
 });

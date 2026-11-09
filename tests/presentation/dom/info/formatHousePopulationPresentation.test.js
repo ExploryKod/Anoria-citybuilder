@@ -38,10 +38,8 @@ describe('formatHousePopulationPresentation', () => {
 
     const { skills } = formatHousePopulationPresentation(composition, 'merchants');
 
-    expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'vente-alimentaire' }),
-      expect.objectContaining({ skillKey: 'stockage-alimentaire' }),
-    ]);
+    // Every skill of the level, once each (the order is the presentation's, not what this pins).
+    expect(skills.map((skill) => skill.skillKey).sort()).toEqual(['negoce', 'stockage-alimentaire', 'vente-alimentaire']);
   });
 
   test('a skill the catalog grants but SKILL_CATALOG has no curated entry for is shown as the "…" marker, not a label made up from its id', () => {

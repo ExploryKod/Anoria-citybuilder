@@ -7,6 +7,8 @@ const FORMATTERS = Object.freeze({
   euro: formatEuro,
   percent: (ratio) => `${(ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`,
   count: (value) => value.toLocaleString('fr-FR'),
+  // A word the catalog or the game names (a good, a city), put in as it is: a text figure is a non-empty string, never a number.
+  text: (value) => value,
   index: (value) => value.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
 });
 
@@ -34,7 +36,8 @@ export function resolveHelp(id, { state = null, figures = {} } = {}) {
     return chosen.replace(/\{(\w+)\}/g, (_, name) => {
       if (!declared.includes(name)) throw new Error(`[help] "${id}": ${where} writes {${name}}, which the entry does not declare as a figure`);
       // A state writes only the figures it needs: one it does not write is not asked for, one it writes must be given.
-      if (!Number.isFinite(figures[name])) throw new Error(`[help] "${id}": ${where} writes {${name}}, which was not given (got ${figures[name]})`);
+      const given = entry.figures[name] === 'text' ? typeof figures[name] === 'string' && figures[name] !== '' : Number.isFinite(figures[name]);
+      if (!given) throw new Error(`[help] "${id}": ${where} writes {${name}}, which was not given (got ${figures[name]})`);
       const shown = FORMATTERS[entry.figures[name]](figures[name]);
       return emphasise ? `**${shown}**` : shown;
     });

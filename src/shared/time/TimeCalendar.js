@@ -35,6 +35,13 @@ export const MONTHS_PER_SEASON = 3;
 /** @readonly */
 export const SEASONS = Object.freeze(['Printemps', 'Été', 'Automne', 'Hiver']);
 
+/**
+ * The ids of the seasons and the months, which the catalogs' schedules name (`values: ['autumn']`), index-aligned with SEASONS and MONTHS: the one place the calendar's
+ * names and these ids meet. Every other list of them (the supply's, the labels the presentation reads) is derived from here.
+ */
+export const SEASON_IDS = Object.freeze(['spring', 'summer', 'autumn', 'winter']);
+export const MONTH_IDS = Object.freeze(['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']);
+
 /** Emoji affiché dans le HUD pour chaque saison */
 export const SEASON_EMOJI = Object.freeze({
   Printemps: '🌸',

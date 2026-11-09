@@ -92,13 +92,15 @@ export class AssignDistributorToHub {
   }
 
   async #linkEntry({ distributorId, x, y, entry, hubRows }) {
-    const { sourceLinkField, range, hubTypes } = entry.hubLink;
+    const { sourceLinkField, range, hubTypes, selection, directionOrder } = entry.hubLink;
     if (range == null) {
       throw new Error(`[AssignDistributorToHub] the hubLink of "${entry.categories.join(', ')}" declares no range in buildingEconomy.js`);
     }
+    // A link that selects the nearest hub has no capacity: the distributor draws on every hub in range, this field only keeps the first of them.
+    const capacityFree = selection === 'nearest';
 
     const allowed = hubTypes ? hubRows.filter((hub) => hubTypes.includes(hub.type)) : hubRows;
-    const requirement = { role: 'hub', categories: entry.categories, range, requiresCapacity: true };
+    const requirement = { role: 'hub', categories: entry.categories, range, requiresCapacity: !capacityFree, directionOrder };
     const owner = rankRequirementCandidates({ x, y }, allowed, requirement)[0];
     if (!owner) {
       const anyMatch = allowed.some((hub) => getCategoriesForRole(hub.type, 'hub').some((c) => entry.categories.includes(c)));
@@ -111,7 +113,7 @@ export class AssignDistributorToHub {
     const linkedDistributors = hub.linkedDistributors ?? [];
     const alreadyLinked = linkedDistributors.some((d) => d.distributorId === distributorId);
     const capacity = getLinkCapacityForRole(hub.type, 'hub');
-    if (capacity != null && linkedDistributors.length >= capacity && !alreadyLinked) {
+    if (!capacityFree && capacity != null && linkedDistributors.length >= capacity && !alreadyLinked) {
       return { assigned: false, reason: 'hub_full' };
     }
 

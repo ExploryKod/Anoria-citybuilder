@@ -37,6 +37,9 @@ export function createSupplyBuildingView({
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
   }
+  if (!type || typeof type !== 'string') {
+    throw new Error(`SupplyBuildingView: building ${id} has no type`);
+  }
 
   const stock = createSupplyStock(stocks);
   // The catalog-derived shape only — no good is added by name here.
@@ -44,7 +47,7 @@ export function createSupplyBuildingView({
 
   return Object.freeze({
     id,
-    type: typeof type === 'string' ? type : '',
+    type,
     x: typeof x === 'number' && Number.isFinite(x) ? x : null,
     y: typeof y === 'number' && Number.isFinite(y) ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : Number(roadCount) || 0,

@@ -18,37 +18,37 @@ describe('canPlaceBuildingAt', () => {
     expect(canPlaceBuildingAt({ x: 0, y: 0, buildingType: 'House-Blue', candidates: [] })).toEqual({ ok: true });
   });
 
-  test('picks the closest hub with a free slot', () => {
-    const result = canPlaceBuildingAt({
-      x: 11,
-      y: 10,
-      buildingType: 'Market-Stall-Red',
-      candidates: [windmillA, windmillB],
-    });
-    expect(result).toEqual({ ok: true, ownerId: 'windmill-a', role: 'hub' });
+  test('picks the closest hub in reach, and among equally close ones the first orientation of the catalog\'s order', () => {
+    const near = (x) => canPlaceBuildingAt({ x, y: 10, buildingType: 'Market-Stall-Red', candidates: [windmillA, windmillB], placedCount: 0 });
+    expect(near(9)).toEqual({ ok: true, ownerId: 'windmill-a', role: 'hub' }); // 1 tile from A, 3 from B
+    // At 11 both are 1 tile away: A lies to the west, B to the east, and the catalog ranks east before west.
+    expect(near(11)).toEqual({ ok: true, ownerId: 'windmill-b', role: 'hub' });
   });
 
   test('rejects when no hub exists at all', () => {
-    const result = canPlaceBuildingAt({ x: 5, y: 5, buildingType: 'Market-Stall-Red', candidates: [] });
+    const result = canPlaceBuildingAt({ x: 5, y: 5, buildingType: 'Market-Stall-Red', candidates: [], placedCount: 0 });
     expect(result).toEqual({ ok: false, reason: 'hub_missing' });
   });
 
-  test('rejects when the only hub is out of range', () => {
-    const result = canPlaceBuildingAt({ x: 30, y: 30, buildingType: 'Market-Stall-Red', candidates: [windmillA] });
-    expect(result).toEqual({ ok: false, reason: 'hub_too_far' });
+  test('a market has no reach limit to its granaries: a far one still owns it', () => {
+    const result = canPlaceBuildingAt({ x: 300, y: 300, buildingType: 'Market-Stall-Red', candidates: [windmillA], placedCount: 0 });
+    expect(result).toEqual({ ok: true, ownerId: 'windmill-a', role: 'hub' });
   });
 
-  test('rejects when nearby hubs are all at capacity', () => {
-    const fullWindmill = {
-      ...windmillA,
-      linkedDistributors: [
-        { distributorId: 'm1', x: 1, y: 1, allocatedStocks: {} },
-        { distributorId: 'm2', x: 2, y: 2, allocatedStocks: {} },
-      ],
-    };
-
-    const result = canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall-Red', candidates: [fullWindmill] });
+  test('rejects when as many markets already stand as there are granaries, wherever they are', () => {
+    const result = canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall-Red', candidates: [windmillA], placedCount: 1 });
     expect(result).toEqual({ ok: false, reason: 'hub_full' });
+  });
+
+  test('many granaries and one market: another market may be placed while granaries outnumber the markets, in reach of just one of them', () => {
+    const far = { id: 'windmill-far', type: 'Windmill-001', x: 90, y: 90, roadCount: 1, linkedDistributors: [] };
+    const placed = (placedCount) => canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall-Red', candidates: [windmillA, windmillB, far], placedCount });
+    expect(placed(2)).toMatchObject({ ok: true });
+    expect(placed(3)).toEqual({ ok: false, reason: 'hub_full' });
+  });
+
+  test('a limited placement must be told how many already stand', () => {
+    expect(() => canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall-Red', candidates: [windmillA] })).toThrow(/placedCount/);
   });
 
   test('ignores candidates without road access', () => {

@@ -1,6 +1,8 @@
 import { buildingCatalog, getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getShelfLifeMonths } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { shelfLifeTurnsOf } from './StockAgingPolicy.js';
+import { matchesSchedule } from './ResourceSchedulePolicy.js';
+import { MONTH_IDS } from '../../../../shared/time/TimeCalendar.js';
 import {
   getResourceRoles,
   getAllCategoriesForRole,
@@ -235,7 +237,6 @@ export function shelfLifeMonthsAt(buildingType, category) {
   return getShelfLifeMonths(category) * factor;
 }
 
-const MONTHS_OF_THE_YEAR = Object.freeze(['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']);
 
 /** @type {Map<string, { unit: string, values?: ReadonlyArray<string> }>} the derived collection schedules (the catalog does not change while the game runs) */
 const collectionSchedules = new Map();
@@ -265,14 +266,18 @@ function deriveCollectionSchedule(hubType, collector) {
       producers += 1;
       if (!entry.sale) return Object.freeze({ unit: 'always' });
       const window = entry.sale.schedule;
-      if (window?.unit !== 'month' || !Array.isArray(window.values)) {
-        throw new Error(`[ResourceRolePolicy] a producer of ${entry.categories.join('/')} sells in a window that is not a list of months: ${hubType}'s collection months cannot be derived from it`);
+      if (window?.unit === 'month' && Array.isArray(window.values)) {
+        for (const month of window.values) months.add(month);
+      } else if (window?.unit === 'monthIndex') {
+        // A recipe's product sold every few months (the cooperative's bread): the months of the year that window falls in.
+        MONTH_IDS.forEach((id, monthIndex) => { if (matchesSchedule(window, { monthIndex })) months.add(id); });
+      } else {
+        throw new Error(`[ResourceRolePolicy] a producer of ${entry.categories.join('/')} sells in a window that is neither a list of months nor a month rhythm: ${hubType}'s collection months cannot be derived from it`);
       }
-      for (const month of window.values) months.add(month);
     }
   }
   if (producers === 0) throw new Error(`[ResourceRolePolicy] ${hubType} collects ${collector.categories.join('/')}, declares no schedule, and no producer makes any of it`);
-  return Object.freeze({ unit: 'month', values: Object.freeze(MONTHS_OF_THE_YEAR.filter((month) => months.has(month))) });
+  return Object.freeze({ unit: 'month', values: Object.freeze(MONTH_IDS.filter((month) => months.has(month))) });
 }
 
 /**

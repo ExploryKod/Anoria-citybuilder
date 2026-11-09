@@ -862,6 +862,17 @@
     padding-right: 24px;
 }
 
+/* A row's verdict in colour (the words say it too, the colour only backs them): creditor green, debtor red. */
+.eco-row--good .eco-label,
+.eco-row--good .eco-figure {
+    color: #2e7d32;
+}
+
+.eco-row--bad .eco-label,
+.eco-row--bad .eco-figure {
+    color: #b91c1c;
+}
+
 .eco-bar {
     grid-column: 1 / -1;
     height: 4px;
@@ -944,4 +955,110 @@
     color: #8d3b00;
     font-size: 0.85rem;
     line-height: 1.5;
+}
+
+/* ---- Commerce extérieur (TradeBalanceTab.js): the controls, the commentary, the twelve months as bars above and below zero ---- */
+.eco-trade-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.eco-trade-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.eco-trade-controls select {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--primary);
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+.eco-trade-commentary {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.eco-trade-commentary:empty {
+    display: none;
+}
+
+/* Twelve columns, a baseline in the middle: a surplus grows upward from it, a deficit downward. */
+.eco-trade-chart {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 4px;
+    height: 160px;
+    margin-top: 8px;
+}
+
+.eco-trade-chart__month {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.eco-trade-chart__month.is-shown {
+    background: rgba(251, 129, 34, 0.1);
+}
+
+/* Two halves per month, each as high as half the chart: the bar of a surplus rests on the baseline in the upper one, that of a deficit hangs from it in the lower one. */
+.eco-trade-chart__month {
+    height: 100%;
+}
+
+.eco-trade-chart__half {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+}
+
+.eco-trade-chart__half--up {
+    align-items: flex-end;
+}
+
+.eco-trade-chart__half--down {
+    align-items: flex-start;
+}
+
+.eco-trade-chart__bar {
+    display: block;
+    width: 60%;
+    min-height: 2px;
+    margin-inline: auto;
+    border-radius: 3px;
+}
+
+.eco-trade-chart__half--up .eco-trade-chart__bar {
+    background: #22c55e;
+}
+
+.eco-trade-chart__half--down .eco-trade-chart__bar {
+    background: #ef4444;
+}
+
+.eco-trade-chart__label {
+    position: absolute;
+    bottom: -18px;
+    left: 0;
+    right: 0;
+    font-size: 0.7rem;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.eco-trade-chart + * {
+    margin-top: 24px;
 }

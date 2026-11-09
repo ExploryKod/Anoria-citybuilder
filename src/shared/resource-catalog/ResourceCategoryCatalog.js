@@ -49,6 +49,8 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   // Set with gold: worth far more than the decorated piece and the gold it took.
   gildedPot: Object.freeze({ vatCategory: 'luxury', emoji: '🏺', label: 'Pot décoré serti d\'or', unit: unitOf('pot serti d\'or', 'pots sertis d\'or'), baseValue: 30.0, colors: Object.freeze({ dark: '#B8860B', pale: '#F2DC8C' }) }),
   gildedPlate: Object.freeze({ vatCategory: 'luxury', emoji: '🍽️', label: 'Plat décoré serti d\'or', unit: unitOf('plat serti d\'or', 'plats sertis d\'or'), baseValue: 38.0, colors: Object.freeze({ dark: '#A67C00', pale: '#EDD98A' }) }),
+  bread: Object.freeze({ vatCategory: 'essential', emoji: '🍞', label: 'Pain', unit: unitOf('pain', 'pains'), baseValue: 1.5, colors: Object.freeze({ dark: '#B8863B', pale: '#F0D9A8' }) }),
+  cabbageSoup: Object.freeze({ vatCategory: 'essential', emoji: '🍲', label: 'Soupe au chou', unit: unitOf('bol', 'bols'), baseValue: 1.2, colors: Object.freeze({ dark: '#2E7D32', pale: '#C8E6C9' }) }),
   carrotCake: Object.freeze({ vatCategory: 'luxury', emoji: '🥕', label: 'Carrot cake', unit: unitOf('gâteau', 'gâteaux'), baseValue: 6.0, colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
   book:   Object.freeze({ vatCategory: 'luxury', emoji: '📚', label: 'Livre', unit: unitOf('livre', 'livres'),     baseValue: 15.0, colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   dealWood:        Object.freeze({ emoji: '🤝', label: 'Export bois',       unit: unitOf('vente', 'ventes'), standsFor: 'wood', colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
@@ -61,6 +63,10 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dealGildedPlate: Object.freeze({ emoji: '🤝', label: 'Export plat serti d\'or', unit: unitOf('vente', 'ventes'), standsFor: 'gildedPlate', colors: Object.freeze({ dark: '#A67C00', pale: '#EDD98A' }) }),
   dealBook:        Object.freeze({ emoji: '🤝', label: 'Export livre',       unit: unitOf('vente', 'ventes'), standsFor: 'book', colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   dealCarrotCake:  Object.freeze({ emoji: '🤝', label: 'Export carrot cake', unit: unitOf('vente', 'ventes'), standsFor: 'carrotCake', colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
+  dealBread:       Object.freeze({ emoji: '🤝', label: 'Export pain', unit: unitOf('vente', 'ventes'), standsFor: 'bread', colors: Object.freeze({ dark: '#B8863B', pale: '#F0D9A8' }) }),
+  dealCabbageSoup: Object.freeze({ emoji: '🤝', label: 'Export soupe au chou', unit: unitOf('vente', 'ventes'), standsFor: 'cabbageSoup', colors: Object.freeze({ dark: '#2E7D32', pale: '#C8E6C9' }) }),
+  dealWheatExport: Object.freeze({ emoji: '🤝', label: 'Export blé', unit: unitOf('vente', 'ventes'), standsFor: 'wheat', colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
+  dealCarrotExport: Object.freeze({ emoji: '🤝', label: 'Export carotte', unit: unitOf('vente', 'ventes'), standsFor: 'carrot', colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
   // Deals waiting for an import: made by the merchants' business, turned into the real good when the city delivers.
   dealCoal:        Object.freeze({ kind: 'importDeal', importGood: 'coal', emoji: '🤝', label: 'Import charbon', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#37474F', pale: '#B0BEC5' }) }),
   dealPetrol:      Object.freeze({ kind: 'importDeal', importGood: 'petrol', emoji: '🤝', label: 'Import pétrole', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#4E342E', pale: '#BCAAA4' }) }),
@@ -102,7 +108,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
  * buys (a good at a market, a service on its bill). A category a house buys must be in one, or `householdConsumptionGroupOf` throws.
  */
 export const HOUSEHOLD_CONSUMPTION_GROUPS = Object.freeze([
-  Object.freeze({ id: 'food', coicop: '01', label: 'Alimentation', categories: Object.freeze(['wheat', 'cabbage', 'carrot', 'dattes']) }),
+  Object.freeze({ id: 'food', coicop: '01', label: 'Alimentation', categories: Object.freeze(['wheat', 'cabbage', 'carrot', 'dattes', 'bread', 'cabbageSoup']) }),
   Object.freeze({ id: 'housing', coicop: '04', label: 'Logement, eau et énergie', categories: Object.freeze(['water', 'energy', 'wood', 'oil', 'candle']) }),
   Object.freeze({ id: 'equipment', coicop: '05', label: 'Équipement du ménage', categories: Object.freeze(['furniture', 'plate', 'pot', 'amphora']) }),
   Object.freeze({ id: 'health', coicop: '06', label: 'Santé', categories: Object.freeze(['doctor', 'hospital']) }),
@@ -192,7 +198,7 @@ export function getResourceBaseValue(category) {
  * food has to keep from one harvest to the next in a granary, so the crops that feed the citizens live a quarter of that unprotected.
  */
 const SHELF_LIFE_MONTHS = Object.freeze({
-  wheat: 6, carrot: 3, cabbage: 2, dattes: 6, olive: 1, oil: 18, carrotCake: 1, wood: 36,
+  wheat: 6, carrot: 3, cabbage: 2, dattes: 6, olive: 1, oil: 18, carrotCake: 1, bread: 1, cabbageSoup: 1, wood: 36,
   coal: Infinity, petrol: Infinity, uranium: Infinity, exoticWood: Infinity, candle: Infinity,
   decoratedPot: Infinity, decoratedPlate: Infinity, gildedPot: Infinity, gildedPlate: Infinity, book: Infinity, furniture: Infinity, plate: Infinity, pot: Infinity, amphora: Infinity,
   rock: Infinity, clay: Infinity, iron: Infinity, gold: Infinity, bandwidth: Infinity,
@@ -257,7 +263,7 @@ export function getShelfLifeMonths(category) {
  * tune with a play-through.
  */
 const DELIVERY_CYCLE_MONTHS = Object.freeze({
-  wheat: 12, carrot: 12, cabbage: 12, dattes: 12, olive: 12, oil: 12, carrotCake: 1, wood: 12,
+  wheat: 12, carrot: 12, cabbage: 12, dattes: 12, olive: 12, oil: 12, carrotCake: 1, bread: 1, cabbageSoup: 1, wood: 12,
 });
 
 /**

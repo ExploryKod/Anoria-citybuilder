@@ -6,6 +6,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import {
@@ -32,6 +33,12 @@ class InMemoryRepository {
   async findById(id) {
     const row = this.rows.get(id);
     return row ? createSupplyBuildingSnapshot({ ...row, stocks: createSupplyStock(row.stocks) }) : null;
+  }
+
+  async findByResourceRole(role, categories) {
+    const found = [];
+    for (const row of this.rows.values()) if (hasResourceRole(row.type, role, categories)) found.push(await this.findById(row.id));
+    return found;
   }
 
   async saveStocks(id, stocks) {

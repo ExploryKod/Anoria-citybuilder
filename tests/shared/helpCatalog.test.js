@@ -6,7 +6,8 @@ describe('help catalog', () => {
   for (const [id, entry] of Object.entries(HELP)) {
     for (const state of entry.states ?? [null]) {
       test(`${id} reads${state ? ` in the state "${state}"` : ''}`, () => {
-        const figures = Object.fromEntries(Object.keys(entry.figures ?? {}).map((name) => [name, 1]));
+        // A text figure is a word; the others are numbers.
+        const figures = Object.fromEntries(Object.entries(entry.figures ?? {}).map(([name, kind]) => [name, kind === 'text' ? 'mot' : 1]));
         const help = resolveHelp(id, { state, figures });
         expect(help.message).not.toMatch(/\{\w+\}/);
       });

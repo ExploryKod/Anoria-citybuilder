@@ -3,7 +3,7 @@
  * FoodForecastPolicy.js). Every figure comes from the catalog and from the buildings standing now: the yield of each farm, the citizens' monthly
  * need, the capacity and the per-good ceiling of each working granary (its storage orders). Read-only, nothing is persisted.
  */
-import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
+import { isOperational, staffingShare } from '../../domain/policies/OperationalGatePolicy.js';
 import { getCategoriesForRole, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
 import { getShelfLifeMonths } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../domain/policies/HubStorageOrdersPolicy.js';
@@ -20,7 +20,7 @@ export class DescribeFoodForecast {
   }
 
   /**
-   * @returns {Promise<ReturnType<typeof foodForecastOf> & { farms: number }>}
+   * @returns {Promise<ReturnType<typeof foodForecastOf> & { farms: number, idleFarms: number }>}
    */
   async execute() {
     const supplied = getSuppliedCategories();
@@ -30,11 +30,21 @@ export class DescribeFoodForecast {
       isOperational({ type: hub.type, roadCount: hub.roadCount, worker: hub.worker, workerNeed: hub.workerNeed })
     );
 
+    // A farm harvests only while it operates (its road, and a worker present: the sick do not count, see the snapshot's `worker`): an idle one yields nothing,
+    // which is how the harvest runs (the same gate as every production). The room of the granaries is judged on what all the farms plant.
     const harvestByCategory = {};
+    const plantedByCategory = {};
+    let idleFarms = 0;
     for (const farm of farms) {
       const entry = getAnnualSupplyEntry(farm.type);
       const category = entry.categories[0];
-      harvestByCategory[category] = (harvestByCategory[category] ?? 0) + entry.amount;
+      plantedByCategory[category] = (plantedByCategory[category] ?? 0) + entry.amount;
+      if (isOperational({ type: farm.type, roadCount: farm.roadCount, worker: farm.worker, workerNeed: farm.workerNeed })) {
+        // A farm yields what its staff makes of it (the workers present over the workers it needs, the same share ProduceResource applies at the harvest).
+        harvestByCategory[category] = (harvestByCategory[category] ?? 0) + entry.amount * staffingShare({ worker: farm.worker, workerNeed: farm.workerNeed });
+      } else {
+        idleFarms += 1;
+      }
     }
 
     const demand = houses.reduce((sum, house) => sum + (house.pop ?? 0) * getPerCapitaDemand(house.type) * MONTHS_PER_YEAR, 0);
@@ -46,7 +56,7 @@ export class DescribeFoodForecast {
       const orders = normalizeHubStorageOrders(granary.hubStorageOrders, goods);
       total += granary.maxStock;
       const granaryEntry = listRoleEntries(granary.type, 'hub').find((entry) => entry.categories.some((category) => goods.includes(category)));
-      for (const category of Object.keys(harvestByCategory)) {
+      for (const category of Object.keys(plantedByCategory)) {
         // An empty granary: what a good can still go in is the room its own ceiling gives it (nil when the granary refuses or empties it).
         const room = getHubProductRemainingInbound({ productId: category, productIds: goods, orders, stocks: {}, totalCapacity: granary.maxStock });
         // A good that goes bad before the next harvest feeds the citizens only for the part of the year it lasts.
@@ -55,6 +65,6 @@ export class DescribeFoodForecast {
       }
     }
 
-    return { farms: farms.length, ...foodForecastOf({ harvestByCategory, demand, storage: { byCategory, total } }) };
+    return { farms: farms.length, idleFarms, ...foodForecastOf({ harvestByCategory, plantedByCategory, demand, storage: { byCategory, total } }) };
   }
 }

@@ -32,6 +32,7 @@ import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import { getNaturalSources, getQuantityConsumerEntries, getSuppliedCategories, getTotalKeyForCategory } from '../shared/building-catalog/resourceRoleQueries.js';
 import { YearClimate } from '../contexts/supply/application/services/YearClimate.js';
+import { cropHarvestFactor } from '../shared/climate/ClimatePolicy.js';
 import { ClimateRepository } from '../contexts/supply/infrastructure/dexie/ClimateRepository.js';
 import { coverOf, scarcityFactorOf } from '../contexts/supply/domain/policies/ScarcityPolicy.js';
 import { SCARCE_NEEDS } from '../shared/resource-catalog/ScarcityCatalog.js';
@@ -244,7 +245,10 @@ export function createSupplyContext({
     dealGate,
     recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
     removeBuilding: (params) => syncRemovedBuilding(params),
-    yearClimate,
+    // A crop yields what the year lets it: the climate of the year, as much as the crop feels it (ClimatePolicy.js).
+    yieldFactors: {
+      climate: async ({ category, period }) => cropHarvestFactor({ category, yearFactor: (await yearClimate.of(period?.year ?? 0)).harvestFactor }),
+    },
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);

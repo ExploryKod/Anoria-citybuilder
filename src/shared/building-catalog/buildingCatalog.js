@@ -210,6 +210,8 @@
  *   with `sourceLinkField`) and, optionally, `hubTypes` (catalog ids of the only hubs it may use —
  *   omitted means any hub holding its goods). A building with several 'distributor' entries links each
  *   to its own hub, in its own `sourceLinkField`.
+ *   `selection: 'nearest'` (with `directionOrder`, every orientation once) lifts the hub's `linkCapacity` for this link: the distributor draws on EVERY hub in range, the nearest first
+ *   (then by the order of orientations), the next when the nearest has not enough (TransferHubToHub); `sourceLinkField` keeps the first of them.
  *
  * @typedef {Object} PlacementRequirement
  * @property {ResourceRoleKind} role Role another, already-placed building must
@@ -219,6 +221,9 @@
  *   anywhere in the city (no distance limit).
  * @property {boolean} [requiresCapacity] When true, the found building must
  *   also have room under its own `linkCapacity` (not already at its cap).
+ * @property {number} [maxPerHub] However many buildings of the role stand (in range or not), this building may be placed only up to `maxPerHub` times each:
+ *   a market for each granary. Placement counts them (`placedCount`); the link has no capacity of its own (see `hubLink.selection`).
+ * @property {ReadonlyArray<string>} [directionOrder] Among hubs equally near, the order of orientations that decides which one is the owner (HubPriorityPolicy.js).
  *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]

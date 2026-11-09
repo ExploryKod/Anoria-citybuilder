@@ -78,39 +78,55 @@ describe('Supply — a house running its own business', () => {
     expect((await repo.findById(id.house)).activityShortfall?.decoratedPot).toBe(false);
   });
 
-  test('the cake needs wheat, carrot and oil all at once: missing just the oil blocks the whole batch', async () => {
-    // Wheat and carrot live at a windmill hub, oil at a warehouse — the SAME split as any citizen's meal and
-    // lighting, and the recipe draws on both at once, each on its own.
-    const id = ids('house', 'mill', 'wh');
+  test('the cake needs wheat and carrot both: missing just the carrot blocks the whole batch', async () => {
+    // Wheat and carrot both live at a windmill hub (a granary): the recipe draws on both at once, each on its own.
+    const id = ids('house', 'mill');
     const repo = new InMemoryRepository([
       { id: id.house, type: 'House-Red', x: 0, y: 0, pop: 4, stocks: {} },
-      { id: id.mill, type: 'Windmill-001', x: 3, y: 0, stocks: { wheat: 20, carrot: 20, food: 40 } },
-      { id: id.wh, type: 'Warehouse', x: 6, y: 0, stocks: {} },
+      { id: id.mill, type: 'Windmill-001', x: 3, y: 0, stocks: { wheat: 20, food: 20 } },
     ]);
     const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
 
     await produce.execute({ buildingId: id.house, period: month(0) });
-    expect((await repo.findById(id.mill)).stocks.wheat).toBe(20); // nothing taken: the oil was missing
+    expect((await repo.findById(id.mill)).stocks.wheat).toBe(20); // nothing taken: the carrot was missing
     expect((await repo.findById(id.house)).activityShortfall?.carrotCake).toBe(true);
 
-    repo.raw.get(id.wh).stocks = { oil: 10, goods: 10 };
+    repo.raw.get(id.mill).stocks = { wheat: 20, carrot: 20, food: 40 };
     await produce.execute({ buildingId: id.house, period: month(1) });
     expect((await repo.findById(id.house)).stocks.carrotCake).toBe(10);
     expect((await repo.findById(id.mill)).stocks.wheat).toBe(16); // 4 wheat taken
     expect((await repo.findById(id.mill)).stocks.carrot).toBe(16); // 4 carrot taken
-    expect((await repo.findById(id.wh)).stocks.oil).toBe(8); // 2 oil taken
+  });
+
+  test('the bread takes wheat from a granary and the water from the house\'s own stock, shared with the household: no water, no bread', async () => {
+    const id = ids('house', 'mill');
+    const repo = new InMemoryRepository([
+      { id: id.house, type: 'House-Red', x: 0, y: 0, pop: 4, stocks: {} },
+      { id: id.mill, type: 'Windmill-001', x: 3, y: 0, stocks: { wheat: 20, food: 20 } },
+    ]);
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
+
+    await produce.execute({ buildingId: id.house, period: month(0) });
+    expect((await repo.findById(id.mill)).stocks.wheat).toBe(20); // nothing taken: the house has no water
+    expect((await repo.findById(id.house)).activityShortfall?.bread).toBe(true);
+
+    repo.raw.get(id.house).stocks = { water: 10 };
+    await produce.execute({ buildingId: id.house, period: month(1) });
+    expect((await repo.findById(id.house)).stocks.bread).toBe(10);
+    expect((await repo.findById(id.mill)).stocks.wheat).toBe(16); // 4 wheat taken from the granary
+    expect((await repo.findById(id.house)).stocks.water).toBe(6); // 4 m³ taken from what the tank delivered to the home
   });
 
   test('households eat and light their homes first: the artisan business only ranks after the markets', () => {
-    for (const producerType of ['Farm-Wheat', 'Farm-Carrot', 'Factory-Pot', 'Factory-Oil']) {
+    for (const producerType of ['Farm-Wheat', 'Farm-Carrot', 'Factory-Pot']) {
       const { order } = resolveClientPriorities(producerType);
       expect(order.indexOf('House-Red')).toBeGreaterThan(order.indexOf('Market-Stall-Red'));
     }
   });
 
   test('who buys what the artisans and the savants make comes straight from the catalog', () => {
-    // The merchants buy it to export; the artisans also take back their own decorated pots and plates to set gold into them.
-    expect(resolveClientPriorities('House-Red').order.sort()).toEqual(['House-Blue', 'House-Red']);
+    // The merchants buy it to export; the artisans also take back their own decorated pots and plates to set gold into them; the markets sell the bread and the soup to the citizens.
+    expect(resolveClientPriorities('House-Red').order.sort()).toEqual(['House-Blue', 'House-Red', 'Market-Stall-Red']);
     expect(resolveClientPriorities('Factory-Network').order).toEqual(['House-Purple']);
   });
 });

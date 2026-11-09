@@ -99,7 +99,7 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Wheat-2-3', 'Farm-Wheat'),
         farm('Farm-Carrot-4-5', 'Farm-Carrot'),
       ]);
-      useCase = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+      useCase = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
     });
 
     test('adds the annual yield of crop in autumn once per year', async () => {
@@ -165,7 +165,7 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Wheat-2-3', 'Farm-Wheat', { roadCount: 0 }),
         farm('Farm-Carrot-4-5', 'Farm-Carrot', { worker: 0, workerNeed: 1 }),
       ]);
-      useCase = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+      useCase = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
 
       const roadless = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
@@ -195,7 +195,7 @@ describe('Supply — farm harvest', () => {
         farm('Farm-Carrot-4-5', 'Farm-Carrot'),
         farm('Farm-Cabbage-6-7', 'Farm-Cabbage', { worker: 0, workerNeed: 1 }),
       ]);
-      const produceResource = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
+      const produceResource = new ProduceResource(repo, { yieldFactors: { climate: async () => 1 } });
       const runProducerCommand = new RunResourceCommandForRole(repo, produceResource);
 
       const { count, results } = await runProducerCommand.execute({

@@ -19,7 +19,7 @@ import { getResourceCategoryPresentation } from '../resource-catalog/ResourceCat
  */
 
 /**
- * A citizen whose health is below this is sick. Chosen so that a house with water and one kind of food (40 + 12 + 8 = 60) is well clear of
+ * A citizen whose health is below this is sick. Chosen so that a house with water and one kind of food (40 + 12 + 6 = 58) is well clear of
  * it, and one that gives almost nothing (the base, 40) is not far under: only a neglected house falls into it. Tuned here, nowhere else.
  */
 export const HEALTH_SICK_BELOW = 45;
@@ -124,8 +124,10 @@ export const HEALTH_FACTORS = Object.freeze([
     label: 'Variété de nourriture',
     requirement: Object.freeze({ kind: 'goodsVariety', outcomeField: 'lastConsumption', min: 3 }),
     measure: 'current',
-    pointsPerUnit: 8,
-    maxUnits: 3,
+    // Each kind of food the house ate this month, up to five: the three crops and the two the cooperative makes of them (bread, cabbage soup). 5 × 6 keeps the best house at
+    // the top of the scale (the guard below): the three crops alone give 18, the whole variety 30.
+    pointsPerUnit: 6,
+    maxUnits: 5,
   }),
   Object.freeze({
     id: 'prevention',

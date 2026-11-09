@@ -113,6 +113,7 @@ export function renderCityLedgerTable(comparison) {
     { key: 'companySubsidy', thisYear: 'companySubsidyThisYear', lastYear: 'companySubsidyLastYear' },
     { key: 'housingSubsidy', thisYear: 'housingSubsidyThisYear', lastYear: 'housingSubsidyLastYear' },
     { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
+    { key: 'diplomaticGifts', thisYear: 'diplomaticGiftsThisYear', lastYear: 'diplomaticGiftsLastYear' },
     { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
     { key: 'loanInterest', thisYear: 'loanInterestThisYear', lastYear: 'loanInterestLastYear' },
     { key: 'loanRepayment', thisYear: 'loanRepaymentThisYear', lastYear: 'loanRepaymentLastYear' },

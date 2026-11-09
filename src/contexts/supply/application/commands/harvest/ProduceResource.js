@@ -1,4 +1,4 @@
-import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
+import { isOperational, staffingShare } from '../../../domain/policies/OperationalGatePolicy.js';
 import {
   addCategoryAmount,
   getCategoryAmount,
@@ -12,7 +12,6 @@ import {
   isWithinRange,
   manhattanDistance,
 } from '../../../domain/policies/ResourceRangePolicy.js';
-import { cropHarvestFactor, isClimateCrop } from '../../../../../shared/climate/ClimatePolicy.js';
 import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -22,6 +21,9 @@ import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/r
  * Fully resource-agnostic — every fact about WHAT is produced, HOW MUCH,
  * WHEN, and the once-per-period lock comes from the building's own catalog
  * entries; this command never names a resource or a lock field itself.
+ *
+ * A simple entry makes what the staff makes: its amount times the workers present over the workers needed (`staffingShare`), the inputs of a transformation
+ * scaled with it. A `cycle` entry is still all or nothing: a chain with one worker present runs as with all of them.
  *
  * A building can hold several 'producer' entries (a house that gathers, a
  * workshop with two outputs); each is evaluated independently. Three catalog
@@ -74,13 +76,14 @@ export class ProduceResource {
    *   building removal, so Supply is handed it rather than reaching into it).
    *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase, yearClimate } = {}) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase, yieldFactors } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     /**
-     * The climate of a year (YearClimate.js): a crop's harvest is the catalog's yield times the factor of the year, as much as the crop feels it.
-     * @type {{ of: (year: number) => Promise<{ harvestFactor: number }> } | null}
+     * What can move an entry's yield, by the name a catalog entry declares (`yieldFactor: 'climate'`): each is given the good and the period and answers the multiplier of the
+     * yield. The command knows none of them (the climate is the composition's to give); an entry that names one nobody gave throws.
+     * @type {Readonly<Record<string, (params: { category: string, period: object }) => Promise<number>>>}
      */
-    this.yearClimate = yearClimate ?? null;
+    this.yieldFactors = yieldFactors ?? {};
     /**
      * What a building draws from a hub for a recipe is bought from it: the supply logs each draw as a sale (hub → building)
      * at the hub's price, and the month's settlement turns it into the two accounts' lines. Without it, inputs would be free.
@@ -407,11 +410,17 @@ export class ProduceResource {
         if (entry.scale === 'population') multiplier = pop;
       }
       let amount = (entry.amount ?? 0) * multiplier;
-      // A crop yields what the year lets it (docs/gameplay/PLAN_CRISES.md): the climate of the year is a factor on the catalog's yield.
-      if (category && isClimateCrop(category)) {
-        if (!this.yearClimate) throw new Error(`[supply] ${building.type} grows ${category}, a crop, but the production was not given the climate of the year`);
-        amount = Math.round(amount * cropHarvestFactor({ category, yearFactor: (await this.yearClimate.of(period?.year ?? 0)).harvestFactor }));
+      // What the entry declares can move its yield (`yieldFactor`, e.g. the climate of the year for a crop, docs/gameplay/PLAN_CRISES.md).
+      if (entry.yieldFactor) {
+        const factor = this.yieldFactors[entry.yieldFactor];
+        if (!factor) throw new Error(`[supply] ${building.type} declares the yield factor "${entry.yieldFactor}" but the production was not given it`);
+        amount = Math.round(amount * (await factor({ category, period })));
       }
+
+      // A building makes what its staff makes: the workers present (the sick are not) over the workers it needs. A building lifted from the staffing gate makes it all.
+      // The share also scales a transformation's inputs, below, so a half-staffed workshop burns half of what it would.
+      const staffed = entry.requiresOperational === false ? 1 : staffingShare({ worker: building.worker, workerNeed: building.workerNeed });
+      if (staffed < 1 && amount > 0) amount = Math.max(1, Math.round(amount * staffed));
 
       // A source that is drawn from gives what it holds, no more: the mine takes the month's amount, or what the rocks in range have left of it.
       const drawing = entry.source?.draw === true;
@@ -422,7 +431,7 @@ export class ProduceResource {
 
       // A reservoir cannot overflow: a building that declares a stock ceiling (a tank, a power plant) makes only what fits
       // under it, and burns only the share of its inputs that makes. Full, it makes nothing and takes nothing.
-      let share = 1;
+      let share = staffed;
       const ceiling = getMaxStockForBuilding(building.type);
       if (Number.isFinite(ceiling) && amount > 0) {
         const room = Math.max(0, Math.floor(ceiling - getCategoryAmount(building.stocks, category)));
@@ -431,7 +440,7 @@ export class ProduceResource {
           continue;
         }
         if (room < amount) {
-          share = room / amount;
+          share *= room / amount;
           amount = room;
         }
       }

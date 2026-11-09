@@ -323,6 +323,10 @@ export function getConsumableCategories() {
  * Consumable categories a consumer produces for ITSELF (its own 'producer'
  * entry, e.g. household gathering) — as opposed to goods that must be
  * supplied to it through the distribution chain.
+ *
+ * Only an entry that belongs to the inhabitants themselves declares a `scale` (ProduceResource.js): the household gathering for itself. Every other producer entry of a house is
+ * its cooperative's, a legal person apart from the household: it gives the household money (its shares), never its products, which the inhabitants cannot take for themselves,
+ * sold or not. What a cooperative makes (bread) therefore reaches the citizens only through the distribution chain, like any other good.
  * @returns {ReadonlyArray<string>}
  */
 export function getSelfProducedCategories() {
@@ -331,7 +335,7 @@ export function getSelfProducedCategories() {
     const entries = definition.resourceRoles ?? [];
     if (!entries.some(isQuantityConsumer)) continue;
     for (const entry of entries) {
-      if (entry.role !== 'producer') continue;
+      if (entry.role !== 'producer' || entry.scale === undefined) continue;
       for (const category of entry.categories) categories.add(category);
     }
   }

@@ -1,9 +1,14 @@
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
+import { DexieRelationEventRepository } from '../contexts/geography/infrastructure/dexie/DexieRelationEventRepository.js';
+import { MakeDiplomaticGift } from '../contexts/geography/application/workflows/MakeDiplomaticGift.js';
+import { readRelation } from '../contexts/geography/domain/policies/RelationMemoryPolicy.js';
+import { getDaysPerMonth } from '../config/events.js';
+import { turnsPerYear } from '../shared/time/TimeCalendar.js';
 import { WorldMarket } from '../contexts/geography/application/services/WorldMarket.js';
 import { WorldMarketRepository } from '../contexts/geography/infrastructure/dexie/WorldMarketRepository.js';
 import { isClimateCrop } from '../shared/climate/ClimatePolicy.js';
-import { TRADE_CATALOG, SATISFACTION_START, getTradeCatalogEntry, listTradedGoodIds } from '../shared/trade-catalog/TradeCatalog.js';
+import { TRADE_CATALOG, DIPLOMATIC_GESTURES, characterWordsOf, getTradeCatalogEntry, listTradedGoodIds } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { addCategoryAmount, takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
@@ -11,6 +16,8 @@ import { buildPriceWaterfall } from '../contexts/geography/domain/policies/Price
 import { importPaysAtHome, priceImportDelivery } from '../contexts/geography/domain/policies/ImportPricePolicy.js';
 import { getResourceBaseValue } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { unitPriceAtStage } from '../shared/resource-catalog/ValueChainCatalog.js';
+import { goodSatisfactionOf, openingGoodReview, openingGoodSatisfaction, relationSatisfaction, saleBiasOf, satisfactionTier } from '../shared/trade-catalog/satisfaction.js';
+import { getWorldCityById } from './worldCityCatalog.js';
 import { getSessionGameTime } from './sessionRuntime.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 
@@ -23,6 +30,23 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  */
 export function createTradeContext({ supply, accounting }) {
   const cityTradeRepository = new DexieCityTradeRepository();
+  const relationEventRepository = new DexieRelationEventRepository();
+  // The gifts the city makes to a partner (a gesture of the relation): paid by the State's own journal line, then written in the relation's journal.
+  const diplomaticGift = new MakeDiplomaticGift({
+    relationEvents: relationEventRepository,
+    recordCityLine: (line) => accounting.recordLedgerEntry(line),
+    now: () => {
+      const turn = getSessionGameTime();
+      const { year, monthIndex } = resolveGetTimeInfo()(turn);
+      return { turn, year, monthIndex };
+    },
+    daysPerMonth: getDaysPerMonth,
+    cityName: (cityId) => {
+      const name = getWorldCityById(cityId)?.name;
+      if (!name) throw new Error(`[trade] the world has no city "${cityId}" to name in a gift`);
+      return name;
+    },
+  });
 
   // The world's prices (WorldMarket.js): what the cities pay and ask moves with them, and a harvest of the world's own sets the crops'.
   const worldMarket = new WorldMarket({
@@ -36,6 +60,7 @@ export function createTradeContext({ supply, accounting }) {
     worldIndexOf: (good, period) => worldMarket.indexOf(good, period),
     homePriceOf: (good, period) => homeShelfPriceOf(good, period),
     cityTradeRepository,
+    relationEvents: relationEventRepository,
     supplyBuildingRepository: supply.supplyBuildingRepository,
     hubServing: supply.hubServing,
     // A hub's `goods` field is a shared total across every deal good it stores (see
@@ -63,9 +88,9 @@ export function createTradeContext({ supply, accounting }) {
     // The duty in force: nil while nobody holds the collection of the customs (the player's rate stays set).
     getCustomsDuty: (authority, flow, good, turn) => accounting.getCustomsDutyInForce(authority, flow, good, turn),
     random: () => Math.random(),
-    // Where a sale's range is centred. No game event moves it yet, so every sale is centred on 0 (no
-    // favour, no hurt); events, the relation's state and the merchant's experience plug in here.
-    saleBias: () => 0,
+    // Where a sale's range is centred: on the good's commercial satisfaction with the city (warm: the partner pays more, cold: less). Events and the
+    // merchant's experience plug in here later.
+    saleBias: ({ good, relation }) => saleBiasOf(goodSatisfactionOf(relation, 'export', good)),
   });
 
   // The merchants make a deal only while a city is open to it: an import deal while an active city offers the good, an
@@ -131,10 +156,13 @@ export function createTradeContext({ supply, accounting }) {
     cityTradeRepository,
 
     async openRelation(cityId, { startMonth }) {
+      const entry = getTradeCatalogEntry(cityId);
+      if (!entry) throw new Error(`[trade] "${cityId}" is not in the trade catalog: no relation can be opened with it`);
       await cityTradeRepository.saveRelation({
         cityId,
         status: 'active',
-        satisfactionScore: SATISFACTION_START,
+        goodSatisfaction: openingGoodSatisfaction(entry),
+        goodReview: openingGoodReview(),
         contractStartMonth: startMonth,
         contractEndMonth: null,
         lastOrderMonth: null,
@@ -172,7 +200,8 @@ export function createTradeContext({ supply, accounting }) {
         await cityTradeRepository.saveRelation({
           cityId: entry.cityId,
           status: 'active',
-          satisfactionScore: SATISFACTION_START,
+          goodSatisfaction: openingGoodSatisfaction(entry),
+          goodReview: openingGoodReview(),
           contractStartMonth: monthIndex,
           contractEndMonth: null,
           lastOrderMonth: null,
@@ -250,16 +279,108 @@ export function createTradeContext({ supply, accounting }) {
     },
 
     /**
-     * Trade summary for one city — relation state + all historical sales.
+     * What there is to know of the trade with one city: the single reading that the admin panel's card and sheet and the world map all use, so they never disagree.
+     * Read from the stored relation, the catalog and the duties in force; nothing is stored here. A city with no entry in the trade catalog (or with no relation yet) says so
+     * (`status: 'none'`, no goods), it is not given a made-up relation.
      * @param {string} cityId
-     * @returns {Promise<{ relation: object|null, entry: object|null, sales: object[] }>}
+     * @returns {Promise<{
+     *   cityId: string, name: string | null, status: 'none' | 'active' | 'suspended' | 'expired', satisfaction: number | null, satisfactionTier: string | null, ceased: object | null,
+     *   goods: Array<{ good: string, flow: 'export' | 'import', ceased: object | null, ourDuty: number, priceRange: { low: number, high: number } | null,
+     *     satisfaction: number | null, satisfactionTier: string | null, review: Record<string, number> | null }>,
+     *   character: string[], relationScore: number | null, relationTier: string | null, relationEvents: Array<object>, // the partner's character in words, and the memory of the relation
+     *   relation: object | null, entry: object | null, sales: object[],
+     * }>}
+     */
+    async describeTradeRelation(cityId) {
+      const base = await this.getCityTradeInfo(cityId);
+      const { entry, relation } = base;
+      // The duties are those in force at the running turn: the sheet is read in a game that runs.
+      const turn = getSessionGameTime();
+      // The climate of each exchange (its satisfaction, its step, what the last review gave), none while no relation is open; `review` is null until the good has had its first order.
+      const climateOf = (flow, good) => {
+        if (!relation) return { satisfaction: null, satisfactionTier: null, review: null };
+        const satisfaction = goodSatisfactionOf(relation, flow, good);
+        return { satisfaction, satisfactionTier: satisfactionTier(satisfaction), review: relation.goodReview[flow][good] ?? null };
+      };
+      const goods = [];
+      for (const want of entry?.wants ?? []) {
+        // A good the city wants but that no merchant house deals in (no `merchantGood`) is never traded: it is not an exchange to show.
+        if (!want.merchantGood) continue;
+        const centre = getResourceBaseValue(want.good) * want.baseMultiplier;
+        goods.push({
+          good: want.good,
+          flow: 'export',
+          ceased: relation?.exportCeased[want.good] ?? null,
+          ourDuty: await accounting.getCustomsDutyInForce('anoria', 'export', want.good, turn),
+          priceRange: { low: centre * (1 - entry.sale.spread), high: centre * (1 + entry.sale.spread) },
+          ...climateOf('export', want.good),
+        });
+      }
+      for (const offer of entry?.offers ?? []) {
+        goods.push({
+          good: offer.good,
+          flow: 'import',
+          ceased: relation?.importCeased[offer.good] ?? null,
+          ourDuty: await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn),
+          priceRange: null,
+          ...climateOf('import', offer.good),
+        });
+      }
+      // The memory of the relation: read from the journal of its events at the running turn, faded by the partner's memory. Nothing is stored.
+      const memory = relation
+        ? readRelation({ events: await relationEventRepository.listOf(cityId), entry, nowTurn: turn, turnsPerYear: turnsPerYear(getDaysPerMonth()) })
+        : null;
+      // The gift gesture: its rule, and how many months to wait before it can be made again (null: now).
+      const giftReadyAt = relation ? await diplomaticGift.readyAtTurn(cityId) : null;
+      return {
+        ...base,
+        goods,
+        gift: relation ? { ...DIPLOMATIC_GESTURES.gift, readyInMonths: giftReadyAt === null ? null : Math.ceil((giftReadyAt - turn) / getDaysPerMonth()) } : null,
+        character: entry ? characterWordsOf(entry) : [],
+        relationScore: memory?.score ?? null,
+        relationTier: memory?.tier ?? null,
+        relationEvents: memory?.events ?? [],
+      };
+    },
+
+    /**
+     * The city gives a partner `amount` € to mend the relation (MakeDiplomaticGift.js). A refusal comes back with its reason; a city with no open relation throws.
+     * @param {string} cityId @param {number} amount
+     */
+    async makeGift(cityId, amount) {
+      const entry = getTradeCatalogEntry(cityId);
+      if (!entry || !(await cityTradeRepository.getRelation(cityId))) throw new Error(`[trade] no relation is open with "${cityId}": nothing to give a gift to`);
+      return diplomaticGift.execute({ entry, amount });
+    },
+
+    /** The reading of every city of the trade catalog (the cards of the admin panel). */
+    async describeTradeRelations() {
+      return Promise.all(TRADE_CATALOG.map((entry) => this.describeTradeRelation(entry.cityId)));
+    },
+
+    /**
+     * The base of the reading of a city's trade — its relation, its state, its satisfaction, what stopped it, its sales — which needs no running game: the world map reads it,
+     * and `describeTradeRelation` (the admin panel's) is this plus the goods, so they are one reading and never disagree. A city with no entry in the trade catalog, or
+     * with no relation yet, says so (`status: 'none'`); it is not given a made-up relation.
+     * @param {string} cityId
      */
     async getCityTradeInfo(cityId) {
-      const [relation, sales] = await Promise.all([
-        cityTradeRepository.getRelation(cityId),
-        supply.getMerchantSalesForCity(cityId),
-      ]);
-      return { relation: relation ?? null, entry: getTradeCatalogEntry(cityId), sales };
+      const entry = getTradeCatalogEntry(cityId);
+      const [relation, sales] = await Promise.all([cityTradeRepository.getRelation(cityId), supply.getMerchantSalesForCity(cityId)]);
+      if (relation && (!relation.exportCeased || !relation.importCeased)) {
+        throw new Error(`[trade] the relation with ${cityId} holds no exportCeased/importCeased: it was not opened by this version`);
+      }
+      return {
+        cityId,
+        name: getWorldCityById(cityId)?.name ?? null,
+        status: relation?.status ?? 'none',
+        satisfaction: relation ? relationSatisfaction(relation, entry) : null,
+        satisfactionTier: relation ? satisfactionTier(relationSatisfaction(relation, entry)) : null,
+        ceased: relation?.ceased ?? null,
+        relation: relation ?? null,
+        entry,
+        sales,
+      };
     },
   };
 }

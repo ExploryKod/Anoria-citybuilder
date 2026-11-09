@@ -31,11 +31,14 @@ export function createSupplyBuildingSnapshot({
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingSnapshot: id is required');
   }
+  if (!type || typeof type !== 'string') {
+    throw new Error(`SupplyBuildingSnapshot: building ${id} has no type`);
+  }
 
   return Object.freeze({
     ...rest,
     id,
-    type: typeof type === 'string' ? type : '',
+    type,
     x: typeof x === 'number' ? x : null,
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,

@@ -1,5 +1,6 @@
 import { hasResourceRole, getLinkCapacityForRole, getPlacementRequirements } from './ResourceRolePolicy.js';
-import { isWithinRange, manhattanDistance, findNaturalSourcesInRange } from './ResourceRangePolicy.js';
+import { isWithinRange, findNaturalSourcesInRange } from './ResourceRangePolicy.js';
+import { rankHubsByPriority } from './HubPriorityPolicy.js';
 import { isRoadNeedMet, getNaturalSources } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -12,36 +13,28 @@ import { isRoadNeedMet, getNaturalSources } from '../../../../shared/building-ca
  */
 
 /**
- * Rank candidates satisfying one requirement (closest first, stable tie-break).
+ * Rank candidates satisfying one requirement (closest first, then the requirement's order of orientations if it declares one, then a stable tie-break: HubPriorityPolicy).
  *
  * @param {{ x: number, y: number }} pos
  * @param {Array<{ id: string, type: string, x?: number, y?: number, roadCount?: number, linkedDistributors?: object[] }>} candidates
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').PlacementRequirement} requirement
  */
 export function rankRequirementCandidates(pos, candidates, requirement) {
-  return [...candidates]
-    .filter((candidate) => {
-      if (candidate.x == null || candidate.y == null) return false;
-      if (!isRoadNeedMet(candidate.type, candidate.roadCount)) return false;
-      if (!hasResourceRole(candidate.type, requirement.role, requirement.categories)) return false;
-      if (requirement.range != null && !isWithinRange(pos, candidate, requirement.range)) return false;
+  const fits = [...candidates].filter((candidate) => {
+    if (candidate.x == null || candidate.y == null) return false;
+    if (!isRoadNeedMet(candidate.type, candidate.roadCount)) return false;
+    if (!hasResourceRole(candidate.type, requirement.role, requirement.categories)) return false;
+    if (requirement.range != null && !isWithinRange(pos, candidate, requirement.range)) return false;
 
-      if (requirement.requiresCapacity) {
-        const capacity = getLinkCapacityForRole(candidate.type, requirement.role);
-        const linkedCount = candidate.linkedDistributors?.length ?? 0;
-        if (capacity != null && linkedCount >= capacity) return false;
-      }
+    if (requirement.requiresCapacity) {
+      const capacity = getLinkCapacityForRole(candidate.type, requirement.role);
+      const linkedCount = candidate.linkedDistributors?.length ?? 0;
+      if (capacity != null && linkedCount >= capacity) return false;
+    }
 
-      return true;
-    })
-    .sort((a, b) => {
-      const distA = manhattanDistance(pos, a);
-      const distB = manhattanDistance(pos, b);
-      if (distA !== distB) return distA - distB;
-      if (a.y !== b.y) return a.y - b.y;
-      if (a.x !== b.x) return a.x - b.x;
-      return a.id.localeCompare(b.id);
-    });
+    return true;
+  });
+  return rankHubsByPriority(pos, fits, requirement.directionOrder);
 }
 
 /**
@@ -64,9 +57,10 @@ export function pickRequirementOwner(pos, candidates, requirement) {
  * @param {Array<object>} [params.naturalCandidates] Every placed natural
  *   resource (a tree, ...), for a raw-material producer's `source` fact: it
  *   cannot be placed unless its resource is within the catalog's range.
+ * @param {number} [params.placedCount] How many of this type already stand: needed by a requirement that declares `maxPerHub`.
  * @returns {{ ok: boolean, reason?: string, ownerId?: string, role?: string }}
  */
-export function canPlaceBuildingAt({ x, y, buildingType, candidates, naturalCandidates = [] }) {
+export function canPlaceBuildingAt({ x, y, buildingType, candidates, naturalCandidates = [], placedCount }) {
   // A producer with several sources (a mine: stone, iron, gold) is placed where it can draw on at least one of them
   const sources = getNaturalSources(buildingType);
   if (sources.length > 0 && sources.every((source) => findNaturalSourcesInRange({ x, y }, naturalCandidates, source).length === 0)) {
@@ -85,14 +79,19 @@ export function canPlaceBuildingAt({ x, y, buildingType, candidates, naturalCand
     }
 
     const owner = pickRequirementOwner({ x, y }, roleMatches, requirement);
-    if (owner) {
-      return { ok: true, ownerId: owner.id, role: requirement.role };
+    if (!owner) {
+      const hasNearby = roleMatches.some(
+        (c) => c.x != null && c.y != null && (requirement.range == null || isWithinRange({ x, y }, c, requirement.range))
+      );
+      return { ok: false, reason: hasNearby ? `${requirement.role}_full` : `${requirement.role}_too_far` };
     }
 
-    const hasNearby = roleMatches.some(
-      (c) => c.x != null && c.y != null && (requirement.range == null || isWithinRange({ x, y }, c, requirement.range))
-    );
-    return { ok: false, reason: hasNearby ? `${requirement.role}_full` : `${requirement.role}_too_far` };
+    // However many hubs stand, only so many of this building may: `maxPerHub` for each hub of the role (a market for each granary, wherever they are).
+    if (requirement.maxPerHub != null) {
+      if (!Number.isInteger(placedCount)) throw new Error(`[placement] ${buildingType} limits itself to ${requirement.maxPerHub} per ${requirement.role}: the placement must be told how many already stand (placedCount)`);
+      if (placedCount >= requirement.maxPerHub * roleMatches.length) return { ok: false, reason: `${requirement.role}_full` };
+    }
+    return { ok: true, ownerId: owner.id, role: requirement.role };
   }
 
   return { ok: true };

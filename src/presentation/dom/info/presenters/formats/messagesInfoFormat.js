@@ -112,9 +112,13 @@ function foodForecastComplaints(vm) {
   const granaries = namesOfBuildings('hub', getSuppliedCategories()).join(', ').toLowerCase();
 
   const complaints = [];
+  // A farm no one works at harvests nothing: the harvest to expect is the working farms', and the idle ones are said first, since they decide it.
+  if (forecast.idleFarms > 0) {
+    complaints.push(`${forecast.idleFarms} champ${forecast.idleFarms > 1 ? 's' : ''} sur ${forecast.farms} à l'arrêt, faute de personnel présent : ${amount(forecast.harvest)} récoltés par an au lieu de ${amount(forecast.potential)} possibles, pour ${amount(forecast.demand)} mangés.`);
+  }
   if (forecast.surplus > 0) {
     const spoil = forecast.spoilRisk > 0 ? ` ${amount(forecast.spoilRisk)} risquent d'être jetés, avariés.` : '';
-    complaints.push(`Trop de champs (${forecast.farms}) : ${amount(forecast.harvest)} récoltés par an pour ${amount(forecast.demand)} mangés.${spoil}`);
+    complaints.push(`Trop de champs (${forecast.farms - forecast.idleFarms} en activité) : ${amount(forecast.harvest)} récoltés par an pour ${amount(forecast.demand)} mangés.${spoil}`);
   }
   if (forecast.unkeepable > 0) {
     const kept = forecast.kept > 0 ? `${amount(forecast.kept)} gardés` : `aucun ${granaries} en état de marche`;

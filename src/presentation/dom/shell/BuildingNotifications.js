@@ -12,7 +12,6 @@ import {
   showWarningToast,
 } from './ToastNotifier.js';
 import {
-  getResourceRoles,
   getResourceStockShape,
 } from '../../../shared/building-catalog/resourceRoleQueries.js';
 import {
@@ -22,7 +21,6 @@ import {
   namesOfBuildings,
   namesOfDependents,
   namesOfNaturalResource,
-  typesHoldingRole,
   unresolvedTerm,
 } from './CatalogVocabulary.js';
 import { confirmModal } from './ConfirmModal.js';
@@ -93,9 +91,9 @@ const PLACEMENT_REFUSALS = Object.freeze([
         case 'too_far':
           return Number.isFinite(requirement.range) ? `${names} trop loin (portée : ${requirement.range} cases).` : `${names} introuvable.`;
         default: {
-          const [hubType] = typesHoldingRole(requirement.role, requirement.categories);
-          const capacity = getResourceRoles(hubType).find((entry) => entry.role === requirement.role)?.linkCapacity;
-          return `${names} à portée : plus de place (${capacity ?? UNRESOLVED_TERM} ${getBuildingDisplayName(building)} au plus).`;
+          // The most of this building the hamlet may hold for each building it needs, wherever they stand (the catalog's `maxPerHub`).
+          const perHub = requirement.maxPerHub ?? UNRESOLVED_TERM;
+          return `Pas assez de ${names} : ${perHub} ${getBuildingDisplayName(building)} au plus pour chacun. Construisez-en un autre.`;
         }
       }
     },
@@ -148,7 +146,9 @@ export function describePlacementNeeds(buildingType) {
 
   for (const requirement of definition?.placementRequires ?? []) {
     const names = namesOfBuildings(requirement.role, requirement.categories).join(' ou ');
-    needs.push(`${names}${withinRange(requirement.range)}${requirement.requiresCapacity ? ' (avec de la place libre)' : ''}`);
+    // The limit on how many may stand: with room on that building's link, or a fixed number for each building of the role, wherever it stands.
+    const limit = requirement.maxPerHub != null ? ` (${requirement.maxPerHub} ${buildingName(buildingType).toLowerCase()} au plus pour chacun)` : requirement.requiresCapacity ? ' (avec de la place libre)' : '';
+    needs.push(`${names}${withinRange(requirement.range)}${limit}`);
   }
 
   for (const entry of definition?.resourceRoles ?? []) {

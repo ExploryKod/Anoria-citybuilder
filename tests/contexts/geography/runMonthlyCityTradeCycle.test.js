@@ -61,7 +61,6 @@ describe('RunMonthlyCityTradeCycle — order rhythm survives a year rollover', (
   test('a relation last ordered late in year 0 orders again once monthNumber (not monthIndex) advances enough', async () => {
     const relation = openRelationRow({
       cityId: 'silvania', // frequencyMonths: 2 in TradeCatalog.js
-      satisfactionScore: 20,
       demandMultiplier: 1,
       lastOrderMonth: 10, // set by a previous run, in absolute-month terms
     });
@@ -384,12 +383,15 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     expect(row.importCeased.coal).toMatchObject({ reason: 'no_warehouse', by: 'merchants' });
   });
 
-  test('a city whose confidence is gone ends the relation: it ceases, and says so', async () => {
-    const { cycle, row, merchantLines } = build({ relation: { satisfactionScore: -80 } });
+  test('a partner as cold as can be orders less but never ends the relation: the satisfaction cools, it does not cut', async () => {
+    const { cycle, row, merchantLines } = build({ relation: { goodSatisfaction: { export: { wheat: 0, carrot: 0 }, import: { coal: -100 } } } });
     await order(cycle);
 
-    expect(row.status).toBe('expired');
-    expect(row.ceased).toMatchObject({ reason: 'satisfaction_too_low', by: 'city' });
-    expect(merchantLines).toHaveLength(0);
+    expect(row.status).toBe('active');
+    expect(row.ceased).toBeNull();
+    // Briga's order is 40 a time; at the bottom of the scale it places the floor's share (40 %): 16.
+    expect(merchantLines.find((line) => line.type === 'import_coal').description).toContain('16 unités');
+    expect(row.goodSatisfaction.import.coal).toBeGreaterThan(-100); // an order that went through warms it again
+    expect(row.goodReview.import.coal).toMatchObject({ sales: expect.any(Number), availability: expect.any(Number), barriers: expect.any(Number) });
   });
 });
