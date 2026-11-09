@@ -84,6 +84,7 @@ assets-src/
 /.claude/settings.json
 /.claude/skills
 /.claude/workflows
+/.claude/worktrees/
 /.gitconfig
 /.gitmodules
 /.mcp.json

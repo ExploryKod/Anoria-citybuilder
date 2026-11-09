@@ -59,7 +59,6 @@ import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { initSupplyBalancePopup } from '../supply-balance/SupplyBalancePanel.js';
 import { initEconomyPopup } from '../economy/EconomyPanel.js';
-import { initAdminSections } from '../admin/initAdminSections.js';
 import { initNewsEventModal, presentIncomingNewsEvents, waitForNewsModalClosed } from '../intelligence/NewsEventModal.js';
 import { awaitTreasuryReady, endOpening, failOpening } from '../../../composition/budgetReadyGate.js';
 import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
@@ -383,6 +382,8 @@ export async function bootstrapGameSession(assetManager) {
     })().then(endOpening, failOpening);
   }
 
+  // The administrator panel's sections are their own chunk (loaded here, with the session, not with the page): the game's chunk stays under the size limit
+  const { initAdminSections } = await import('../admin/initAdminSections.js');
   await initAdminSections({
     ...panelDeps,
     employment: sessionApi.employment,
