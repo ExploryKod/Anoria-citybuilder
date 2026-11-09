@@ -481,7 +481,8 @@ class GameUI {
      */
     setConstructionSettling(on) {
         document.querySelector('.info-panel .info-box.infos-time')?.classList.toggle('infos-time--settling', on);
-        const toggle = document.getElementById('toolbar-mobile-toggle');
+        // The hammer (the mode's switch) is the button that starts a construction
+        const toggle = document.getElementById('toolbar-construction-mode-btn');
         if (toggle) {
             toggle.disabled = on;
             toggle.setAttribute('aria-busy', on ? 'true' : 'false');

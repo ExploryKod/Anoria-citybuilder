@@ -19,7 +19,6 @@ import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding, isAppoin
 import { lowestHouseTierForWorkers } from '../../../shared/population/workforceQueries.js';
 import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 import { raw } from '../shell/safeHtml.js';
-import { enterConstructionMode, exitConstructionMode, isConstructionModeActive } from './ConstructionMode.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
@@ -195,8 +194,6 @@ export function open() {
   // The bar is anchored on the row of buttons it opens from: a folded row has no place on screen to anchor on
   unfoldGroupOf(document.getElementById('toolbar-mobile-toggle'));
   isOpen = true;
-  // Opening the construction bar pauses the game (when the setting asks for it) until the construction button is closed
-  enterConstructionMode();
   buildBarEl.hidden = false;
   buildBarEl.classList.add('mobile-build-bar--open');
   buildBarEl.setAttribute('aria-hidden', 'false');
@@ -234,14 +231,11 @@ export function open() {
   });
 }
 
-/**
- * @param {{ keepMode?: boolean }} [options] `keepMode`: only the bar steps aside (a tool was picked on a small screen); construction mode goes on
- */
-export function close({ keepMode = false } = {}) {
+/** Closes the bar only: the construction mode (the hammer's) goes on. */
+export function close() {
   if (!buildBarEl) return;
   hideBuildToolHoverPreview();
   isOpen = false;
-  if (!keepMode) exitConstructionMode();
   buildBarFocusSession?.release({ restoreFocus: false });
   buildBarFocusSession = null;
   // A bar hidden from assistive technology cannot keep the focus inside it (the browser refuses `aria-hidden` on a focused element)
@@ -259,16 +253,14 @@ export function close({ keepMode = false } = {}) {
  * map under it can be used to place the building or the road. The tool stays armed; the house button opens the bar again.
  */
 function closeForPlacement() {
-  if (isOpen && window.matchMedia(NO_ROOM_FOR_BAR_QUERY).matches) close({ keepMode: true });
+  if (isOpen && window.matchMedia(NO_ROOM_FOR_BAR_QUERY).matches) close();
 }
 
 function syncConstructionOpenButton() {
   const toggle = document.getElementById('toolbar-mobile-toggle');
   if (!toggle) return;
-  // Lit while the construction mode runs, even when the bar has stepped aside on a small screen
-  const lit = isOpen || isConstructionModeActive();
-  toggle.classList.toggle('active', lit);
-  toggle.setAttribute('aria-pressed', lit ? 'true' : 'false');
+  toggle.classList.toggle('active', isOpen);
+  toggle.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
   toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 

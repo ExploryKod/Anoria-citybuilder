@@ -14,6 +14,8 @@ import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructu
 import { createCityTradeRelationsSystem } from '../contexts/geography/infrastructure/runtime/cityTradeRelationsSystem.js';
 import { createLandMonthlySystem } from '../contexts/supply/infrastructure/runtime/landMonthlySystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { getWorldCityById } from './worldCityCatalog.js';
+import { getResourceCategoryPresentation } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
 import { getSharedEventBus } from './sharedEventBus.js';
@@ -138,7 +140,21 @@ export function createGameRuntime({
     )
     .register(
       'commerce.monthlyCityTrade',
-      createCityTradeMonthlySystem({ trade, getTimeInfo })
+      createCityTradeMonthlySystem({
+        trade,
+        getTimeInfo,
+        // What a partner did on its own (an embargo on us, a broken relation) is told in a dépêche, in the words of the world's and the goods' catalogs.
+        announce: ({ milestoneId, turn, occurrence, params: { cityId, good, ...rest } }) => {
+          const cityName = getWorldCityById(cityId)?.name;
+          if (!cityName) throw new Error(`[trade] the world has no city "${cityId}" to name in the dépêche "${milestoneId}"`);
+          return intelligence.announceMilestone({
+            milestoneId,
+            turn,
+            occurrence,
+            params: { cityName, ...(good ? { goodName: getResourceCategoryPresentation(good).label } : {}), ...rest },
+          });
+        },
+      })
     )
     .register('land.monthlyPurchases', createLandMonthlySystem({ land, getTimeInfo }));
 

@@ -18,9 +18,39 @@ import { TRADE_EXPORT, TRADE_IMPORT } from '../../../../shared/trade-catalog/Tra
  *   referencePrice?: number, // the world's reference price of the good (the ceiling of an import is a multiple of it)
  *   homePrice?: number | null, // the market's price at home for a good the city makes itself: the ceiling an import must stay under; null for any other good
  *   failures?: Record<string, number>,
+ *   embargoed: boolean, // the city has decreed an embargo on this good in this flow (the relation's journal says so)
+ *   partnerEmbargoed: boolean, // the partner has decreed one on us, in force now (the same journal)
  * }} CeaseContext
  */
+
+/** The embargo of a context: it must be said, a context that does not say is a defect of its caller. */
+function embargoedOf(embargoed) {
+  if (typeof embargoed !== 'boolean') throw new Error(`[trade] the cease context must say whether the good is embargoed (a boolean), got ${embargoed}`);
+  return embargoed;
+}
 export const CEASE_REASONS = Object.freeze({
+  // The city's own decision (an embargo it decreed on this good, in this flow): first, so that it is the reason shown whatever else holds. Read live from the relation's journal.
+  embargo: Object.freeze({
+    by: 'city',
+    scope: 'import',
+    applies: ({ embargoed }) => embargoedOf(embargoed),
+  }),
+  export_embargo: Object.freeze({
+    by: 'city',
+    scope: 'export',
+    applies: ({ embargoed }) => embargoedOf(embargoed),
+  }),
+  // The partner's own decision (an embargo it decreed on us, in force until its end: see PartnerPolicy).
+  partner_embargo: Object.freeze({
+    by: 'partner',
+    scope: 'import',
+    applies: ({ partnerEmbargoed }) => embargoedOf(partnerEmbargoed),
+  }),
+  export_partner_embargo: Object.freeze({
+    by: 'partner',
+    scope: 'export',
+    applies: ({ partnerEmbargoed }) => embargoedOf(partnerEmbargoed),
+  }),
   unprofitable: Object.freeze({
     by: 'merchants',
     scope: 'import',

@@ -569,7 +569,7 @@ export function validateTutorialDispatches(dispatches, steps) {
   }
 }
 
-const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause', 'houses', 'artisans', 'merchants']);
+const HIGHLIGHT_TARGETS = Object.freeze(['constructionMode', 'construction', 'road', 'history', 'pause', 'houses', 'artisans', 'merchants']);
 /** An objective may also point at a building's button in the build bar: `tool:House-Red`. */
 const TOOL_TARGET_PREFIX = 'tool:';
 

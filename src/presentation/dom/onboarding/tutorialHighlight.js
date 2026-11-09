@@ -11,13 +11,16 @@
  */
 
 import { foldToggleOf } from '../shell/hudFoldGroup.js';
+import { isConstructionModeActive } from '../tools/ConstructionMode.js';
 
 /** What a group folding or a carousel scrolling takes to settle, before the way to the target is read again. */
 const PATH_SETTLE_MS = 450;
 
 /** The targets a toast may name (`highlight` in the tutorial catalog) and the button each one is. */
 const TARGETS = Object.freeze({
-  // The house-shaped button that opens the build bar.
+  // The hammer: the construction mode's switch, which shows the house, road and eraser buttons.
+  constructionMode: '#toolbar-construction-mode-btn',
+  // The house-shaped button that opens the build bar (shown while the construction mode runs).
   construction: '#toolbar-mobile-toggle',
   // The road tool's own button, next to it.
   road: '#toolbar-road-btn',
@@ -163,6 +166,8 @@ function pulseObjective() {
   if (standing === null) return;
   const way = new Set();
   for (const name of standing) {
+    // The mode is on: the way to the objective goes on from the buttons it showed, the hammer has been pressed
+    if (name === 'constructionMode' && isConstructionModeActive()) continue;
     for (const button of document.querySelectorAll(selectorOf(name))) {
       way.add(button);
       const toggle = foldToggleOf(button);

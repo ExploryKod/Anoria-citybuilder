@@ -115,20 +115,25 @@
   margin: 0.5em 0 0;
   /* The browser's own indent would push the text off the edge the paragraph is on. */
   padding: 0;
+  /* A list is a row of pills that wraps: short items sit side by side, a long one takes the width it needs and wraps its text */
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-flow: row wrap;
+  gap: 8px;
   text-align: left;
 }
 
 .news-event-list > li {
   margin: 0;
-  padding: 7px 12px 7px 14px;
-  border-left: 3px solid var(--cta);
-  border-radius: 0 6px 6px 0;
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 0.93rem;
-  line-height: 1.45;
+  padding: 6px 14px;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: 16px;
+  background: #fdebd8;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .news-event-list > li::marker {
@@ -546,13 +551,6 @@
 .confirm-modal-item-text .news-event-paragraph + .news-event-list,
 .confirm-modal-item-text .news-event-list + .news-event-paragraph {
   margin-top: 0.5em;
-}
-
-/* A list inside an entry (itself a card) is not a card of cards: it shows lines with an accent rule only. */
-.confirm-modal-item .news-event-list > li {
-  background: none;
-  padding-top: 2px;
-  padding-bottom: 2px;
 }
 
 /* The two answers of a confirmation are big enough to touch (40px) and share the width on a narrow screen. */

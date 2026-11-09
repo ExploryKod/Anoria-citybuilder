@@ -112,8 +112,13 @@ export const TRADE_BALANCE_COMMENTARY = Object.freeze({
  * CEASE_REASONS; a reason with no line here is shown as "…" with a warning, never as its id.
  */
 export const TRADE_CEASE_WORDING = Object.freeze({
-  by: Object.freeze({ city: 'La ville a cessé', merchants: 'Nos marchands ont cessé' }),
+  by: Object.freeze({ city: 'La ville a cessé', merchants: 'Nos marchands ont cessé', partner: 'Le partenaire a cessé' }),
   reasons: Object.freeze({
+    partner_embargo: "il a décrété un embargo : il ne nous vend plus ce bien",
+    export_partner_embargo: "il a décrété un embargo : il n'achète plus ce bien chez nous",
+    relation_broken: "il a rompu la relation : plus aucun échange tant qu'une mission ne l'a pas renouée",
+    embargo: "un embargo décrété par la ville interdit d'acheter ce bien à ce partenaire",
+    export_embargo: "un embargo décrété par la ville interdit de lui vendre ce bien",
     unprofitable: "le prix rendu, droits et transport compris, dépasse ce que le marché paie",
     export_unprofitable: "la vente, droits déduits, ne couvre plus le prix d'achat des marchandises",
     export_no_merchants: "aucun accord d'export n'attend : aucune maison de négociants ne les prépare",
@@ -386,9 +391,11 @@ export function developmentOf(entry) {
  * it accepts in a contract), `gratitude` (the weight of a gesture), `liberalism` (its own duties, and whether it proposes a treaty). First values, to tune by playing.
  */
 export const PARTNER_TRAITS = Object.freeze({
+  // What it does when we cut a good (SetTradeEmbargo): absorbs, nothing (the event marks the relation); retaliates, a mirror embargo `delayMonths` later for `durationMonths`
+  // (RunMonthlyCityTradeCycle, PartnerPolicy); breaks, the relation is cut as soon as its score falls under the city's own `relation.breakThreshold` (and stays so until a mission renews it).
   embargoReaction: Object.freeze({
     absorbs: Object.freeze({ word: 'placide' }),
-    retaliates: Object.freeze({ word: 'fier' }),
+    retaliates: Object.freeze({ word: 'fier', delayMonths: 1, durationMonths: 3 }),
     breaks: Object.freeze({ word: 'intransigeant' }),
   }),
   aidSensitivity: Object.freeze({
@@ -445,6 +452,45 @@ export const RELATION_EVENT_KINDS = Object.freeze({
   customs_relieved: Object.freeze({ weight: 8, wording: 'nos droits de douane sur {good} sont revenus à un niveau qu’il tolère' }),
   // A kind with no fixed weight (null) is weighed by the gesture that writes it, from its own rule (DIPLOMATIC_GESTURES); `{amount}` is the sum given.
   gift_received: Object.freeze({ weight: null, wording: 'nous lui avons fait un don de {amount}' }),
+  // The embargo the city decrees on one good in one flow (`{flow}`: see TRADE_FLOW_WORDING). Lifting it warms the relation back less than the decree cooled it. The partner's own
+  // reaction (`embargoReaction`: it absorbs, retaliates or breaks) is still to come: the weight is the same for every partner today.
+  embargo_decreed: Object.freeze({ weight: -12, wording: 'nous avons décrété un embargo sur {good} ({flow})' }),
+  embargo_lifted: Object.freeze({ weight: 6, wording: 'nous avons levé notre embargo sur {good} ({flow})' }),
+  // The embargo the partner imposes on us (a mirror of ours, or of its own initiative: PARTNER_EMBARGO): it lasts until `cause.untilTurn`, read from the event, never lifted by another one.
+  partner_embargo_started: Object.freeze({ weight: -10, wording: 'il a décrété un embargo sur {good} ({flow})' }),
+  // The partner cut the relation (embargoReaction `breaks`), and a mission of ours renewed it.
+  relation_broken: Object.freeze({ weight: -5, wording: 'il a rompu la relation' }),
+  relation_renewed: Object.freeze({ weight: 40, wording: 'la relation a été renouée par une mission' }),
+});
+
+/**
+ * The embargo a partner decrees on its own initiative (docs/gameplay/PLAN_TRADE_RELATIONS.md, step 7), drawn once a month per relation without one in force. The chance is
+ * `chanceByTier` (the relation's step now), plus `perHostileCustoms` for each of our duties above its tolerance and `perOurEmbargo` for each embargo of ours in force; it hits one good
+ * the partner trades with us, in either flow, for `durationMonths`. First values, to tune by playing.
+ */
+export const PARTNER_EMBARGO = Object.freeze({
+  durationMonths: 6,
+  chanceByTier: Object.freeze({ hostile: 0.15, tendue: 0.05, neutre: 0.01, cordiale: 0, amie: 0 }),
+  perHostileCustoms: 0.03,
+  perOurEmbargo: 0.02,
+});
+
+/** The volume limits of the city (units a month): what one press of the panel's + or − moves a limit by. A first value, to tune by playing. */
+export const VOLUME_LIMIT_STEP = 5;
+
+/** The side of the trade an event or a policy concerns, in the player's words (`flow` of a relation event). */
+export const TRADE_FLOW_WORDING = Object.freeze({ export: 'nos ventes', import: 'nos achats' });
+
+/** What the player reads when the trade policy (an embargo) is refused, by reason. */
+export const TRADE_POLICY_REFUSALS = Object.freeze({
+  no_relation: 'Aucune relation n’est ouverte avec cette ville.',
+  not_traded: 'Ce bien ne s’échange pas avec cette ville dans ce sens.',
+  already_embargoed: 'Cet embargo est déjà décrété.',
+  not_embargoed: 'Aucun embargo n’est décrété sur ce bien.',
+  invalid_limit: 'Une limitation est un nombre entier d’unités par mois, d’au moins 1.',
+  not_broken: 'Cette relation n’est pas rompue : il n’y a rien à renouer.',
+  renewal_cooling_down: 'Il est trop tôt pour renouer : il faut attendre {months} mois après la rupture.',
+  treasury_insufficient: 'La trésorerie de la ville ne permet pas cette mission.',
 });
 
 /**
@@ -456,6 +502,8 @@ export const RELATION_EVENT_KINDS = Object.freeze({
  */
 export const DIPLOMATIC_GESTURES = Object.freeze({
   gift: Object.freeze({ minAmount: 100, pointsPer100: 3, maxPoints: 20, cooldownMonths: 3 }),
+  // The mission that renews a relation the partner broke: it costs `cost` €, can be sent `cooldownMonths` after the break, and the event it writes weighs `RELATION_EVENT_KINDS.relation_renewed`.
+  renewal: Object.freeze({ cost: 300, cooldownMonths: 6 }),
 });
 
 /** What the player reads when a gesture is refused (`{min}` the least a gift can be, `{months}` the wait), by reason; the journal's own reasons are the ones it gives. */

@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { embargoesIn } from '../../domain/policies/RelationMemoryPolicy.js';
 
 /**
  * The journal of a relation's events (RelationMemoryPolicy.js): appended, never edited, never purged. The year and the month are stamped when the event is written.
@@ -18,6 +19,11 @@ export class DexieRelationEventRepository {
   async lastOfKind(cityId, kind) {
     const events = await this.listOf(cityId);
     return events.filter((event) => event.kind === kind).at(-1) ?? null;
+  }
+
+  /** @param {string} cityId @returns {Promise<Set<string>>} the embargoes the city has in force with this partner (`embargoKey`s), read from the journal */
+  async embargoesOf(cityId) {
+    return embargoesIn(await this.listOf(cityId));
   }
 
   /**

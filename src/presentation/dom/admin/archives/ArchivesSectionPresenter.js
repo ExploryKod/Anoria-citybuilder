@@ -2,7 +2,8 @@ import { labelForNewsSource, labelForNewsCategory } from '../../../../compositio
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { renderRichText } from '../../shell/richText.js';
-import { raw } from '../../shell/safeHtml.js';
+import { html, raw } from '../../shell/safeHtml.js';
+import { bindPager, pageSlice, pagerHtml } from '../../shell/pagination.js';
 
 const TRASH_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -21,11 +22,15 @@ export class ArchivesSectionPresenter {
   constructor(deps) {
     this.intelligence = deps.intelligence;
     this.listEl = null;
+    /** The bar at the foot of the list, and the page shown (PAGE_SIZE dépêches a page, the newest first as the list comes). */
+    this.pagerEl = null;
+    this.page = 1;
     this._onListClick = this._onListClick.bind(this);
   }
 
   init() {
     this.listEl = document.getElementById('archives-news-list');
+    this.#bindPager();
     if (this.listEl && !this.listEl.dataset.deleteBound) {
       this.listEl.addEventListener('click', this._onListClick);
       this.listEl.dataset.deleteBound = '1';
@@ -55,23 +60,41 @@ export class ArchivesSectionPresenter {
     }
   }
 
+  /** The page buttons at the foot of the list: a press shows that page and brings the top of the list back into view. */
+  #bindPager() {
+    this.pagerEl ??= document.getElementById('archives-pager');
+    if (!this.pagerEl) throw new Error('[archives] #archives-pager is missing from game.html');
+    if (this.pagerEl.dataset.pagerBound) return;
+    this.pagerEl.dataset.pagerBound = '1';
+    bindPager(this.pagerEl, (page) => {
+      this.page = page;
+      void this.loadArchives().then(() => this.listEl.scrollIntoView({ block: 'start' }));
+    });
+  }
+
   async loadArchives() {
     if (!this.listEl) {
       this.listEl = document.getElementById('archives-news-list');
     }
     if (!this.listEl) return;
+    this.#bindPager();
 
     if (!this.listEl.dataset.deleteBound) {
       this.listEl.addEventListener('click', this._onListClick);
       this.listEl.dataset.deleteBound = '1';
     }
 
-    const items = await this.intelligence.listArchivedNews();
-    if (!items.length) {
+    const archived = await this.intelligence.listArchivedNews();
+    if (!archived.length) {
       this.listEl.innerHTML =
         '<p class="archives-empty">Aucune dépêche archivée pour le moment.</p>';
+      this.pagerEl.innerHTML = '';
       return;
     }
+    // Ten a page: the rest is behind the bar at the foot of the list (a page that no longer exists, after a deletion, falls back to the last one).
+    const { items, page, pageCount } = pageSlice(archived, this.page);
+    this.page = page;
+    this.pagerEl.innerHTML = html`${pagerHtml({ page, pageCount })}`;
 
     const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
     // Built with the DOM: what a dépêche says (title, text, hamlet name) only ever becomes text nodes or attribute values, never markup. The one innerHTML left is the

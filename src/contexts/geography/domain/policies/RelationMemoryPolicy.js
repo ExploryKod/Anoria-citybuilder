@@ -43,6 +43,42 @@ export function readRelation({ events, entry, nowTurn, turnsPerYear }) {
   return { score, tier: relationTier(score), events: read.sort((a, b) => b.turn - a.turn) };
 }
 
+/** The key of one embargo: a good, in one flow (the side of the trade). */
+export const embargoKey = (flow, good) => `${flow}:${good}`;
+
+/**
+ * The embargoes the city has in force with a partner, read from its events: the last embargo event of each good and flow decides (decreed: in force, lifted: not).
+ * Nothing else stores them.
+ * @param {ReadonlyArray<RelationEvent>} events the events of one relation, oldest first
+ * @returns {Set<string>} the `embargoKey`s in force
+ */
+export function embargoesIn(events) {
+  const inForce = new Set();
+  for (const event of events) {
+    if (event.kind !== 'embargo_decreed' && event.kind !== 'embargo_lifted') continue;
+    if (!event.good || !event.flow) throw new Error(`[trade] an embargo event of ${event.cityId} names no good or no flow`);
+    const key = embargoKey(event.flow, event.good);
+    if (event.kind === 'embargo_decreed') inForce.add(key);
+    else inForce.delete(key);
+  }
+  return inForce;
+}
+
+/**
+ * The embargoes the partner has on us in force at a turn, read from its events: each `partner_embargo_started` holds until the turn its cause names (`untilTurn`), no other event lifts it.
+ * @param {ReadonlyArray<RelationEvent>} events @param {number} nowTurn
+ * @returns {Set<string>} the `embargoKey`s in force (the flow is ours: `export` the partner no longer buys our good, `import` it no longer sells us its good)
+ */
+export function partnerEmbargoesIn(events, nowTurn) {
+  const inForce = new Set();
+  for (const event of events) {
+    if (event.kind !== 'partner_embargo_started') continue;
+    if (!event.good || !event.flow || !Number.isFinite(event.cause?.untilTurn)) throw new Error(`[trade] a partner embargo of ${event.cityId} names no good, no flow or no end`);
+    if (event.cause.untilTurn > nowTurn) inForce.add(embargoKey(event.flow, event.good));
+  }
+  return inForce;
+}
+
 /**
  * The event our customs make, if any: the duty goes above the partner's tolerance (it takes it for a hostile act), or comes back under it after having.
  * It is an event of the change, once, never one per month the duty stays high.

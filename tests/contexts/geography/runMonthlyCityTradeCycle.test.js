@@ -181,6 +181,73 @@ describe('RunMonthlyCityTradeCycle — sells through HubServing (city is a real 
   });
 });
 
+/**
+ * The city's law and the partners' own decisions: a volume limit caps what is exported in the month, whoever orders; a partner that breaks cuts the relation before any order and
+ * the player is told; a partner's embargo on us stops the sale of that good only.
+ */
+describe('RunMonthlyCityTradeCycle — volume limits and the partner\'s decisions', () => {
+  function build({ relation, relationEventLog = [], volumeLimitOf = async () => null }) {
+    const merchant = { id: 'merchant-1', type: 'House-Blue' };
+    const hub = {
+      id: 'hub-1', type: 'TradeWarehouse', x: 9, y: 2, roadCount: 3, worker: 4, workerNeed: 4, maxStock: 500,
+      stocks: { dealDecoratedPot: 100 }, lots: { dealDecoratedPot: { [merchant.id]: 100 } },
+    };
+    const store = new Map([[merchant.id, merchant], [hub.id, hub]]);
+    const repo = {
+      async findById(id) { const r = store.get(id); return r ? Object.freeze({ ...r }) : null; },
+      async updateBuildingFields(id, f) { store.set(id, { ...store.get(id), ...f }); },
+      async saveStocks(id, stocks) { store.set(id, { ...store.get(id), stocks }); },
+      async listAllBuildingRows() { return [...store.values()].map((r) => Object.freeze({ ...r })); },
+      async findByResourceRole() { return [...store.values()].filter((r) => r.type === 'TradeWarehouse').map((r) => Object.freeze({ ...r })); },
+    };
+    const hubServing = new HubServing(repo, { listExternalClients: (c) => (c === 'dealDecoratedPot' ? [{ id: 'city:silvania', type: 'TradeCity' }] : []) });
+    const sales = [];
+    const cycle = new RunMonthlyCityTradeCycle({
+      worldIndexOf: async () => 1,
+      homePriceOf: async () => null,
+      cityTradeRepository: { async getActiveRelations() { return [relation]; }, async saveRelation(next) { Object.assign(relation, next); } },
+      supplyBuildingRepository: repo,
+      hubServing,
+      takeHubStock,
+      recordMerchantSale: async (s) => sales.push(s),
+      getCustomsDuty: () => 0.1,
+      ...importCapabilities({ relationEventLog }),
+      volumeLimitOf,
+      random: () => 0.99, // never a spontaneous embargo
+      saleBias: () => 0,
+    });
+    return { cycle, sales };
+  }
+
+  test('a volume limit caps the units sold this month', async () => {
+    const relation = openRelationRow({ cityId: 'silvania', demandMultiplier: 1 });
+    const { cycle, sales } = build({ relation, volumeLimitOf: async (flow, good) => (flow === 'export' && good === 'decoratedPot' ? 5 : null) });
+    await cycle.execute({ turn: 0, monthIndex: 0, monthNumber: 0, year: 0 });
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({ dealGood: 'dealDecoratedPot', quantity: 5 });
+  });
+
+  test('a partner that breaks cuts the relation before any order, and is announced', async () => {
+    const relation = openRelationRow({ cityId: 'sablia', demandMultiplier: 1 });
+    const relationEventLog = [{ cityId: 'sablia', kind: 'customs_hostile', good: 'wheat', flow: 'export', turn: 0, year: 0, monthIndex: 0, weight: -90 }];
+    const { cycle, sales } = build({ relation, relationEventLog });
+    const announcements = await cycle.execute({ turn: 0, monthIndex: 0, monthNumber: 0, year: 0 });
+    expect(relation).toMatchObject({ status: 'expired', ceased: { by: 'partner', reason: 'relation_broken' } });
+    expect(relationEventLog.at(-1)).toMatchObject({ kind: 'relation_broken' });
+    expect(announcements).toEqual([expect.objectContaining({ milestoneId: 'trade-relation-broken', params: { cityId: 'sablia' } })]);
+    expect(sales).toHaveLength(0);
+  });
+
+  test('an embargo of the partner on a good stops its sale', async () => {
+    const relation = openRelationRow({ cityId: 'silvania', demandMultiplier: 1 });
+    const relationEventLog = [{ cityId: 'silvania', kind: 'partner_embargo_started', good: 'decoratedPot', flow: 'export', turn: 0, year: 0, monthIndex: 0, weight: -10, cause: { untilTurn: 180 } }];
+    const { cycle, sales } = build({ relation, relationEventLog });
+    await cycle.execute({ turn: 0, monthIndex: 0, monthNumber: 0, year: 0 });
+    expect(sales).toHaveLength(0);
+    expect(relation.exportCeased.decoratedPot).toMatchObject({ reason: 'export_partner_embargo', by: 'partner' });
+  });
+});
+
 describe('RunMonthlyCityTradeCycle — real calendar timeInfo (no turn field)', () => {
   test('a sale runs to completion with the calendar shape TimeCalendar actually returns', async () => {
     const { TimeManager } = await import('../../../src/shared/time/TimeManager.js');
@@ -214,7 +281,7 @@ describe('RunMonthlyCityTradeCycle — real calendar timeInfo (no turn field)', 
 
     const timeInfo = TimeManager.getTimeInfo(4, 5);
     expect(timeInfo.turn).toBeUndefined();
-    await expect(cycle.execute(timeInfo)).resolves.toBeUndefined();
+    await expect(cycle.execute(timeInfo)).resolves.toEqual([]);
     expect(sales).toHaveLength(1);
     expect((await repo.findById('hub-1')).stocks.dealDecoratedPot).toBe(80);
   });
