@@ -475,6 +475,20 @@ class GameUI {
     }
 
     /**
+     * What the construction mode built is being digested: a small spinner turns on the date pill (nothing is hidden), and the construction button
+     * waits (a new construction cannot start while the previous one is not settled).
+     * @param {boolean} on
+     */
+    setConstructionSettling(on) {
+        document.querySelector('.info-panel .info-box.infos-time')?.classList.toggle('infos-time--settling', on);
+        const toggle = document.getElementById('toolbar-mobile-toggle');
+        if (toggle) {
+            toggle.disabled = on;
+            toggle.setAttribute('aria-busy', on ? 'true' : 'false');
+        }
+    }
+
+    /**
      * Updates pause UI elements (icons only - time display is not changed)
      * @param {boolean} paused - Current pause state
      */
