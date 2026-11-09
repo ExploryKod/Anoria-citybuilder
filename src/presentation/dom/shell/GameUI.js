@@ -467,6 +467,14 @@ class GameUI {
     }
 
     /**
+     * Construction mode: the date/season pill pulses green (the pause icon is the one `setPaused` shows). No overlay: the map stays usable.
+     * @param {boolean} on
+     */
+    setConstructionPause(on) {
+        document.querySelector('.info-panel .info-box.infos-time')?.classList.toggle('infos-time--construction', on);
+    }
+
+    /**
      * Updates pause UI elements (icons only - time display is not changed)
      * @param {boolean} paused - Current pause state
      */

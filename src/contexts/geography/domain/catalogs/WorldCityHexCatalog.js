@@ -14,6 +14,7 @@ export const WORLD_CITY_HEX_SITES = Object.freeze({
   sablia: { q: -2, r: 5, sprite: 'village' },
   frumenta: { q: 5, r: 4, sprite: 'village' },
   carbonne: { q: -1, r: -3, sprite: 'hamlet' },
+  ateli: { q: -7, r: 4, sprite: 'village' },
 });
 
 /**

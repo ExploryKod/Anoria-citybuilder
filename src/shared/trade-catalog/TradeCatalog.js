@@ -7,14 +7,14 @@
  *
  * Each entry declares:
  *   cityId          — matches a WorldCityCatalog id
- *   wants           — goods this city will buy, each with a baseMultiplier applied
- *                     on top of the good's own ResourceCategoryCatalog.baseValue. For a want with a
- *                     `merchantGood` (our merchants export it, see RunMonthlyCityTradeCycle.js), the merchants bought the
- *                     good from a warehouse at the value chain's hub price (baseValue × 1.2 × 1.2, ValueChainCatalog) and pay the good's
- *                     export duty (set per good in the customs panel; FiscalRateCatalog's default is 0, 15% on wood) on the sale:
- *                     baseMultiplier must clear 1.44 / (1 − duty) — 1.44 at no duty, about 1.7 at 15% — or the merchants cease
- *                     to export it (`export_unprofitable`). The buying city pays the freight.
- *   offers          — goods this city SELLS to Anoria (imports), each with a baseMultiplier on the good's baseValue
+ *   development    — its class (DEVELOPMENT_CLASSES): the level of its prices against the world's reference
+ *   wants           — goods this city will buy, each with a baseMultiplier: the city's premium (above 1, for what it lacks) or discount (below 1) on the world's reference
+ *                     price of the good times its level (see DEVELOPMENT_CLASSES). For a want with a `merchantGood` (our merchants export it, see RunMonthlyCityTradeCycle.js),
+ *                     the merchants bought the good from a warehouse at our own price (our cost: wages included) plus the warehouse's margin, and pay the good's export duty (set per
+ *                     good in the customs panel; FiscalRateCatalog's default is 0, 15% on wood) on the sale: the price must clear that or the merchants cease to export it
+ *                     (`export_unprofitable`). A developed city pays more than our cost, a developing one less: what we sell it depends on our wages against the world's.
+ *                     The buying city pays the freight.
+ *   offers          — goods this city SELLS to Anoria (imports), each with a baseMultiplier on the world's reference price times the city's level
  *                     (the city's price per unit), a quantity per order (cq) and the `merchantGood` deal that Anoria's
  *                     merchants make for it. Delivered to a trade warehouse on the order months (`trade.frequencyMonths`, ct),
  *                     against the deals the merchants hold; see TRADE_IMPORT for who pays what.
@@ -34,6 +34,7 @@
  *
  * @typedef {{
  *   cityId: string,
+ *   development: string, // a key of DEVELOPMENT_CLASSES (see developmentOf)
  *   wants: ReadonlyArray<{ good: string, merchantGood: string, baseMultiplier: number }>,
  *   offers: ReadonlyArray<{ good: string, merchantGood: string, baseMultiplier: number, quantityPerOrder: number }>,
  *   transport: { mode: string, distanceMultiplier: number },
@@ -62,14 +63,14 @@
  *   merchants' margin  = (foreign price + transport + duty) × merchantMargin       (to the merchant houses)
  * The duty's base is the customs value: the price plus every charge generated outside Anoria, never the merchants'
  * margin, which is earned inside it.
- *   marketCeiling      — the most the market pays for one unit, as a multiple of the good's baseValue: when the
+ *   marketCeiling      — the most the market pays for one unit, as a multiple of the good's world reference price: when the
  *                        landed price plus margin is above it, the merchants cease to deal (`unprofitable`).
  *   failedOrdersBeforeCease — consecutive order months the warehouse could not take or pay before the merchants stop.
  *   dealLifetimeMonths — a waiting deal older than this is dropped (`expired`).
  */
 export const TRADE_IMPORT = Object.freeze({
   merchantMargin: 0.10,
-  marketCeiling: 2.2,
+  marketCeiling: 1.8,
   failedOrdersBeforeCease: 3,
   dealLifetimeMonths: 6,
   transportModes: Object.freeze({
@@ -128,9 +129,9 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'olivea',
     wants: Object.freeze([
-      { good: 'wood', merchantGood: 'dealWood', baseMultiplier: 1.9 },
-      { good: 'rock', merchantGood: 'dealRock', baseMultiplier: 1.7 },
-      { good: 'iron', merchantGood: 'dealIron', baseMultiplier: 1.7 },
+      { good: 'wood', merchantGood: 'dealWood', baseMultiplier: 1.45 },
+      { good: 'rock', merchantGood: 'dealRock', baseMultiplier: 1.2 },
+      { good: 'iron', merchantGood: 'dealIron', baseMultiplier: 1.2 },
       { good: 'pot',  merchantGood: null,        baseMultiplier: 1.3 },
       { good: 'oil',  merchantGood: null,        baseMultiplier: 1.4 },
     ]),
@@ -139,6 +140,7 @@ export const TRADE_CATALOG = Object.freeze([
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.0 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 30 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developed',
     personality: Object.freeze({ embargoReaction: 'absorbs', aidSensitivity: 'patient', customsSensitivity: 'tolerant', memory: 'tenacious', riskTaste: 'measured', gratitude: 'normal', liberalism: 'moderate' }),
     culture: "Négociants patients et méthodiques, nés de la culture de l'olivier. Ils bâtissent leur confiance lentement mais la gardent longtemps : un partenaire qui tient ses engagements finit par devenir indispensable. Ils recherchent surtout l'huile, les pots et le bois.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 1, loss: 2 })]),
@@ -147,17 +149,18 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'silvania',
     wants: Object.freeze([
-      { good: 'gold',         merchantGood: 'dealGold',         baseMultiplier: 1.8 },
-      { good: 'book',         merchantGood: 'dealBook',         baseMultiplier: 1.8 },
-      { good: 'decoratedPot', merchantGood: 'dealDecoratedPot', baseMultiplier: 1.75 },
-      { good: 'decoratedPlate', merchantGood: 'dealDecoratedPlate', baseMultiplier: 1.75 },
-      { good: 'gildedPot', merchantGood: 'dealGildedPot', baseMultiplier: 2.2 },
+      { good: 'gold',         merchantGood: 'dealGold',         baseMultiplier: 1.2 },
+      { good: 'book',         merchantGood: 'dealBook',         baseMultiplier: 1.2 },
+      { good: 'decoratedPot', merchantGood: 'dealDecoratedPot', baseMultiplier: 1.2 },
+      { good: 'decoratedPlate', merchantGood: 'dealDecoratedPlate', baseMultiplier: 1.2 },
+      { good: 'gildedPot', merchantGood: 'dealGildedPot', baseMultiplier: 1.2 },
     ]),
-    offers: Object.freeze([{ good: 'exoticWood', merchantGood: 'dealExoticWood', baseMultiplier: 1.5, quantityPerOrder: 15 }]),
+    offers: Object.freeze([{ good: 'exoticWood', merchantGood: 'dealExoticWood', baseMultiplier: 1, quantityPerOrder: 15 }]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 70, breakThreshold: -40 }),
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.2 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 20 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developed',
     personality: Object.freeze({ embargoReaction: 'retaliates', aidSensitivity: 'normal', customsSensitivity: 'normal', memory: 'forgetful', riskTaste: 'bold', gratitude: 'warm', liberalism: 'liberal' }),
     culture: "Forestiers et enthousiastes, ils s'enflamment pour les belles pièces. Leur confiance grimpe vite après une bonne livraison, mais un manquement la fait retomber tout aussi vite. Ils collectionnent les livres et les pots décorés.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 3, loss: 6 })]),
@@ -166,14 +169,15 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'briga',
     wants: Object.freeze([
-      { good: 'wheat',  merchantGood: 'dealWheatExport', baseMultiplier: 1.7 },
-      { good: 'carrot', merchantGood: 'dealCarrotExport', baseMultiplier: 1.7 },
+      { good: 'wheat',  merchantGood: 'dealWheatExport', baseMultiplier: 1.65 },
+      { good: 'carrot', merchantGood: 'dealCarrotExport', baseMultiplier: 1.65 },
     ]),
-    offers: Object.freeze([{ good: 'coal', merchantGood: 'dealCoal', baseMultiplier: 1.35, quantityPerOrder: 40 }]),
+    offers: Object.freeze([{ good: 'coal', merchantGood: 'dealCoal', baseMultiplier: 1.4, quantityPerOrder: 40 }]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 50, breakThreshold: -60 }),
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.5 }),
     trade: Object.freeze({ frequencyMonths: 3, quantityPerOrder: 50 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developing',
     personality: Object.freeze({ embargoReaction: 'absorbs', aidSensitivity: 'patient', customsSensitivity: 'tolerant', memory: 'average', riskTaste: 'cautious', gratitude: 'modest', liberalism: 'protectionist' }),
     culture: "Village isolé et pragmatique. Pas de goût particulier pour la nouveauté : ils achètent le grain et les légumes qui nourrissent leurs foyers. Réguliers mais peu bavards, ils jugent un partenaire à la régularité de ses livraisons.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
@@ -182,14 +186,15 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'piceta',
     wants: Object.freeze([
-      { good: 'wheat', merchantGood: 'dealWheatExport', baseMultiplier: 1.75 },
+      { good: 'wheat', merchantGood: 'dealWheatExport', baseMultiplier: 1.65 },
       { good: 'oil',   merchantGood: null, baseMultiplier: 1.45 },
     ]),
-    offers: Object.freeze([{ good: 'uranium', merchantGood: 'dealUranium', baseMultiplier: 1.3, quantityPerOrder: 10 }]),
+    offers: Object.freeze([{ good: 'uranium', merchantGood: 'dealUranium', baseMultiplier: 1.35, quantityPerOrder: 10 }]),
     relation: Object.freeze({ durationMonths: 12, renewalThreshold: 55, breakThreshold: -60 }),
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.8 }),
     trade: Object.freeze({ frequencyMonths: 3, quantityPerOrder: 20 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developing',
     personality: Object.freeze({ embargoReaction: 'absorbs', aidSensitivity: 'rancorous', customsSensitivity: 'normal', memory: 'tenacious', riskTaste: 'cautious', gratitude: 'modest', liberalism: 'moderate' }),
     culture: "Cité minière bâtie autour de ses galeries, où l'on extrait le minerai qui alimente les plus grandes centrales. Les mineurs ne mangent pas ce qu'ils creusent : ils achètent le blé et l'huile en gros, paient comptant et jugent un partenaire à la ponctualité de ses convois.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 4 })]),
@@ -198,18 +203,19 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'maris',
     wants: Object.freeze([
-      { good: 'gold',      merchantGood: 'dealGold', baseMultiplier: 1.8 },
-      { good: 'gildedPlate', merchantGood: 'dealGildedPlate', baseMultiplier: 2.2 },
-      { good: 'iron',      merchantGood: 'dealIron', baseMultiplier: 1.7 },
+      { good: 'gold',      merchantGood: 'dealGold', baseMultiplier: 1.2 },
+      { good: 'gildedPlate', merchantGood: 'dealGildedPlate', baseMultiplier: 1.2 },
+      { good: 'iron',      merchantGood: 'dealIron', baseMultiplier: 1.2 },
       { good: 'furniture', merchantGood: null, baseMultiplier: 1.6 },
       { good: 'amphora',   merchantGood: null, baseMultiplier: 1.3 },
-      { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.7 },
+      { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.2 },
     ]),
-    offers: Object.freeze([{ good: 'petrol', merchantGood: 'dealPetrol', baseMultiplier: 1.4, quantityPerOrder: 20 }]),
+    offers: Object.freeze([{ good: 'petrol', merchantGood: 'dealPetrol', baseMultiplier: 0.93, quantityPerOrder: 20 }]),
     relation: Object.freeze({ durationMonths: 24, renewalThreshold: 50, breakThreshold: -70 }),
     transport: Object.freeze({ mode: 'sea', distanceMultiplier: 2.0 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 15 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developed',
     personality: Object.freeze({ embargoReaction: 'retaliates', aidSensitivity: 'normal', customsSensitivity: 'tolerant', memory: 'average', riskTaste: 'bold', gratitude: 'normal', liberalism: 'liberal' }),
     culture: "Port habitué aux marchandises de luxe et aux commandes fréquentes. Exigeants sur les meubles et les amphores, ils passent commande chaque mois et ne font confiance qu'à la constance.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
@@ -218,18 +224,19 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'sablia',
     wants: Object.freeze([
-      { good: 'wheat',  merchantGood: 'dealWheatExport', baseMultiplier: 1.9 },
-      { good: 'carrot', merchantGood: 'dealCarrotExport', baseMultiplier: 1.85 },
+      { good: 'wheat',  merchantGood: 'dealWheatExport', baseMultiplier: 1.2 },
+      { good: 'carrot', merchantGood: 'dealCarrotExport', baseMultiplier: 1.2 },
       { good: 'oil',    merchantGood: null, baseMultiplier: 1.5 },
       { good: 'pot',    merchantGood: null, baseMultiplier: 1.3 },
-      { good: 'bread', merchantGood: 'dealBread', baseMultiplier: 1.9 },
-      { good: 'cabbageSoup', merchantGood: 'dealCabbageSoup', baseMultiplier: 1.85 },
+      { good: 'bread', merchantGood: 'dealBread', baseMultiplier: 1.2 },
+      { good: 'cabbageSoup', merchantGood: 'dealCabbageSoup', baseMultiplier: 1.2 },
     ]),
-    offers: Object.freeze([{ good: 'petrol', merchantGood: 'dealPetrol', baseMultiplier: 1.3, quantityPerOrder: 25 }]),
+    offers: Object.freeze([{ good: 'petrol', merchantGood: 'dealPetrol', baseMultiplier: 0.87, quantityPerOrder: 25 }]),
     relation: Object.freeze({ durationMonths: 12, renewalThreshold: 55, breakThreshold: -60 }),
     transport: Object.freeze({ mode: 'sea', distanceMultiplier: 1.6 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 25 }),
     sale: Object.freeze({ spread: 0.2, drawWidth: 0.5 }),
+    development: 'developed',
     personality: Object.freeze({ embargoReaction: 'breaks', aidSensitivity: 'rancorous', customsSensitivity: 'sensitive', memory: 'forgetful', riskTaste: 'cautious', gratitude: 'modest', liberalism: 'protectionist' }),
     culture: "Oasis marchande au bord du désert : on n'y cultive presque rien et l'on y paie le grain, l'huile et la poterie au prix fort. Ses marchands sont durs en affaires et changent de fournisseur sans prévenir ; leur prix suit celui du grain dans le monde.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 6 })]),
@@ -238,17 +245,18 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'carbonne',
     wants: Object.freeze([
-      { good: 'wheat', merchantGood: 'dealWheatExport', baseMultiplier: 1.7 },
-      { good: 'bread', merchantGood: 'dealBread', baseMultiplier: 1.7 },
-      { good: 'cabbageSoup', merchantGood: 'dealCabbageSoup', baseMultiplier: 1.8 },
-      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.9 },
-      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.7 },
+      { good: 'wheat', merchantGood: 'dealWheatExport', baseMultiplier: 1.65 },
+      { good: 'bread', merchantGood: 'dealBread', baseMultiplier: 1.65 },
+      { good: 'cabbageSoup', merchantGood: 'dealCabbageSoup', baseMultiplier: 1.65 },
+      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.95 },
+      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.65 },
     ]),
-    offers: Object.freeze([{ good: 'coal', merchantGood: 'dealCoal', baseMultiplier: 1.25, quantityPerOrder: 50 }]),
+    offers: Object.freeze([{ good: 'coal', merchantGood: 'dealCoal', baseMultiplier: 1.3, quantityPerOrder: 50 }]),
     relation: Object.freeze({ durationMonths: 12, renewalThreshold: 50, breakThreshold: -60 }),
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.3 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 30 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developing',
     personality: Object.freeze({ embargoReaction: 'absorbs', aidSensitivity: 'normal', customsSensitivity: 'normal', memory: 'average', riskTaste: 'measured', gratitude: 'modest', liberalism: 'moderate' }),
     culture: "Cité de mineurs qui vit de ses galeries : le charbon y est bon marché, le bois d'étai et le fer toujours demandés, et le blé acheté en gros pour nourrir les équipes. Réguliers et peu bavards, ils paient à l'échéance.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 4 })]),
@@ -258,18 +266,50 @@ export const TRADE_CATALOG = Object.freeze([
     cityId: 'frumenta',
     wants: Object.freeze([
       { good: 'pot',   merchantGood: null, baseMultiplier: 1.3 },
-      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.9 },
-      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.7 },
+      { good: 'wood',  merchantGood: 'dealWood', baseMultiplier: 1.95 },
+      { good: 'iron',  merchantGood: 'dealIron', baseMultiplier: 1.65 },
     ]),
     // Its grain is not cheap (the multiplier is the world's price for it, and the freight is long): the merchants bring it only when the city's own is dearer than that.
-    offers: Object.freeze([{ good: 'wheat', merchantGood: 'dealWheat', baseMultiplier: 1.6, quantityPerOrder: 40 }]),
+    offers: Object.freeze([{ good: 'wheat', merchantGood: 'dealWheat', baseMultiplier: 1.1, quantityPerOrder: 40 }]),
     relation: Object.freeze({ durationMonths: 12, renewalThreshold: 50, breakThreshold: -60 }),
     transport: Object.freeze({ mode: 'land', distanceMultiplier: 1.4 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 30 }),
     sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developing',
     personality: Object.freeze({ embargoReaction: 'absorbs', aidSensitivity: 'patient', customsSensitivity: 'normal', memory: 'average', riskTaste: 'measured', gratitude: 'normal', liberalism: 'liberal' }),
     culture: "Plaine à blé aux greniers immenses, qui vit de ses récoltes. Ses négociants vendent le grain au prix du marché mondial, et le gardent quand il est cher : une mauvaise année dans le monde, et leurs prix suivent. Ils apprécient les pots, le bois et le fer.",
     satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
+    openingRequirements: Object.freeze({}),
+  },
+  {
+    // The workshop city: it makes almost everything in bulk, so it sells cheap (a multiplier under what our own costs ask), and has no scholars or goldsmiths, so it buys what
+    // we make that it cannot: books, decorated and gilded pieces, cakes. What it buys, it pays well; what it sells competes with our fields and our workshops (the player's choice).
+    cityId: 'ateli',
+    wants: Object.freeze([
+      { good: 'book',           merchantGood: 'dealBook',           baseMultiplier: 2.05 },
+      { good: 'decoratedPot',   merchantGood: 'dealDecoratedPot',   baseMultiplier: 2.05 },
+      { good: 'decoratedPlate', merchantGood: 'dealDecoratedPlate', baseMultiplier: 2.05 },
+      { good: 'gildedPot',      merchantGood: 'dealGildedPot',      baseMultiplier: 2.05 },
+      { good: 'gildedPlate',    merchantGood: 'dealGildedPlate',    baseMultiplier: 2.05 },
+      { good: 'carrotCake',     merchantGood: 'dealCarrotCake',     baseMultiplier: 2.05 },
+    ]),
+    offers: Object.freeze([
+      { good: 'wheat',     merchantGood: 'dealWheat',     baseMultiplier: 0.6, quantityPerOrder: 60 },
+      { good: 'carrot',    merchantGood: 'dealCarrot',    baseMultiplier: 0.45, quantityPerOrder: 50 },
+      { good: 'cabbage',   merchantGood: 'dealCabbage',   baseMultiplier: 0.4, quantityPerOrder: 40 },
+      { good: 'pot',       merchantGood: 'dealPot',       baseMultiplier: 0.65, quantityPerOrder: 30 },
+      { good: 'plate',     merchantGood: 'dealPlate',     baseMultiplier: 0.9, quantityPerOrder: 30 },
+      { good: 'amphora',   merchantGood: 'dealAmphora',   baseMultiplier: 0.85, quantityPerOrder: 20 },
+      { good: 'wood',      merchantGood: 'dealWoodImport', baseMultiplier: 0.45, quantityPerOrder: 40 },
+    ]),
+    relation: Object.freeze({ durationMonths: 12, renewalThreshold: 50, breakThreshold: -60 }),
+    transport: Object.freeze({ mode: 'sea', distanceMultiplier: 2.4 }),
+    trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 30 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    development: 'developing',
+    personality: Object.freeze({ embargoReaction: 'retaliates', aidSensitivity: 'normal', customsSensitivity: 'sensitive', memory: 'average', riskTaste: 'bold', gratitude: 'modest', liberalism: 'liberal' }),
+    culture: "Cité-atelier aux ateliers innombrables, qui fabrique en grande série : blé, légumes, bois, poteries, assiettes, elle vend presque tout à bas prix, moins cher que vos fermes et vos ateliers. Elle n'a ni savants ni orfèvres et paie bien les livres, les pièces décorées ou serties d'or et les gâteaux. À vous de choisir ce que vous lui achetez et ce que vous gardez de votre production.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 4 })]),
     openingRequirements: Object.freeze({}),
   },
 ]);
@@ -312,6 +352,30 @@ export const SATISFACTION_FACTOR_WORDING = Object.freeze({
   availability: 'disponibilité',
   barriers: 'barrières',
 });
+
+/**
+ * How developed a city is: it sets the LEVEL OF ITS PRICES (and of its wages) against the world's reference. What a city pays for a good, and what it sells it at, is the world's
+ * reference price of the good (what a producer sells it at at the world's reference wage, see createWorldReferencePrices.js) times its level, times the premium or discount the entry
+ * declares for that good (`baseMultiplier`: above 1 for what it lacks and pays dear, below 1 for what it makes better than the world). A developed city pays more for what we make
+ * than our cost; a developing one sells cheaper than we can, at the world's wage. First values, to tune by playing.
+ */
+export const DEVELOPMENT_CLASSES = Object.freeze({
+  underdeveloped: Object.freeze({ label: 'sous-développée', priceLevel: 0.5 }),
+  developing: Object.freeze({ label: 'en développement', priceLevel: 0.8 }),
+  developed: Object.freeze({ label: 'développée', priceLevel: 1.25 }),
+  advanced: Object.freeze({ label: 'très développée', priceLevel: 1.6 }),
+});
+
+/**
+ * The development class of a city, read strictly: a city that names none, or one the catalog does not declare, throws.
+ * @param {{ cityId: string, development?: string }} entry
+ * @returns {{ id: string, label: string, priceLevel: number }}
+ */
+export function developmentOf(entry) {
+  const found = DEVELOPMENT_CLASSES[entry.development];
+  if (!found) throw new Error(`[trade] ${entry.cityId} names no development class of DEVELOPMENT_CLASSES (got "${entry.development}")`);
+  return { id: entry.development, ...found };
+}
 
 /**
  * A partner's personality (docs/gameplay/PLAN_TRADE_RELATIONS.md): seven traits, each at one of three levels the catalog declares, and each city names the level of every trait

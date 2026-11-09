@@ -58,7 +58,11 @@ const MERCHANT_ACTIVITY_GOODS = [
 const IMPORTED_GOODS = ['coal', 'petrol', 'uranium', 'exoticWood'];
 // Wheat is imported too, but it is a good the city makes: it is filed in the granaries that hold it, from where the markets sell it (its deal is in the list below).
 /** The merchants' deals waiting for those imports (one per imported good): see ResourceCategoryCatalog `importGood`. */
-const MERCHANT_IMPORT_DEAL_GOODS = ['dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood', 'dealWheat'];
+const MERCHANT_IMPORT_DEAL_GOODS = [
+  'dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood', 'dealWheat',
+  // Goods the city makes too, bought abroad when they are cheaper there: they are filed where such goods are kept (a granary, a warehouse).
+  'dealCarrot', 'dealCabbage', 'dealPot', 'dealPlate', 'dealAmphora', 'dealWoodImport',
+];
 const STORED_GOODS = [
   'wood', 'rock', 'iron', 'gold', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,

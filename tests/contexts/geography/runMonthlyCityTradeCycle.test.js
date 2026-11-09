@@ -1,4 +1,5 @@
-import { importCapabilities, openRelationRow } from './importCapabilities.js';
+import { importCapabilities, openRelationRow, referencePriceOf } from './importCapabilities.js';
+import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
 import { RunMonthlyCityTradeCycle } from '../../../src/contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
@@ -333,7 +334,7 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     expect(hub.stocks.coal).toBe(40); // Briga's offer: 40 per order
     expect(hub.lots.coal).toEqual({ 'city:briga': 40 });
 
-    const priced = priceImportDelivery({ cityId: 'briga', offer: { good: 'coal', baseMultiplier: 1.35 }, quantity: 40, dutyRate: 0.1, worldIndex: 1 });
+    const priced = priceImportDelivery({ cityId: 'briga', offer: getTradeCatalogEntry('briga').offers.find((candidate) => candidate.good === 'coal'), quantity: 40, dutyRate: 0.1, worldIndex: 1, referencePrice: referencePriceOf('coal') });
     const amountOf = (type) => merchantLines.find((line) => line.type === type)?.amount;
     expect(merchantLines.every((line) => line.houseId === 'house-1' && line.partnerId === 'briga')).toBe(true);
     expect(amountOf('import_coal')).toBe(priced.foreign);

@@ -26,6 +26,7 @@ import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initCompactToolbar } from '../tools/CompactToolbar.js';
+import { initConstructionMode } from '../tools/ConstructionMode.js';
 import { initHamletSwitcher } from '../hamlets/hamletSwitcher.js';
 import { initBottomModeRadio } from '../tools/BottomModeRadio.js';
 import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
@@ -75,6 +76,7 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initConstructionMode();
   initHamletSwitcher({ getGame: getSessionGame });
   initBottomModeRadio({ getGame: getSessionGame });
   initBuildToolHoverPreview();

@@ -8,7 +8,25 @@ import { UNATTRIBUTED } from './HubLotsPolicy.js';
  *
  * Pure: given the lots, each lot's priorities, and how much each client still wants, it says what one client
  * may take.
+ *
+ * Among the lots a client may take, the cheapest is served first (`priceOf`, the unit price each lot entered the hub at): a good made here and the same good imported compete on
+ * their price, whatever their origin. A lot whose price cannot be told is served after the ones that have one, then by key; when no price is given at all, by key.
  */
+
+/**
+ * @param {Record<string, number>} lots
+ * @param {((lotKey: string) => number | null) | undefined} priceOf
+ * @returns {string[]} the lot keys, cheapest first
+ */
+export function orderedLotKeys(lots, priceOf) {
+  const keys = Object.keys(lots).sort();
+  if (!priceOf) return keys;
+  const price = (key) => {
+    const value = key === UNATTRIBUTED ? null : priceOf(key);
+    return Number.isFinite(value) ? value : Infinity;
+  };
+  return keys.sort((a, b) => (price(a) === price(b) ? 0 : price(a) < price(b) ? -1 : 1));
+}
 
 /**
  * @typedef {{ order: string[], disabled: string[] }} ClientPriorities
@@ -18,11 +36,11 @@ import { UNATTRIBUTED } from './HubLotsPolicy.js';
  * @param {Record<string, number>} lots Units per lot key (a producer type, or UNATTRIBUTED).
  * @param {(lotKey: string) => ClientPriorities} priorityOf The priorities a lot carries.
  * @param {Record<string, number>} wanted Units each client type still wants (the asking client included).
+ * @param {string[]} [keys] The lots in the order they are served (see `orderedLotKeys`); by key when omitted.
  * @returns {{ entitled: Record<string, Record<string, number>>, free: Record<string, number> }}
  *   What each client is served from each lot in rank order, and what is left in each lot after them.
  */
-export function planAllocation(lots, priorityOf, wanted) {
-  const keys = Object.keys(lots).sort();
+export function planAllocation(lots, priorityOf, wanted, keys = Object.keys(lots).sort()) {
   const left = { ...lots };
   const remaining = { ...wanted };
   const entitled = {};
@@ -54,21 +72,23 @@ export function planAllocation(lots, priorityOf, wanted) {
  * @param {Record<string, number>} params.othersWanted What the OTHER clients still want.
  * @param {string} params.client The asking client type.
  * @param {number} params.want
+ * @param {(lotKey: string) => number | null} [params.priceOf] The unit price a lot entered the hub at: the cheapest lot is served first.
  * @returns {Array<{ key: string, amount: number }>} What to take, per lot.
  */
-export function allocateToClient({ lots, priorityOf, othersWanted, client, want }) {
-  const { entitled, free } = planAllocation(lots, priorityOf, { ...othersWanted, [client]: want });
+export function allocateToClient({ lots, priorityOf, othersWanted, client, want, priceOf }) {
+  const keys = orderedLotKeys(lots, priceOf);
+  const { entitled, free } = planAllocation(lots, priorityOf, { ...othersWanted, [client]: want }, keys);
   const takes = [];
   let left = Math.max(0, Math.floor(want));
 
-  for (const key of Object.keys(lots).sort()) {
+  for (const key of keys) {
     const amount = Math.min(entitled[key]?.[client] ?? 0, left);
     if (amount > 0) {
       takes.push({ key, amount });
       left -= amount;
     }
   }
-  for (const key of Object.keys(lots).sort()) {
+  for (const key of keys) {
     if (left <= 0) break;
     const closed = key !== UNATTRIBUTED && priorityOf(key).disabled.includes(client);
     const amount = closed ? 0 : Math.min(free[key] ?? 0, left);
@@ -84,7 +104,7 @@ export function allocateToClient({ lots, priorityOf, othersWanted, client, want 
  * How much a client could take at most from these lots right now (what `allocateToClient` would give it if it
  * asked for everything).
  */
-export function availableToClient({ lots, priorityOf, othersWanted, client }) {
+export function availableToClient({ lots, priorityOf, othersWanted, client, priceOf }) {
   const total = Object.values(lots).reduce((sum, amount) => sum + amount, 0);
-  return allocateToClient({ lots, priorityOf, othersWanted, client, want: total }).reduce((sum, take) => sum + take.amount, 0);
+  return allocateToClient({ lots, priorityOf, othersWanted, client, want: total, priceOf }).reduce((sum, take) => sum + take.amount, 0);
 }

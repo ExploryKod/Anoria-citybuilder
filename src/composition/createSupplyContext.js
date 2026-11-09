@@ -127,8 +127,22 @@ export function createSupplyContext({
       })
     );
   }
+  // What a lot costs at the hub, so the cheapest is served first: the price its producer sells at (the price book), or the landed price of an import (the trade context
+  // registers how an import is priced, as it does the open-deal check). A producer that no longer stands, or an import nobody prices, leaves its lot without a price: served last.
+  let importLotPricer = null;
+  const lotUnitPrice = async ({ lotKey, category, turn }) => {
+    const { producerId } = lotOrigin(lotKey);
+    if (!producerId) return null;
+    if (producerId.startsWith('city:')) return importLotPricer ? importLotPricer({ cityId: producerId.slice('city:'.length), good: category, turn }) : null;
+    const producer = await supplyBuildingRepositoryImpl.findById(producerId);
+    if (!producer) return null;
+    const period = getTimeInfo(turn);
+    await priceBook.ensure(period);
+    return priceBook.sellingPrice(producer, category, period);
+  };
   const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
     listExternalClients: listExternalClientsForCategory,
+    lotUnitPrice,
   });
   const rebalanceHubAllocations = new RebalanceHubAllocations(
     supplyBuildingRepositoryImpl
@@ -392,6 +406,11 @@ export function createSupplyContext({
 
   return {
     /** @param {(dealCategory: string) => Promise<boolean>} check whether the merchants may make this deal now */
+    /** The trade context says how a lot of imported goods is priced at the hub (its landed price), so it competes with the goods made here. @param {(lot: { cityId: string, good: string, turn: number }) => Promise<number | null>} pricer */
+    setImportLotPricer(pricer) {
+      importLotPricer = pricer;
+    },
+
     setOpenDealCheck(check) {
       openDealCheck = check;
     },

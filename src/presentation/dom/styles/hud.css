@@ -339,6 +339,30 @@
   overflow: hidden;
 }
 
+/* Construction mode: the game is paused so the player can build; the date pill pulses green (the pause icon shows beside the date). */
+.info-panel > .info-box.infos-time.infos-time--construction {
+  animation: infos-time-construction-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes infos-time-construction-pulse {
+  0%, 100% { background-color: rgba(46, 160, 90, 0.35); }
+  50% { background-color: rgba(46, 160, 90, 0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-panel > .info-box.infos-time.infos-time--construction {
+    animation: none;
+    background-color: rgba(46, 160, 90, 0.7);
+  }
+}
+
+/* The road and the eraser outside construction mode */
+.toolbar-toggle-btn:disabled {
+  opacity: 0.4;
+  filter: grayscale(70%);
+  cursor: not-allowed;
+}
+
 .hud-season {
   display: inline-flex;
   align-items: center;

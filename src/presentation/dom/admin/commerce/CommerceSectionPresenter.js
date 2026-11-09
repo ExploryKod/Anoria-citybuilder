@@ -234,6 +234,7 @@ export class CommerceSectionPresenter {
           <h4>${reading.name ?? unresolvedTerm('city name', cityId)}</h4>
           <span class="commerce-pill commerce-pill--${STATUS_TONE[reading.status]}">${STATUS_LABEL[reading.status]}</span>
         </header>
+        ${reading.development ? html`<p class="commerce-sheet__character">Niveau de développement : <strong>${reading.development.label}</strong></p>` : ''}
         ${reading.character.length > 0 ? html`<p class="commerce-sheet__character">Caractère : <strong>${reading.character.join(', ')}</strong></p>` : ''}
         ${reading.entry?.culture ? html`<p class="commerce-sheet__culture">${reading.entry.culture}</p>` : ''}
         ${reading.satisfaction === null ? html`<p class="commerce-empty-state">Aucune relation n’est encore ouverte avec cette ville.</p>` : html`

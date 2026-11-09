@@ -187,6 +187,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
   let time = 0;
   let isPause;
+  /** @type {{ resumeOnExit: boolean } | null} set while the construction mode pauses the game */
+  let constructionPause = null;
   let isOver;
   let infos = {};
   /** @type {GameLoop | null} */
@@ -2471,7 +2473,36 @@ export function createGame(gameStore, assetManager, citySize = null) {
       gameUI.setPaused(true);
     },
 
+    /**
+     * Construction mode: the game is paused (without the pause overlay) and stays paused while the player builds; the many `play()` calls that end a
+     * placement do nothing until the mode ends. Whether the game ran before is remembered, so a game the player had paused stays paused.
+     */
+    enterConstructionPause() {
+      if (constructionPause) {
+        return;
+      }
+      constructionPause = { resumeOnExit: !isPause };
+      isPause = true;
+      gameUI.setPaused(true);
+      gameUI.setConstructionPause(true);
+    },
+
+    async leaveConstructionPause() {
+      if (!constructionPause) {
+        return;
+      }
+      const { resumeOnExit } = constructionPause;
+      constructionPause = null;
+      gameUI.setConstructionPause(false);
+      if (resumeOnExit) {
+        await game.play();
+      }
+    },
+
     async play() {
+      if (constructionPause) {
+        return;
+      }
       isPause = false;
       gameUI.setPaused(false);
       if (objectivesTracker.enabled) {

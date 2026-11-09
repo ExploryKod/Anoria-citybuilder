@@ -4,6 +4,10 @@ import { lotOrigin } from '../../../src/contexts/supply/domain/policies/HubLotsP
 import { referenceHubSellingPrice } from '../../helpers/referencePriceBook.js';
 import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
 import { openingGoodReview, openingGoodSatisfaction } from '../../../src/shared/trade-catalog/satisfaction.js';
+import { createWorldReferencePrices } from '../../../src/composition/createWorldReferencePrices.js';
+
+/** The world's reference price of a good, as the game computes it (the cities' prices are built on it). */
+export const { referencePriceOf } = createWorldReferencePrices();
 
 /** A relation row as the game opens it (createTradeContext.js): the cease state starts empty, every good at the middle of the satisfaction scale. */
 export const openRelationRow = (fields) => ({
@@ -27,6 +31,7 @@ export const openRelationRow = (fields) => ({
  */
 export function importCapabilities({ merchantLines = [], cityLines = [], deliveries = [], relationEventLog = [] } = {}) {
   return {
+    referencePriceOf,
     // The relation's journal, in memory: what the cycle writes in it is in `relationEventLog`.
     relationEvents: {
       record: async (event) => { relationEventLog.push(event); },

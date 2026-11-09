@@ -8,9 +8,12 @@ import { turnsPerYear } from '../shared/time/TimeCalendar.js';
 import { WorldMarket } from '../contexts/geography/application/services/WorldMarket.js';
 import { WorldMarketRepository } from '../contexts/geography/infrastructure/dexie/WorldMarketRepository.js';
 import { isClimateCrop } from '../shared/climate/ClimatePolicy.js';
-import { TRADE_CATALOG, DIPLOMATIC_GESTURES, characterWordsOf, getTradeCatalogEntry, listTradedGoodIds } from '../shared/trade-catalog/TradeCatalog.js';
+import { TRADE_CATALOG, DIPLOMATIC_GESTURES, characterWordsOf, developmentOf, getTradeCatalogEntry, listTradedGoodIds } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { harvestReservePerHub, harvestToCome } from '../contexts/supply/domain/policies/HarvestReservePolicy.js';
+import { worldUnitPrice } from '../contexts/geography/domain/policies/WorldPricePolicy.js';
+import { createWorldReferencePrices } from './createWorldReferencePrices.js';
 import { addCategoryAmount, takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
 import { buildPriceWaterfall } from '../contexts/geography/domain/policies/PriceWaterfallPolicy.js';
 import { importPaysAtHome, priceImportDelivery } from '../contexts/geography/domain/policies/ImportPricePolicy.js';
@@ -56,9 +59,12 @@ export function createTradeContext({ supply, accounting }) {
     worldClimateOfYear: (year) => supply.getWorldClimateOfYear(year),
     random: () => Math.random(),
   });
+  // The world's reference price of each good, at the world's reference wage: the cities' prices are built on it, so they answer our own wages (see createWorldReferencePrices.js).
+  const { referencePriceOf } = createWorldReferencePrices();
   const runMonthlyCityTradeCycle = new RunMonthlyCityTradeCycle({
+    referencePriceOf,
     worldIndexOf: (good, period) => worldMarket.indexOf(good, period),
-    homePriceOf: (good, period) => homeShelfPriceOf(good, period),
+    homePriceOf: (good, period) => homePriceOf(good, period),
     cityTradeRepository,
     relationEvents: relationEventRepository,
     supplyBuildingRepository: supply.supplyBuildingRepository,
@@ -79,7 +85,8 @@ export function createTradeContext({ supply, accounting }) {
     hubSellingPrice: (hub, good, period) => supply.sellingPriceOf(hub, good, period),
     producerOfLot: (lotKey) => supply.producerOfLot(lotKey),
     hubHolds: (hub, category) => getCategoriesForRole(hub.type, 'hub').includes(category),
-    hubRoom: (hub) => Math.max(0, hub.maxStock - (hub.stocks[getTotalKeyForRole(hub.type, 'hub')] ?? 0)),
+    // The room an import may take in a hub: what is free, less what the coming harvest of the fields will need (an import never keeps the harvest out).
+    hubRoom: async (hub, good) => Math.max(0, hub.maxStock - (hub.stocks[getTotalKeyForRole(hub.type, 'hub')] ?? 0) - (await harvestReserveOf(hub, good))),
     // Same shape as takeHubStock: the category and the hub's shared total move together (ResourceStock.js).
     addHubStock: (hub, category, amount) =>
       addCategoryAmount(hub.stocks, category, amount, getCategoriesForRole(hub.type, 'hub'), getTotalKeyForRole(hub.type, 'hub')),
@@ -98,34 +105,64 @@ export function createTradeContext({ supply, accounting }) {
   // (`unprofitable` / `export_unprofitable`). Deals already waiting, in the warehouses and in the merchant houses that made
   // them, must not exceed what the cities take in one order: more would only fill the warehouse (and, for exports,
   // consume real goods for nothing).
-  // A good the city makes itself is imported only while buying it abroad is cheaper than the market's price at home (importPaysAtHome): the landed price of the offer
-  // (the world's price of the month, the freight, the duty, the merchants' margin) against the average shelf price now, which carries the scarcity. Read once a month per city.
+  // A good the city makes itself is imported only while buying it abroad is cheaper than the price at home (importPaysAtHome): the landed price of the offer
+  // (the world's price of the month, the freight, the duty, the merchants' margin) against the local price now. What is eaten is compared with the average shelf price, which
+  // carries the scarcity; any other good the city makes, with what its warehouses sell it at. A good the city does not make has no local price to beat. Read once a month per good.
   const homePriceByMonth = new Map();
-  /** The average shelf price now of a good the city makes itself (the reference chain's while no market sells it yet); null for a good it does not make. */
-  const homeShelfPriceOf = async (good, period) => {
-    const scarce = new Set((await supply.describeScarcity()).flatMap((need) => need.categories));
-    if (!scarce.has(good)) return null;
+  /** Whether a producer of the good stands in the hamlet: what makes an import a competitor of something made here. */
+  const madeHere = async (good) => (await supply.supplyBuildingRepository.findByResourceRole('producer', [good])).length > 0;
+  const averageOf = (prices) => (prices.length > 0 ? prices.reduce((sum, price) => sum + price, 0) / prices.length : null);
+  /**
+   * The price at home of a good the city makes itself, or null for a good it does not make (or one no warehouse sells yet: nothing to compete with).
+   * @returns {Promise<number | null>}
+   */
+  const homePriceOf = async (good, period) => {
     const cacheKey = `${good}|${period.year}|${period.monthIndex}`;
-    if (!homePriceByMonth.has(cacheKey)) {
+    if (homePriceByMonth.has(cacheKey)) return homePriceByMonth.get(cacheKey);
+    const scarce = new Set((await supply.describeScarcity()).flatMap((need) => need.categories));
+    let price = null;
+    if (scarce.has(good)) {
+      // What is eaten: the shelf price (the reference chain's while no market sells it yet).
       const shelf = (await supply.listSellingPrices(period)).filter((row) => row.category === good && row.stage === 'distributor').map((row) => row.price);
-      homePriceByMonth.set(cacheKey, shelf.length > 0 ? shelf.reduce((sum, price) => sum + price, 0) / shelf.length : unitPriceAtStage('distributor', good));
+      price = averageOf(shelf) ?? unitPriceAtStage('distributor', good);
+    } else if (await madeHere(good)) {
+      price = averageOf((await supply.listSellingPrices(period)).filter((row) => row.category === good && row.stage === 'hub').map((row) => row.price));
     }
-    return homePriceByMonth.get(cacheKey);
+    homePriceByMonth.set(cacheKey, price);
+    return price;
   };
   const importIsWorthwhile = async (entry, offer) => {
     const turn = getSessionGameTime();
     const period = resolveGetTimeInfo()(turn);
+    const localUnitPrice = await homePriceOf(offer.good, period);
+    if (localUnitPrice === null) return true;
     const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn);
-    const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period) });
-    return importPaysAtHome({ landedUnitSale: delivery.unit.sale, localUnitPrice: await homeShelfPriceOf(offer.good, period) });
+    const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period), referencePrice: referencePriceOf(offer.good) });
+    return importPaysAtHome({ landedUnitSale: delivery.unit.sale, localUnitPrice });
   };
+
+  // The units of the coming harvest a hub must keep room for: the standing fields of the good that have not yielded this year and that work, shared among the hubs that hold the good.
+  // An import takes only what is left, so the cheapest goods of the world never keep the harvest of the fields out of the granary.
+  const harvestReserveOf = async (hub, good) => {
+    const { year } = resolveGetTimeInfo()(getSessionGameTime());
+    const toCome = harvestToCome({ producers: await supply.supplyBuildingRepository.findByResourceRole('producer', [good]), good, year });
+    if (toCome === 0) return 0;
+    return harvestReservePerHub({ toCome, hubCount: (await supply.supplyBuildingRepository.findByResourceRole('hub', [good])).length });
+  };
+  // How an import is priced when it sits in a hub next to the goods made here (see HubServing's lotUnitPrice): its landed price now.
+  supply.setImportLotPricer(async ({ cityId, good, turn }) => {
+    const offer = getTradeCatalogEntry(cityId)?.offers.find((candidate) => candidate.good === good);
+    if (!offer) return null;
+    const period = resolveGetTimeInfo()(turn);
+    const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', good, turn);
+    return priceImportDelivery({ cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(good, period), referencePrice: referencePriceOf(good) }).unit.sale;
+  });
   supply.setOpenDealCheck(async (dealGood) => {
     const importCities = TRADE_CATALOG.filter((entry) => entry.offers.some((offer) => offer.merchantGood === dealGood));
     const exportCities = TRADE_CATALOG.filter((entry) => entry.wants.some((want) => want.merchantGood === dealGood));
     if (importCities.length === 0 && exportCities.length === 0) {
       throw new Error(`[trade] no city of the trade catalog offers or wants the good that "${dealGood}" is a deal for`);
     }
-    const scarceGoods = new Set((await supply.describeScarcity()).flatMap((need) => need.categories));
     const relations = new Map((await cityTradeRepository.getActiveRelations()).map((relation) => [relation.cityId, relation]));
     let perOrder = 0;
     for (const entry of importCities) {
@@ -133,7 +170,7 @@ export function createTradeContext({ supply, accounting }) {
       const ceased = relations.get(entry.cityId)?.importCeased[offer.good];
       if (!relations.has(entry.cityId) || ceased?.reason === 'unprofitable') continue;
       // What the city makes itself is imported only when the home price is dearer (a shortage, a dear harvest); coal and the like have no home price to beat.
-      if (scarceGoods.has(offer.good) && !(await importIsWorthwhile(entry, offer))) continue;
+      if (!(await importIsWorthwhile(entry, offer))) continue;
       perOrder += offer.quantityPerOrder;
     }
     for (const entry of exportCities) {
@@ -240,7 +277,7 @@ export function createTradeContext({ supply, accounting }) {
           const warehousePrice = average(offer.good, 'hub');
           if (warehousePrice === null) continue;
           const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn);
-          const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period) });
+          const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period), referencePrice: referencePriceOf(offer.good) });
           waterfalls.push(buildPriceWaterfall({
             good: offer.good,
             reference: getResourceBaseValue(offer.good),
@@ -306,7 +343,7 @@ export function createTradeContext({ supply, accounting }) {
       for (const want of entry?.wants ?? []) {
         // A good the city wants but that no merchant house deals in (no `merchantGood`) is never traded: it is not an exchange to show.
         if (!want.merchantGood) continue;
-        const centre = getResourceBaseValue(want.good) * want.baseMultiplier;
+        const centre = worldUnitPrice({ referencePrice: referencePriceOf(want.good), entry, multiplier: want.baseMultiplier });
         goods.push({
           good: want.good,
           flow: 'export',
@@ -374,6 +411,7 @@ export function createTradeContext({ supply, accounting }) {
         cityId,
         name: getWorldCityById(cityId)?.name ?? null,
         status: relation?.status ?? 'none',
+        development: entry ? developmentOf(entry) : null,
         satisfaction: relation ? relationSatisfaction(relation, entry) : null,
         satisfactionTier: relation ? satisfactionTier(relationSatisfaction(relation, entry)) : null,
         ceased: relation?.ceased ?? null,

@@ -256,6 +256,29 @@ Pourquoi ces seuils : à 50 % un seul acteur pèse plus que tous les autres ense
 - **Où** : un formulaire en bas de la fiche d'une ville (section Commerce). Cas de refus testés dans `makeDiplomaticGift.test.js`.
 - **Pas fait** : la **mission de renouement** (rien ne rompt encore une relation, elle n'aurait rien à rouvrir) et **honorer une aide** (les prêts des villes partenaires ne sont pas encore reliés à la relation).
 
+## À garder pour plus tard : l'indice de qualité d'un bien (idée seulement, rien de construit)
+
+Aujourd'hui, un bien fabriqué ici et le même bien importé se concurrencent **sur le prix seul** : le lot le moins cher est servi d'abord (`HubClientAllocationPolicy`, `lotUnitPrice`), et un bien fabriqué ici n'est importé que s'il est moins cher que chez nous. Un bien n'a qu'**une qualité**, celle du catalogue.
+
+L'idée : donner à un bien un **indice de qualité**, qui dépend de son origine (qui l'a fabriqué : une ferme d'ici, une ville partenaire), pour que le prix ne soit pas le seul critère. Ce qu'elle permettrait, à décider le moment venu :
+- le cas d'une ville comme « Ateli » (grande productrice à bas prix) : moins cher, mais de moindre qualité, donc un vrai arbitrage pour le joueur au lieu d'un gagnant automatique ;
+- une concurrence qui ne se joue plus au centime près (le lot le moins cher n'est plus toujours servi d'abord) ;
+- un effet possible sur ce que les habitants en tirent (la variété et la santé pour la nourriture, la satisfaction pour les biens) et sur le prix qu'ils acceptent de payer ;
+- un prix d'export qui dépend de la qualité que nos producteurs livrent.
+
+Rien n'est décidé : où se déclare l'indice (le bien, la ville, le bâtiment), comment il se compare au prix, ce qu'il change, et s'il évolue. À traiter avec la ville « Ateli » et le scénario (étape E de la concurrence import/local), pas avant.
+
+**Ateli existe** (catalogue des échanges et carte du monde) : une cité-atelier lointaine, par mer, qui vend à bas prix blé, carotte, chou, pot, plat et amphore (moins cher que notre coût de revient réel), et qui achète, bien payés, les livres, les pots et plats décorés ou sertis d'or, et les carrot cakes, qu'elle ne fabrique pas. Son prix d'achat des produits de luxe est au-dessus du coût des négociants ; ses prix de vente sont au-dessous de ceux de nos fermes et de nos ateliers : c'est le choix du joueur. Le meuble a été retiré de son offre : notre propre meuble coûte moins cher (7,8 €) que le sien ne pourrait l'être (20 €), son prix de base est à revoir. Il n'y a pas encore de scénario ni d'indice de qualité.
+
+## Un vrai marché mondial : prix de référence et niveau de développement (construit)
+
+Les prix des villes ne partent plus de la valeur de base du bien (écrite avant les salaires) : ils partent du **prix mondial de référence** du bien, ce qu'un producteur le vend au **salaire de référence du monde** (les salaires de départ du marché du travail), avec la même formule que le prix de revient (`createWorldReferencePrices`, `StandardUnitCostPolicy`). Le prix d'une ville = prix de référence × **niveau de prix de sa classe** × **prime** (`baseMultiplier` : au-dessus de 1 pour ce qu'elle manque, en dessous pour ce qu'elle fait mieux que le monde) × indice du mois (`WorldPricePolicy`).
+
+- **Classes** (`DEVELOPMENT_CLASSES`) : sous-développée 0,5 ; en développement 0,8 ; développée 1,25 ; très développée 1,6. Une ville développée paie plus que notre coût, une ville en développement vend moins cher que nous ne pouvons.
+- **Conséquence pour nos décisions** : nos salaires ne sont plus ceux du monde. S'ils montent, nos biens coûtent plus cher que ceux du monde (exports moins rentables, imports plus compétitifs) ; s'ils baissent, l'inverse. Le plafond d'un import sans prix local est un multiple du prix de référence (`TRADE_IMPORT.marketCeiling`).
+- **Les 32 exports** du catalogue passent le seuil de rentabilité au prix de revient aux salaires de référence (audit), alors qu'avant la plupart des matières premières étaient déficitaires.
+- **Pas encore fait** : la classe d'Anoria elle-même, lue de ses salaires, et ses effets sur ce que les partenaires nous font payer ou nous proposent ; l'affichage de l'écart avec le monde.
+
 ## Ce que ce plan prépare pour la politique
 
 La relation est faite pour cela : la politique étrangère (alliances, sanctions, traités) et la politique intérieure (opinion, lobbies) y ajouteront des **genres d'événements**, des **gestes** et des **auteurs** et **causes** d'arrêt, sans toucher au reste. La satisfaction commerciale, elle, reste du pur business.

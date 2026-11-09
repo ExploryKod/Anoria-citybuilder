@@ -25,15 +25,15 @@ const BASKET = Object.freeze({ one: 'panier', many: 'paniers' });
 const unitOf = (one, many) => Object.freeze({ one, many });
 export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   wheat:  Object.freeze({ vatCategory: 'essential', emoji: '🌾', label: 'Blé',     unit: BASKET, baseValue: 0.8, climateSensitivity: 1, transportWeight: 2,  colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
-  cabbage: Object.freeze({ vatCategory: 'essential', emoji: '🥬', label: 'Chou',   unit: BASKET, baseValue: 0.5, climateSensitivity: 0.5,  colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
-  carrot: Object.freeze({ vatCategory: 'essential', emoji: '🥕', label: 'Carotte', unit: BASKET, baseValue: 0.6, climateSensitivity: 0.6,  colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
+  cabbage: Object.freeze({ vatCategory: 'essential', emoji: '🥬', label: 'Chou',   unit: BASKET, baseValue: 0.5, climateSensitivity: 0.5, transportWeight: 2,  colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
+  carrot: Object.freeze({ vatCategory: 'essential', emoji: '🥕', label: 'Carotte', unit: BASKET, baseValue: 0.6, climateSensitivity: 0.6, transportWeight: 2,  colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
   // Imported goods: bought from a trade city (see TradeCatalog `offers`), never made here.
   coal:   Object.freeze({ vatCategory: 'other', emoji: '⛏️', label: 'Charbon', unit: unitOf('tonne', 'tonnes'), baseValue: 1.2, transportWeight: 3, colors: Object.freeze({ dark: '#37474F', pale: '#B0BEC5' }) }),
   petrol: Object.freeze({ vatCategory: 'other', emoji: '🛢️', label: 'Pétrole', unit: unitOf('baril', 'barils'), baseValue: 3.0, transportWeight: 1, colors: Object.freeze({ dark: '#4E342E', pale: '#BCAAA4' }) }),
   uranium: Object.freeze({ vatCategory: 'other', emoji: '☢️', label: 'Uranium', unit: unitOf('fût', 'fûts'), baseValue: 8.0, transportWeight: 1, colors: Object.freeze({ dark: '#558B2F', pale: '#DCEDC8' }) }),
   exoticWood: Object.freeze({ vatCategory: 'luxury', emoji: '🌳', label: 'Bois exotique', unit: unitOf('bille', 'billes'), baseValue: 4.0, transportWeight: 2, colors: Object.freeze({ dark: '#7B1F2E', pale: '#E3A4AE' }) }),
   dattes: Object.freeze({ vatCategory: 'essential', emoji: '🌴', label: 'Dattes',  unit: BASKET, baseValue: 1.2, climateSensitivity: 0.5,  colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
-  wood:   Object.freeze({ vatCategory: 'essential', emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), baseValue: 1.0, colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
+  wood:   Object.freeze({ vatCategory: 'essential', emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), baseValue: 1.0, transportWeight: 3, colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
   heat: Object.freeze({ emoji: '🔥', label: 'Chauffage', unit: unitOf('unité', 'unités') }),
   // Lighting: olive green for oil, beeswax for candles.
@@ -72,13 +72,19 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dealPetrol:      Object.freeze({ kind: 'importDeal', importGood: 'petrol', emoji: '🤝', label: 'Import pétrole', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#4E342E', pale: '#BCAAA4' }) }),
   dealWheat:       Object.freeze({ kind: 'importDeal', importGood: 'wheat', emoji: '🤝', label: 'Import blé', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
   dealUranium:     Object.freeze({ kind: 'importDeal', importGood: 'uranium', emoji: '🤝', label: 'Import uranium', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#558B2F', pale: '#DCEDC8' }) }),
+  dealWoodImport:  Object.freeze({ kind: 'importDeal', importGood: 'wood', emoji: '🤝', label: 'Import bois', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
+  dealCarrot:      Object.freeze({ kind: 'importDeal', importGood: 'carrot', emoji: '🤝', label: 'Import carotte', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
+  dealCabbage:     Object.freeze({ kind: 'importDeal', importGood: 'cabbage', emoji: '🤝', label: 'Import chou', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
+  dealPot:         Object.freeze({ kind: 'importDeal', importGood: 'pot', emoji: '🤝', label: 'Import pot', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#BF5B3A', pale: '#E8B9A3' }) }),
+  dealPlate:       Object.freeze({ kind: 'importDeal', importGood: 'plate', emoji: '🤝', label: 'Import plat', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#5C7C99', pale: '#DCE6F0' }) }),
+  dealAmphora:     Object.freeze({ kind: 'importDeal', importGood: 'amphora', emoji: '🤝', label: 'Import amphore', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#C98A2B', pale: '#F0D9A8' }) }),
   dealExoticWood:  Object.freeze({ kind: 'importDeal', importGood: 'exoticWood', emoji: '🤝', label: 'Import bois exotique', unit: unitOf('accord', 'accords'), baseValue: 0, colors: Object.freeze({ dark: '#7B1F2E', pale: '#E3A4AE' }) }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
   // terracotta for pots, ochre clay for amphorae.
   furniture: Object.freeze({ vatCategory: 'craft', emoji: '🪑', label: 'Meuble',  unit: unitOf('meuble', 'meubles'),   baseValue: 20.0, colors: Object.freeze({ dark: '#6D4C41', pale: '#BCAAA4' }) }),
-  plate:     Object.freeze({ vatCategory: 'craft', emoji: '🍽️', label: 'Plat',    unit: unitOf('plat', 'plats'),        baseValue: 5.0,  colors: Object.freeze({ dark: '#5C7C99', pale: '#DCE6F0' }) }),
-  pot:       Object.freeze({ vatCategory: 'craft', emoji: '🍲', label: 'Pot',     unit: unitOf('pot', 'pots'),           baseValue: 3.0,  colors: Object.freeze({ dark: '#BF5B3A', pale: '#E8B9A3' }) }),
-  amphora:   Object.freeze({ vatCategory: 'craft', emoji: '🏺', label: 'Amphore', unit: unitOf('amphore', 'amphores'),   baseValue: 4.0,  colors: Object.freeze({ dark: '#C98A2B', pale: '#F0D9A8' }) }),
+  plate:     Object.freeze({ vatCategory: 'craft', emoji: '🍽️', label: 'Plat',    unit: unitOf('plat', 'plats'),        baseValue: 5.0, transportWeight: 2, colors: Object.freeze({ dark: '#5C7C99', pale: '#DCE6F0' }) }),
+  pot:       Object.freeze({ vatCategory: 'craft', emoji: '🍲', label: 'Pot',     unit: unitOf('pot', 'pots'),           baseValue: 3.0, transportWeight: 3, colors: Object.freeze({ dark: '#BF5B3A', pale: '#E8B9A3' }) }),
+  amphora:   Object.freeze({ vatCategory: 'craft', emoji: '🏺', label: 'Amphore', unit: unitOf('amphore', 'amphores'),   baseValue: 4.0, transportWeight: 4, colors: Object.freeze({ dark: '#C98A2B', pale: '#F0D9A8' }) }),
   // Deposits of the map.
   // Stone, iron and gold are drawn from the rocks by the mine and sold to the warehouse, so they are goods with a value too.
   rock: Object.freeze({ vatCategory: 'other', emoji: '🪨', label: 'Pierre', unit: unitOf('bloc', 'blocs'), baseValue: 0.6, colors: Object.freeze({ dark: '#78909C', pale: '#CFD8DC' }) }),
