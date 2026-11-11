@@ -1,16 +1,16 @@
-import { deleteGameDatabaseForNewGame } from '../../../core/persistence/dexie/db.js';
+import { deleteGameDatabase } from '../../../core/persistence/dexie/db.js';
 import loaderManager from '../shell/LoaderManager.js';
 import { confirmModal } from '../shell/ConfirmModal.js';
 
 /**
- * The door of the game (top left) leaves the game: the whole database is deleted (the cheat codes the player activated are kept) and the player goes back to the home
- * page. A game is not kept once left; a plain reload of the page, which does not go through the door, still resumes it.
+ * The door of the game (top left) leaves the game: the whole database is deleted, the cheat codes with it (they belong to the game they were typed in), and the player
+ * goes back to the home page. No database is left behind: the next game creates its own while it loads. A game is not kept once left; a plain reload of the page,
+ * which does not go through the door, still resumes it.
  *
  * A confirmation comes first ("Quitter la partie ?"); declining it, with the button or Escape, leaves the game exactly as it was.
  *
- * The loader "Suppression des données de la partie…" covers the game while it goes (the full-screen loader takes the clicks), and the deletion is verified: every table of
- * the game must be empty afterwards. The game is paused first, so no turn is writing while the database goes. If the deletion fails the game is resumed and the error is
- * raised, so the player is never left on a paused game with half a database.
+ * The loader "Suppression des données de la partie…" covers the game while it goes (the full-screen loader takes the clicks). The game is paused first, so no turn is
+ * writing while the database goes. If the deletion fails the game is resumed and the error is raised, so the player is never left on a paused game with half a database.
  *
  * @param {{ pauseGame: () => void, playGame: () => void }} deps
  */
@@ -40,7 +40,7 @@ export function initLeaveGame({ pauseGame, playGame }) {
     loaderManager.show('Suppression des données de la partie…');
     pauseGame();
     try {
-      await deleteGameDatabaseForNewGame();
+      await deleteGameDatabase();
     } catch (error) {
       leaving = false;
       loaderManager.hide();

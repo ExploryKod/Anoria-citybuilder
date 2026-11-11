@@ -1,6 +1,6 @@
-import { deleteGameDatabaseForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { deleteGameDatabase } from '../../../core/persistence/dexie/db.js';
 
-/** The game's own database: deleted and created again by the game itself (cheat codes kept), so it is the one database left alone here. */
+/** The game's own database: deleted by the game itself (through its own connection, which a raw deletion would wait on), so it is not deleted a second time here. */
 const GAME_DATABASE = 'anoriaDb';
 
 /** Resolves once the database is gone; another open connection makes the deletion wait, it is not skipped. */
@@ -21,8 +21,8 @@ function resetLocalStorage() {
 }
 
 /**
- * New game from scratch: service worker, caches and every browser storage are cleared, the game's tables are
- * emptied (the cheat codes the player activated are the one thing kept), then back to the menu.
+ * New game from scratch: service worker, caches and every browser storage are cleared, the game's database is
+ * deleted (cheat codes included; the next game creates its own), then back to the menu.
  */
 export async function performReset() {
   try {
@@ -43,8 +43,7 @@ export async function performReset() {
     resetLocalStorage();
     sessionStorage.clear();
 
-    await waitForDatabaseReady();
-    await deleteGameDatabaseForNewGame();
+    await deleteGameDatabase();
     if ('indexedDB' in window) {
       const databases = await indexedDB.databases();
       for (const database of databases) {

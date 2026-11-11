@@ -248,10 +248,13 @@ export function createSupplyContext({
   // Which deals the merchants may make is the trade context's to say, and it is built after this one: it registers
   // its answer through `setOpenDealCheck`. Asked before that, the gate throws (see ProduceResource).
   let openDealCheck = null;
+  // What the check may read once for a whole resource cycle (the relations, their events, the limits: nothing the cycle itself changes), set while a cycle runs
+  // and null outside it: every recipe of every merchant house asks the same questions of the database, several times a day.
+  let dealCheckCycleMemo = null;
   const dealGate = {
     isOpen: (category) => {
       if (!openDealCheck) throw new Error('[supply] the open-deal check was never set: the trade context must register it');
-      return openDealCheck(category);
+      return openDealCheck(category, dealCheckCycleMemo);
     },
   };
   const produceResource = new ProduceResource(supplyBuildingRepositoryImpl, {
@@ -517,11 +520,14 @@ export function createSupplyContext({
       // One building-table snapshot for this whole tick (see HubServing.invalidateCache) instead
       // of a fresh full scan on every single producer's every single draw from a hub.
       hubServing.invalidateCache();
-      const run = () => runMonthlyResourceCycle.execute({
-        season,
-        month,
-        timeInfo,
-      });
+      const run = async () => {
+        dealCheckCycleMemo = new Map();
+        try {
+          return await runMonthlyResourceCycle.execute({ season, month, timeInfo });
+        } finally {
+          dealCheckCycleMemo = null;
+        }
+      };
       // A repository with a unit of work reads each building once and writes what changed in one go at the end of the cycle (the cycle reads and rewrites the same
       // few dozen rows hundreds of times a day, each a transaction); one without runs the cycle as it always did.
       // The traceability rows the cycle adds go the same way: one write at the end instead of one per row.

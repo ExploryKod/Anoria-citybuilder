@@ -21,7 +21,7 @@ import {
   getSessionService,
   updateSessionDisplayedFunds,
 } from '../../../composition/sessionRuntime.js';
-import { deleteGameDatabaseForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { createEmptyGameDatabase, deleteGameDatabase, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
 import { ensureHamletCatalog, listHamlets, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
 import { initGameCalendar } from '../../../config/events.js';
@@ -157,19 +157,23 @@ export async function bootstrapGameSession(assetManager) {
 
   // Shown until the game is ready: the database reset, the hamlets and the scene all happen under it.
   loaderManager.show('Préparation de la partie…');
-  await waitForDatabaseReady();
 
   // Map mode: session is runtime SoT. Write only on explicit menu entry (consumeBootMode).
   const bootMode = consumeBootMode();
   // Any menu choice but a reload of a saved game starts from an empty database.
   const startsFromScratch = bootMode !== null && bootMode !== 'load';
+  // A menu choice of a new game (new, tutorial, mission, editor, prefab) starts from a database of its own: whatever stands is deleted (a game left by the door left
+  // none, a tab closed on a game left its own), and a new one is created here, under the loader, which says so. A reload opens the game's database as it is.
+  if (startsFromScratch) {
+    loaderManager.setStep('Suppression des données de la partie précédente…');
+    await deleteGameDatabase();
+    loaderManager.setStep('Création de la base de données de la partie…');
+    await createEmptyGameDatabase();
+  } else {
+    await waitForDatabaseReady();
+  }
   if (bootMode !== null) {
     setGameMode(gameModeFromBootMode(bootMode));
-  }
-  // A menu choice of a new game (new, tutorial, mission, editor, prefab) starts from an empty database.
-  if (startsFromScratch) {
-    loaderManager.setStep('Remise à zéro de la partie…');
-    await deleteGameDatabaseForNewGame();
   }
   let prefabCitySize = null;
   if (bootMode === 'prefab') {

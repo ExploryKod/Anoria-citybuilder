@@ -158,12 +158,13 @@ export function createTradeContext({ supply, accounting }) {
     homePriceByMonth.set(cacheKey, price);
     return price;
   };
-  const importIsWorthwhile = async (entry, offer) => {
+  /** @param {(authority: string, flow: string, good: string, turn: number) => number | Promise<number>} dutyInForce the duty in force (accounting's), read by the caller's pass */
+  const importIsWorthwhile = async (entry, offer, dutyInForce) => {
     const turn = getSessionGameTime();
     const period = resolveGetTimeInfo()(turn);
     const localUnitPrice = await homePriceOf(offer.good, period);
     if (localUnitPrice === null) return true;
-    const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn);
+    const dutyRate = await dutyInForce('anoria', 'import', offer.good, turn);
     const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period), referencePrice: referencePriceOf(offer.good) });
     return importPaysAtHome({ landedUnitSale: delivery.unit.sale, localUnitPrice });
   };
@@ -184,17 +185,31 @@ export function createTradeContext({ supply, accounting }) {
     const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', good, turn);
     return priceImportDelivery({ cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(good, period), referencePrice: referencePriceOf(good) }).unit.sale;
   });
-  supply.setOpenDealCheck(async (dealGood) => {
+  /**
+   * What the cities take of a deal good in one order (0: no city is open to it). It depends on the relations, the embargoes, the prices and the law, none of which
+   * the resource cycle changes: within one cycle (`cycleMemo`, given by the supply while its cycle runs) it is read once per good, and the relations and their events
+   * once for all the goods, instead of once per recipe of every merchant house. Outside a cycle (`cycleMemo` null) everything is read live.
+   * @param {string} dealGood
+   * @param {Map<string, Promise<unknown>> | null} cycleMemo
+   * @returns {Promise<number>}
+   */
+  const dealVolumePerOrder = (dealGood, cycleMemo) => {
+    const once = (key, load) => {
+      if (!cycleMemo) return load();
+      if (!cycleMemo.has(key)) cycleMemo.set(key, load());
+      return cycleMemo.get(key);
+    };
+    return once(`volume|${dealGood}`, async () => {
     const importCities = TRADE_CATALOG.filter((entry) => entry.offers.some((offer) => offer.merchantGood === dealGood));
     const exportCities = TRADE_CATALOG.filter((entry) => entry.wants.some((want) => want.merchantGood === dealGood));
     if (importCities.length === 0 && exportCities.length === 0) {
       throw new Error(`[trade] no city of the trade catalog offers or wants the good that "${dealGood}" is a deal for`);
     }
-    const relations = new Map((await cityTradeRepository.getActiveRelations()).map((relation) => [relation.cityId, relation]));
+    const relations = await once('relations', async () => new Map((await cityTradeRepository.getActiveRelations()).map((relation) => [relation.cityId, relation])));
     // An embargo, the city's or the partner's, is read live (the cease marker only follows at the next order month): no deal is prepared for a good it forbids.
     const turn = getSessionGameTime();
     const forbids = async (cityId, flow, good) => {
-      const events = await relationEventRepository.listOf(cityId);
+      const events = await once(`events|${cityId}`, () => relationEventRepository.listOf(cityId));
       return embargoesIn(events).has(embargoKey(flow, good)) || partnerEmbargoesIn(events, turn).has(embargoKey(flow, good));
     };
     // What the cities take in one order, by good and flow: the law's volume limit (a month's figure) caps what is worth preparing of each.
@@ -206,7 +221,9 @@ export function createTradeContext({ supply, accounting }) {
       if (!relations.has(entry.cityId) || ceased?.reason === 'unprofitable') continue;
       if (await forbids(entry.cityId, 'import', offer.good)) continue;
       // What the city makes itself is imported only when the home price is dearer (a shortage, a dear harvest); coal and the like have no home price to beat.
-      if (!(await importIsWorthwhile(entry, offer))) continue;
+      // Whether the customs have a collector reads every building: once for the cycle, not once per offer of every good.
+      const dutyInForce = await once('customsDuties', () => accounting.readCustomsDutiesInForce());
+      if (!(await importIsWorthwhile(entry, offer, dutyInForce))) continue;
       add('import', offer.good, offer.quantityPerOrder);
     }
     for (const entry of exportCities) {
@@ -218,10 +235,18 @@ export function createTradeContext({ supply, accounting }) {
     }
     let perOrder = 0;
     for (const { flow, good, quantity } of perGood.values()) {
-      const limit = await volumeLimits.limitOf(flow, good);
+      // Every limit the law sets, read once for the cycle (a good with none is not capped).
+      const limits = await once('volumeLimits', async () => new Map((await volumeLimits.list()).map((row) => [embargoKey(row.flow, row.good), row.perMonth])));
+      const limit = limits.has(embargoKey(flow, good)) ? limits.get(embargoKey(flow, good)) : null;
       perOrder += limit === null ? quantity : Math.min(quantity, limit);
     }
+    return perOrder;
+    });
+  };
+  supply.setOpenDealCheck(async (dealGood, cycleMemo) => {
+    const perOrder = await dealVolumePerOrder(dealGood, cycleMemo);
     if (perOrder === 0) return false;
+    // What waits already is read at each ask: the merchant house before this one may just have made some.
     const rows = await supply.supplyBuildingRepository.listAllBuildingRows();
     const waiting = rows.reduce((sum, row) => sum + (row.stocks?.[dealGood] ?? 0), 0);
     return waiting < perOrder;

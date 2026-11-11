@@ -13,6 +13,10 @@ import {
   manhattanDistance,
 } from '../../../domain/policies/ResourceRangePolicy.js';
 import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { tickPerfEnabled } from '../../../../../core/diagnostics/tickPerf.js';
+
+/** Measurement only: a production slower than this is detailed in the console (`[tick-perf] produce …`). */
+const SLOW_PRODUCTION_MS = 20;
 
 /**
  * Command: a building produces resource units into its own stock, gated by
@@ -95,6 +99,20 @@ export class ProduceResource {
     this.removeBuilding = removeBuilding ?? null;
     // How a hub serves a recipe drawing on it, among the other clients of the same goods.
     this.hubServing = hubServing;
+  }
+
+  /** Measurement only (`[tick-perf]`): the milliseconds the building being produced spent in each phase, or null when nothing is measured. */
+  #phaseMs = null;
+
+  /** Runs `work` and files its duration under `phase` (measurement only; nested phases each count their own time, so their sum can exceed the total). */
+  async #timed(phase, work) {
+    if (!this.#phaseMs) return work();
+    const startedAt = performance.now();
+    try {
+      return await work();
+    } finally {
+      this.#phaseMs[phase] = (this.#phaseMs[phase] ?? 0) + performance.now() - startedAt;
+    }
   }
 
 
@@ -244,9 +262,9 @@ export class ProduceResource {
       if (open || (step.wait === true && state.opened)) {
         const inputs = step.inputs ?? [];
         const need = (input) => input.amount ?? 0;
-        const plan = operational ? await this.#planInputs({ ...building, stocks: stock }, inputs, need, period?.turn ?? 0) : null;
+        const plan = operational ? await this.#timed('cyclePlan', () => this.#planInputs({ ...building, stocks: stock }, inputs, need, period?.turn ?? 0)) : null;
         if (plan && !plan.missing) {
-          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period);
+          stock = await this.#timed('cycleTake', () => this.#takeInputs({ ...building, stocks: stock }, plan, need, period));
           state.value = state.index === 0 ? (step.amount ?? 0) : state.value * (step.factor ?? 1);
           advanced = true;
           if (inputs.length > 0) {
@@ -323,7 +341,24 @@ export class ProduceResource {
    * }>}
    */
   async execute({ buildingId, period }) {
-    let building = await this.supplyBuildingRepository.findById(buildingId);
+    if (!tickPerfEnabled()) return this.#produce({ buildingId, period });
+    // Measurement only: a building that takes long says in which phase (the deal gate, a cycle's plan and take, the plain recipes).
+    this.#phaseMs = {};
+    const startedAt = performance.now();
+    try {
+      return await this.#produce({ buildingId, period });
+    } finally {
+      const total = performance.now() - startedAt;
+      if (total >= SLOW_PRODUCTION_MS) {
+        const phases = Object.entries(this.#phaseMs).map(([phase, ms]) => `${phase}=${ms.toFixed(1)}`).join(' ');
+        console.info(`[tick-perf] produce ${buildingId} total=${total.toFixed(1)}ms ${phases}`);
+      }
+      this.#phaseMs = null;
+    }
+  }
+
+  async #produce({ buildingId, period }) {
+    let building = await this.#timed('findBuilding', () => this.supplyBuildingRepository.findById(buildingId));
     if (!building) {
       return { produced: false, reason: 'building_not_found' };
     }
@@ -345,7 +380,7 @@ export class ProduceResource {
 
       if (entry.requiresOpenDeal) {
         if (!this.dealGate) throw new Error(`[supply] "${category}" requires an open deal but no dealGate was given to ProduceResource`);
-        if (!(await this.dealGate.isOpen(category))) {
+        if (!(await this.#timed('dealGate', () => this.dealGate.isOpen(category)))) {
           firstFailure ??= 'no_open_deal';
           continue;
         }
@@ -367,7 +402,7 @@ export class ProduceResource {
       }
 
       if (entry.cycle) {
-        const outcome = await this.#advanceCycle(building, entry, category, period);
+        const outcome = await this.#timed('cycle', () => this.#advanceCycle(building, entry, category, period));
         building = outcome.building;
         if (outcome.credited > 0) {
           for (const produced of entry.categories) credited[produced] = (credited[produced] ?? 0) + outcome.credited;
