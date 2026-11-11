@@ -189,6 +189,12 @@ class ParametersPanel {
         }
     }
 
+    /** The game has booted (its database is open, its calendar frozen): the values that are the game's can be read now. */
+    async showGameCalendar() {
+        this.gameBooted = true;
+        await this.loadValues();
+    }
+
     async loadValues() {
         try {
             if (this.eventsEnabledToggle) {
@@ -199,7 +205,9 @@ class ParametersPanel {
                 this.eventProbabilityInput.value = eventsConfig.getEventProbability();
             }
 
-            if (this.daysPerMonthInput) {
+            // The calendar is the game's, read from its database: not before the game has booted (the panel is built first, while a new game's database is still being
+            // deleted and created). `showGameCalendar` is called again once the game is there.
+            if (this.daysPerMonthInput && this.gameBooted) {
                 // Frozen for the whole game (set before it starts, on the settings page): shown, never editable.
                 const calendar = await eventsConfig.describeCalendar();
                 this.daysPerMonthInput.min = eventsConfig.DAYS_PER_MONTH_MIN;

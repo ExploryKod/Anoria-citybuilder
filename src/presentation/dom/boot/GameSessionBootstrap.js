@@ -152,7 +152,8 @@ function resolveBootSelection(bootMode, prefabCitySize) {
 
 export async function bootstrapGameSession(assetManager) {
   if (redirectToLandingUnlessEntryAllowed()) {
-    return;
+    // No game boots (the page is leaving for the menu): the caller must not read the game's database, which would create it.
+    return false;
   }
 
   // Shown until the game is ready: the database reset, the hamlets and the scene all happen under it.

@@ -158,14 +158,19 @@ export function createTradeContext({ supply, accounting }) {
     homePriceByMonth.set(cacheKey, price);
     return price;
   };
-  /** @param {(authority: string, flow: string, good: string, turn: number) => number | Promise<number>} dutyInForce the duty in force (accounting's), read by the caller's pass */
-  const importIsWorthwhile = async (entry, offer, dutyInForce) => {
+  /**
+   * @param {(authority: string, flow: string, good: string, turn: number) => number | Promise<number>} dutyInForce the duty in force (accounting's), read by the caller's pass
+   * @param {(period: object) => Promise<Record<string, number>>} worldIndicesAt the world prices of the month (the world market's), read by the caller's pass
+   */
+  const importIsWorthwhile = async (entry, offer, dutyInForce, worldIndicesAt) => {
     const turn = getSessionGameTime();
     const period = resolveGetTimeInfo()(turn);
     const localUnitPrice = await homePriceOf(offer.good, period);
     if (localUnitPrice === null) return true;
     const dutyRate = await dutyInForce('anoria', 'import', offer.good, turn);
-    const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: await worldMarket.indexOf(offer.good, period), referencePrice: referencePriceOf(offer.good) });
+    const worldIndices = await worldIndicesAt(period);
+    if (!Object.hasOwn(worldIndices, offer.good)) throw new Error(`[world-market] "${offer.good}" is not a good that crosses a border: it has no world price`);
+    const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate, worldIndex: worldIndices[offer.good], referencePrice: referencePriceOf(offer.good) });
     return importPaysAtHome({ landedUnitSale: delivery.unit.sale, localUnitPrice });
   };
 
@@ -223,7 +228,9 @@ export function createTradeContext({ supply, accounting }) {
       // What the city makes itself is imported only when the home price is dearer (a shortage, a dear harvest); coal and the like have no home price to beat.
       // Whether the customs have a collector reads every building: once for the cycle, not once per offer of every good.
       const dutyInForce = await once('customsDuties', () => accounting.readCustomsDutiesInForce());
-      if (!(await importIsWorthwhile(entry, offer, dutyInForce))) continue;
+      // The world prices of the month are one stored row: read once for the cycle too.
+      const worldIndicesAt = (period) => once(`worldIndices|${period.year}|${period.monthIndex}`, () => worldMarket.indicesAt(period));
+      if (!(await importIsWorthwhile(entry, offer, dutyInForce, worldIndicesAt))) continue;
       add('import', offer.good, offer.quantityPerOrder);
     }
     for (const entry of exportCities) {

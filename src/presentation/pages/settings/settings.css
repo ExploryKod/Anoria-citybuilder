@@ -7,6 +7,59 @@
   margin: 0 auto;
 }
 
+/* The page widens on a large screen (header, panel and footer share the variable); a phone keeps the narrow column. */
+@media (min-width: 900px) {
+  .site-page {
+    --site-panel-max-width: 720px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .site-page {
+    --site-panel-max-width: 880px;
+  }
+}
+
+/* Tabs: one row that wraps on a narrow screen, a thin divider under it, the current tab underlined. */
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--site-border-light);
+}
+
+.settings-tab {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--site-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-tab[aria-selected='true'] {
+  border-bottom-color: var(--cta);
+  color: var(--cta);
+}
+
+.settings-tab:focus-visible {
+  outline: 2px solid var(--cta);
+  outline-offset: 2px;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-panel section + section {
+  margin-top: 20px;
+}
+
 .settings-actions {
   margin-top: 20px;
   display: flex;

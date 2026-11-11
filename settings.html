@@ -17,6 +17,14 @@
         </header>
 
         <div class="settings-content site-panel">
+            <div class="settings-tabs" role="tablist" aria-label="Catégories de paramètres">
+                <button type="button" class="settings-tab" role="tab" id="settings-tab-game" aria-controls="settings-panel-game" aria-selected="true">Jeu</button>
+                <button type="button" class="settings-tab" role="tab" id="settings-tab-display" aria-controls="settings-panel-display" aria-selected="false" tabindex="-1">Affichage</button>
+                <button type="button" class="settings-tab" role="tab" id="settings-tab-performance" aria-controls="settings-panel-performance" aria-selected="false" tabindex="-1">Performance</button>
+                <button type="button" class="settings-tab" role="tab" id="settings-tab-development" aria-controls="settings-panel-development" aria-selected="false" tabindex="-1">Développement</button>
+            </div>
+
+            <div class="settings-panel" role="tabpanel" id="settings-panel-game" aria-labelledby="settings-tab-game">
             <section>
                 <h2 class="site-section-title">Évènements</h2>
                 <div class="site-field">
@@ -37,7 +45,9 @@
                 </div>
                 <p id="settings-days-per-month-note" class="site-hint"></p>
             </section>
+            </div>
 
+            <div class="settings-panel" role="tabpanel" id="settings-panel-display" aria-labelledby="settings-tab-display" hidden>
             <section>
                 <h2 class="site-section-title">Affichage</h2>
                 <div class="site-field">
@@ -67,7 +77,22 @@
                     >
                 </div>
             </section>
+            </div>
 
+            <div class="settings-panel" role="tabpanel" id="settings-panel-performance" aria-labelledby="settings-tab-performance" hidden>
+            <section>
+                <h2 class="site-section-title">Moteur de rendu</h2>
+                <div class="site-field">
+                    <label for="settings-webgpu">Utiliser WebGPU (expérimental)</label>
+                    <input type="checkbox" id="settings-webgpu" class="site-switch">
+                </div>
+                <p class="site-hint">Désactivé, le jeu dessine avec <strong>WebGL2</strong> : le moteur sur lequel il a été conçu, qui fonctionne partout.</p>
+                <p class="site-hint">Activé, il essaie <strong>WebGPU</strong>, qui peut être plus fluide mais ne tient pas sur tous les navigateurs ni toutes les cartes graphiques. S’il cesse de fonctionner en jeu, il est désactivé et le jeu vous demande de recharger la page.</p>
+                <p id="settings-webgpu-note" class="site-hint"></p>
+            </section>
+            </div>
+
+            <div class="settings-panel" role="tabpanel" id="settings-panel-development" aria-labelledby="settings-tab-development" hidden>
             <section>
                 <h2 class="site-section-title">Développement</h2>
                 <div class="site-field">
@@ -82,6 +107,7 @@
                 <p class="site-hint">Pour construire les étapes suivantes du jeu sans y jouer. Désactivé, le jeu retrouve ses règles.</p>
                 <p class="site-hint">Raccourci pour saisir un code, en jeu : <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> (<kbd>Échap</kbd> pour fermer).</p>
             </section>
+            </div>
 
             <div class="settings-actions">
                 <button type="button" id="settings-save-btn" class="site-btn site-btn--primary site-btn--inline">

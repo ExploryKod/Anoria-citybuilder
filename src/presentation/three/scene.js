@@ -3,6 +3,7 @@ import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getR
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
+import { isWebGpuEnabled, setWebGpuEnabled } from '../../config/renderBackend.js';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
 import { logRenderLoad } from './renderLoadBreakdown.js';
@@ -212,7 +213,11 @@ export function createScene(_gameStore, assetManager, deps) {
         // sur un GPU jugé "faible" (failIfMajorPerformanceCaveat bloquerait sinon
         // la création du renderer sur pas mal de terminaux Android d'entrée de gamme).
         antialias: !runningOnMobile,
-        powerPreference: 'default',
+        // WebGL2 unless the player asked for WebGPU (Paramètres, tab Performance; config/renderBackend.js): WebGL2 is the backend the game was built and played on
+        // (see the note below: WebGPU never started before 2026-11-11), and the first try of WebGPU lost its device at once (a Vulkan error of Chrome on Linux).
+        forceWebGL: !isWebGpuEnabled(),
+        // No `powerPreference` here: three hands it as it is to WebGPU's `requestAdapter`, which knows only 'low-power' and 'high-performance'. 'default' (a WebGL
+        // value) made that call throw, and three then fell back to WebGL2 on every browser, saying "WebGPU is not available" whatever the browser could do.
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
     });
@@ -286,6 +291,16 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = true;
         console.error('[WebGPU] Device lost — ressources GPU insuffisantes.', info);
         loaderManager.hide(0);
+        if (renderer.backend?.isWebGPUBackend) {
+            // A lost WebGPU device does not come back, and the scene cannot change backend while it runs: the player's choice is switched off, and they are told
+            // what to do. Left on, every reload would lose the device again.
+            setWebGpuEnabled(false);
+            showWarningToast(
+                'Le moteur WebGPU a cessé de fonctionner sur cet appareil. Il a été désactivé dans les paramètres : rechargez la page pour reprendre avec WebGL2.',
+                { timeout: 20000 }
+            );
+            return;
+        }
         showWarningToast(
             "Le rendu 3D a rencontré un problème (ressources graphiques insuffisantes). Tentative de récupération automatique…",
             { timeout: 6000 }
@@ -1482,6 +1497,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 mesh.userData.collapseRisk = wornBuildingIds.has(instanceId);
                 if (mesh.userData.collapseRisk) {
                     for (const name of ['no-road', 'no-work', 'no-resource']) assetManager.removeStatusSprite(mesh, name);
+                    // The road icon is gone from the mesh: it is judged again once the building is out of danger.
+                    syncRoadAccess.forget(instanceId);
                     if (collapseSprite) {
                         collapseSprite.visible = mapFilterOn('alerts');
                     } else {
