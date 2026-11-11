@@ -185,6 +185,7 @@ export class PerformanceManager {
                 const shouldCastShadow = distance < maxShadowDistance;
 
                 building.traverse((child) => {
+                    if (child.userData.castsNoShadow) return;
                     if (child instanceof THREE.Mesh && child.castShadow !== shouldCastShadow) {
                         child.castShadow = shouldCastShadow;
                         child.receiveShadow = true;

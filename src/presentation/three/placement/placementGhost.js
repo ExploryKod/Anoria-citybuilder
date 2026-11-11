@@ -54,10 +54,25 @@ const GHOST_ANCHORED = new THREE.Color(0x7c3aed);
 function createGhostMaterial(valid, mode = 'hover') {
   const anchored = mode === 'anchored';
   const color = anchored ? GHOST_ANCHORED : valid ? GHOST_VALID : GHOST_INVALID;
+  const key = anchored ? 'anchored' : valid ? 'valid' : 'invalid';
+  if (!sharedGhostMaterials.has(key)) {
+    sharedGhostMaterials.set(key, buildGhostMaterial(color, anchored ? 0.6 : valid ? 0.7 : 0.75));
+  }
+  return sharedGhostMaterials.get(key);
+}
+
+/**
+ * One tint material per state (valid, invalid, anchored), shared by every mesh of every ghost and never disposed: a material per mesh and
+ * per spawn made the renderer set each ghost mesh up again whenever the ghost changed.
+ * @type {Map<string, THREE.MeshBasicMaterial>}
+ */
+const sharedGhostMaterials = new Map();
+
+function buildGhostMaterial(color, opacity) {
   return new THREE.MeshBasicMaterial({
     color,
     transparent: true,
-    opacity: anchored ? 0.6 : valid ? 0.7 : 0.75,
+    opacity,
     depthWrite: false,
     fog: false,
     toneMapped: false,
@@ -68,14 +83,16 @@ function createGhostMaterial(valid, mode = 'hover') {
 }
 
 const PLOT_HIGHLIGHT_COLOR = new THREE.Color(0xffd426);
+/** @type {THREE.MeshBasicMaterial | null} */
+let sharedPlotHighlightMaterial = null;
 
 /**
  * The border of the ground a building reserves, drawn around its ghost. Yellow whatever the placement state (the ghost
- * itself says valid or not): it stands out from the grass and from both the blue and the red ghost.
+ * itself says valid or not): it stands out from the grass and from both the blue and the red ghost. Shared, never disposed.
  * @returns {THREE.MeshBasicMaterial}
  */
 function createPlotHighlightMaterial() {
-  return new THREE.MeshBasicMaterial({
+  sharedPlotHighlightMaterial ??= new THREE.MeshBasicMaterial({
     color: PLOT_HIGHLIGHT_COLOR,
     transparent: true,
     opacity: 0.95,
@@ -86,6 +103,7 @@ function createPlotHighlightMaterial() {
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
   });
+  return sharedPlotHighlightMaterial;
 }
 
 /**
@@ -102,18 +120,23 @@ function createPlotHighlightMaterial() {
 function createPreviewGhostMaterial(source, valid, mode) {
   const anchored = mode === 'anchored';
   const tint = anchored ? GHOST_ANCHORED : valid ? GHOST_VALID : GHOST_INVALID;
-  const material = source.clone();
-  material.transparent = true;
+  // A ghost that only changes state (valid ↔ invalid) keeps its clone and is re-tinted in place.
+  const owned = source.userData?.isGhostPreviewMaterial === true;
+  const material = owned ? source : source.clone();
+  if (!owned) {
+    material.userData = { ...material.userData, isGhostPreviewMaterial: true, ghostBaseColor: source.color?.clone() ?? null };
+    material.transparent = true;
+    material.depthWrite = false;
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -1;
+    material.polygonOffsetUnits = -1;
+  }
   material.opacity = valid || anchored ? 0.78 : 0.68;
-  material.depthWrite = false;
-  material.polygonOffset = true;
-  material.polygonOffsetFactor = -1;
-  material.polygonOffsetUnits = -1;
   if (material.emissive) {
     material.emissive = tint.clone();
     material.emissiveIntensity = 0.4;
   } else if (material.color) {
-    material.color = material.color.clone().lerp(tint, 0.35);
+    material.color = material.userData.ghostBaseColor.clone().lerp(tint, 0.35);
   }
   return material;
 }
@@ -150,9 +173,10 @@ export function applyGhostAppearance(root, { valid = true, mode = 'hover', style
       return;
     }
 
-    const count = Array.isArray(obj.material) ? obj.material.length : 1;
-    const ghostMats = Array.from({ length: count }, () => createGhostMaterial(valid, mode));
-    obj.material = count > 1 ? ghostMats : ghostMats[0];
+    const tintMaterial = createGhostMaterial(valid, mode);
+    obj.material = Array.isArray(obj.material) && obj.material.length > 1
+      ? obj.material.map(() => tintMaterial)
+      : tintMaterial;
   });
 
   root.name = 'placement-ghost';
@@ -165,13 +189,16 @@ export function applyGhostAppearance(root, { valid = true, mode = 'hover', style
 }
 
 /**
+ * Only the materials the ghost owns (the clones of the 'preview' style): the tint and plot materials are shared by every ghost.
  * @param {THREE.Object3D} root
  */
 function disposeGhostMaterials(root) {
   root.traverse((obj) => {
     if (obj instanceof THREE.Mesh) {
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach((m) => m?.dispose?.());
+      mats.forEach((m) => {
+        if (m?.userData?.isGhostPreviewMaterial) m.dispose();
+      });
     }
   });
 }
@@ -240,7 +267,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     const footprintHeight = options.footprintHeight ?? gridSize;
     const anchorY = options.placementBaseLocalY ?? '';
     const mountKey = resolveEditorMountKey(options);
-    return `${assetId}|${mode}|${valid}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}|${anchorY}|${mountKey}`;
+    // Not `valid`: a spawn still loading takes the latest state when it lands (`pendingAsyncSpawn.valid`), it is not started again.
+    return `${assetId}|${mode}|${gridSize}|${footprintWidth}|${footprintHeight}|${rotationStep}|${anchorY}|${mountKey}`;
   }
 
   function disposeGhost() {
@@ -608,7 +636,6 @@ export function createPlacementGhostController({ scene, assetManager }) {
     if (
       !ghost
       || currentAssetId !== assetId
-      || lastValid !== valid
       || ghostMode !== mode
       || lastGridSize !== gridSize
       || lastRotationStep !== rotationStepOpt
@@ -616,6 +643,12 @@ export function createPlacementGhostController({ scene, assetManager }) {
     ) {
       spawn(assetId, x, y, valid, mode, options);
       return;
+    }
+
+    // Valid ↔ invalid: the same ghost in another colour. Building it again (meshes, buffers, materials) at every flip made the cursor stutter over the map.
+    if (lastValid !== valid) {
+      applyGhostAppearance(ghost, { valid, mode, style: ASSET_CATALOG[assetId]?.presentation?.ghostStyle });
+      lastValid = valid;
     }
 
     repositionGhost(ghost, assetId, x, y, options);

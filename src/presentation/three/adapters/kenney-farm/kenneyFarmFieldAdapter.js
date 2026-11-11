@@ -110,7 +110,10 @@ function createCropField(stageModels, cropConfig, width, depth, seed) {
     template.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const mesh = new THREE.InstancedMesh(child.geometry, child.material, placements.length);
-      mesh.castShadow = true;
+      // Plants a few centimetres high cast no shadow worth its cost: each caster is set up and drawn a second time for the shadow map.
+      // `castsNoShadow` keeps the camera-distance pass (PerformanceManager.updateShadowCasting) from switching it back on.
+      mesh.castShadow = false;
+      mesh.userData.castsNoShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       mesh.count = 0;
