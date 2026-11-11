@@ -706,8 +706,14 @@ export function createScene(_gameStore, assetManager, deps) {
         return queued;
     }
 
+    /**
+     * @param {object} city
+     * @param {number} [time]
+     * @param {{ meshAt?: { x: number, y: number } }} [_options] `meshAt`: draw only the building just placed on that tile (see below), not the whole city
+     */
     async function runUpdate(city, time = 0, _options = {}) {
-        lastSceneUpdateTime = time;
+        // A one-tile draw is not a day: it must not move the scene's clock
+        if (!_options.meshAt) lastSceneUpdateTime = time;
 
         // Measurement only: the milliseconds each section of this update took, reported at its end (dev builds).
         const sectionMs = {};
@@ -929,6 +935,17 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                 }
             }
+        }
+
+        // `meshAt`: a placement shows its building at once, the moment it is paid and written, instead of waiting for the sweep of every tile below
+        // (which the game still runs after, and which finds this tile already drawn). Same queue as a full update, so no two touch the scene together.
+        if (_options.meshAt) {
+            const { x: meshX, y: meshY } = _options.meshAt;
+            const tileBuildingId = city.tiles[meshX]?.[meshY]?.buildingId;
+            const meshType = buildings[meshX]?.[meshY]?.userData?.catalogId;
+            const drawnType = meshType && meshType !== 'grass' ? meshType : null;
+            await placeTileMeshIfNeeded(meshX, meshY, Boolean(tileBuildingId && tileBuildingId !== drawnType), tileBuildingId);
+            return;
         }
 
         // Population for HUD / citizens (gameplay persist + turn budget owned by game tick)
@@ -1562,9 +1579,9 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZATION: Returns only buildings + terrain, not backdrop/lights/etc.
      * Since objects are now in zone groups, we collect them from all zone groups
      */
-    function getInteractiveObjects() {
+    function getInteractiveObjects(zones = zoneGroups) {
         const objects = [];
-        zoneGroups.forEach((zoneGroup) => {
+        zones.forEach((zoneGroup) => {
             zoneGroup.children.forEach((child) => {
                 if (child.userData?.isDecorative) return;
                 if (child.userData?.nonInteractive) return;
@@ -1572,7 +1589,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 objects.push(child);
             });
         });
-        if (objects.length === 0) {
+        // Only when the city has no zone content at all (not when a narrowed list of zones holds nothing: the ray simply crosses none)
+        if (objects.length === 0 && zones === zoneGroups) {
             scene.children.forEach((child) => {
                 if (child.userData?.isDecorative) return;
                 if (child.userData?.nonInteractive) return;
@@ -2056,12 +2074,30 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZED: Only raycast against interactive objects (buildings + terrain)
      * instead of all scene children (backdrop, lights, etc.)
      */
-    function pickInteractiveTile(raycaster) {
-        return pickTileFromRaycast(raycaster, getInteractiveObjects())
+    function pickInteractiveTile(raycaster, roots = getInteractiveObjects()) {
+        return pickTileFromRaycast(raycaster, roots)
             ?? (isEditorMode() && currentCity
                 ? pickEditorTileOnGroundPlane(raycaster, currentCity.size)
                 : null);
     }
+
+    /**
+     * What a hover pick walks: the zones the ray crosses, not every mesh of the city (undefined before the zones exist: the pick then walks them all, as a click does).
+     * Only the hover uses it; a click always picks among everything.
+     */
+    function hoverPickRoots(pickRaycaster) {
+        return performanceManager ? getInteractiveObjects(performanceManager.zonesAlongRay(pickRaycaster.ray)) : undefined;
+    }
+
+    // What the last hover pick was made from: the pointer, the camera and what the zones held. The pick runs again only when one of them moved
+    // (it walks every mesh it may hit, which at every frame was the frame's biggest cost); a still screen keeps its focus.
+    const lastHoverPick = {
+        pointerX: NaN,
+        pointerY: NaN,
+        contentVersion: -1,
+        cameraWorld: new THREE.Matrix4(),
+        cameraProjection: new THREE.Matrix4(),
+    };
 
     function updateFocusedObject() {
         if (focusDrivenByTouch) {
@@ -2073,12 +2109,30 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         const { x: clientX, y: clientY } = inputMouse;
+        const cameraObject = camera.camera;
+        const contentVersion = performanceManager?.contentVersion ?? -1;
+        const unchanged = clientX === lastHoverPick.pointerX
+            && clientY === lastHoverPick.pointerY
+            && contentVersion === lastHoverPick.contentVersion
+            && cameraObject.matrixWorld.equals(lastHoverPick.cameraWorld)
+            && cameraObject.projectionMatrix.equals(lastHoverPick.cameraProjection);
+        if (unchanged) {
+            return;
+        }
+
         mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
-        
-        raycaster.setFromCamera(mouse, camera.camera);
-        
-        const newFocusedObject = pickInteractiveTile(raycaster);
+
+        raycaster.setFromCamera(mouse, cameraObject);
+
+        const roots = hoverPickRoots(raycaster);
+        lastHoverPick.pointerX = clientX;
+        lastHoverPick.pointerY = clientY;
+        lastHoverPick.contentVersion = performanceManager?.contentVersion ?? -1;
+        lastHoverPick.cameraWorld.copy(cameraObject.matrixWorld);
+        lastHoverPick.cameraProjection.copy(cameraObject.projectionMatrix);
+
+        const newFocusedObject = pickInteractiveTile(raycaster, roots);
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
@@ -2166,6 +2220,24 @@ export function createScene(_gameStore, assetManager, deps) {
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();
 
+    // `[frame-perf]`: a frame slower than SLOW_FRAME_MS says where it went (walkers, hover pick, culling, shadows, render) and what the render drew, at most once a second.
+    // Same switch as the turn's `[tick-perf]`: always in dev; in a build `localStorage.setItem('show-tick-perf', 'true')`, then reload.
+    const SLOW_FRAME_MS = 40;
+    const frameTiming = tickPerfEnabled();
+    let lastSlowFrameReportAt = 0;
+
+    function reportSlowFrame(frameMs) {
+        if (!frameMs) return;
+        const total = Object.values(frameMs).reduce((sum, ms) => sum + ms, 0);
+        const now = performance.now();
+        if (total < SLOW_FRAME_MS || now - lastSlowFrameReportAt < 1000) return;
+        lastSlowFrameReportAt = now;
+        const sections = Object.entries(frameMs).map(([section, ms]) => `${section}=${ms.toFixed(1)}`).join(' ');
+        const { drawCalls, triangles } = renderer.info.render;
+        const { geometries, textures } = renderer.info.memory;
+        console.info(`[frame-perf] ${total.toFixed(0)}ms ${sections} | drawCalls=${drawCalls} triangles=${triangles} geometries=${geometries} textures=${textures}`);
+    }
+
     // Note: updateCitizen() moved to CitizenManager.updateAllCitizens()
     
     function draw() {
@@ -2181,25 +2253,42 @@ export function createScene(_gameStore, assetManager, deps) {
         const currentTime = performance.now();
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
-        
+
+        // Measurement only (`[frame-perf]`, see frameTiming below): where the milliseconds of a slow frame went.
+        const frameMs = frameTiming ? {} : null;
+        let frameLapAt = currentTime;
+        const frameLap = (section) => {
+            if (!frameMs) return;
+            const now = performance.now();
+            frameMs[section] = now - frameLapAt;
+            frameLapAt = now;
+        };
+
         // Legacy border-bounce citizen spawn/update (CitizenManager.updateCitizens /
         // updateAllCitizens) retired — superseded by walkerEventController below.
 
         if (walkerEventController && !gameUI.isPaused) {
             walkerEventController.update(deltaTime);
         }
+        frameLap('walkers');
 
         updateFocusedObject(); // Update focused object every frame
+        frameLap('hoverPick');
         if (typeof onPlacementHoverHandler === 'function') {
             onPlacementHoverHandler(focusedObject ?? null);
         }
+        frameLap('hoverHandler');
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
             performanceManager.updateFrustumCulling(usesEditorLikePresentation());
+            frameLap('culling');
             // OPTIMIZATION: Update shadow casting based on camera distance (throttled, not every frame)
             performanceManager.updateShadowCasting(50); // 50 unit distance threshold - objects beyond this won't cast shadows
+            frameLap('shadows');
         }
         renderer.render(scene, camera.camera);
+        frameLap('render');
+        reportSlowFrame(frameMs);
         logPerformanceStats(); // Log performance stats if enabled
 
         // `info.render.drawCalls` is this frame's draw calls; `info.render.calls` of the WebGPU renderer is the number of `render()` calls since the app started (it only grows).
@@ -2371,7 +2460,7 @@ function onMouseMove(event) {
 
     // Perform raycasting (OPTIMIZED: only interactive objects)
     raycaster.setFromCamera(mouse, camera.camera);
-    focusedObject = pickInteractiveTile(raycaster);
+    focusedObject = pickInteractiveTile(raycaster, hoverPickRoots(raycaster));
     hoveredObjectName = focusedObject?.name || '';
 
     if (typeof this.onPlacementHover === 'function') {

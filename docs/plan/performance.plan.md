@@ -97,6 +97,9 @@ touche à la construction resté accessible.
   par réglage.
 - **Mobile** : l'indicateur de pause et la barre de construction doivent tenir sur un téléphone (cibles de 40 px au moins, pas de défilement horizontal).
 
+> **Suite (2026-11-11)** : l'affichage immédiat du bâtiment (§3.4) est commencé (`scene.update(..., { meshAt })`) et le balayage complet de la ville après chaque pose est
+> traité dans `docs/plan/scene-update-incremental.plan.md`.
+
 ## 6. Ce que la mesure a dit, et ce qui a été fait (2026-11-07, même jour)
 
 **La mesure** (relevé du rendu et lignes `[tick-perf]` pris en ligne sur une petite partie : 8 maisons, 9 lieux de travail, 25 jours).

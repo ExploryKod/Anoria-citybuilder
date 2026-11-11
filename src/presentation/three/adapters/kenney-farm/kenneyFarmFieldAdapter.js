@@ -114,6 +114,7 @@ function createCropField(stageModels, cropConfig, width, depth, seed) {
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       mesh.count = 0;
+      mesh.visible = false;
       root.add(mesh);
       parts.push({ mesh, matrix: child.matrixWorld.clone() });
     });
@@ -149,7 +150,11 @@ function createCropField(stageModels, cropConfig, width, depth, seed) {
       for (const [name, stageData] of Object.entries(stages)) {
         const active = name === stage;
         if (active) fillStage(stageData);
-        stageData.parts.forEach(({ mesh }) => { mesh.count = active ? placements.length : 0; });
+        // An inactive stage is not drawn at all: `count = 0` alone left its meshes in the render (and in the shadow pass) of every frame, for every field.
+        stageData.parts.forEach(({ mesh }) => {
+          mesh.count = active ? placements.length : 0;
+          mesh.visible = active;
+        });
       }
     },
   };

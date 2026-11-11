@@ -10,7 +10,13 @@ export function createCamera(gameWindow) {
     const KEYBOARD_ZOOM_MINUS = '-';
 
     // Camera constants for zooming in and out
-    const MIN_CAMERA_RADIUS = 10;
+    // Closest the camera may get. In the isometric view the zoom is baselineRadius / cameraRadius
+    // (clamped to ORTHO_MAX_ZOOM), so this and ORTHO_MAX_ZOOM are what set how far you can zoom in.
+    const MIN_CAMERA_RADIUS = 4;
+    // The zoom scale (baseline and starting radius) stays computed from this radius, not from
+    // MIN_CAMERA_RADIUS, so lowering the closest radius does not rescale every zoom level.
+    const ZOOM_REFERENCE_MIN_RADIUS = 10;
+    const ORTHO_MAX_ZOOM = 3;
     let MAX_CAMERA_RADIUS = 30; // Will be updated based on World platform size
     const PAN_STEP = 0.5;
     
@@ -51,7 +57,7 @@ export function createCamera(gameWindow) {
 
     camera.position.z = 0.5;
     let cameraOrigin = new THREE.Vector3();
-    let cameraRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
+    let cameraRadius = (MAX_CAMERA_RADIUS + ZOOM_REFERENCE_MIN_RADIUS) / 2;
     let cameraElevation = isIsometricMode ? ISOMETRIC_ELEVATION : 20;
     let cameraAzimuth = isIsometricMode ? (ISOMETRIC_AZIMUTH_BASE + isometricRotationOffset) : 50;
     let isLeftMouseDown = false;
@@ -64,11 +70,11 @@ export function createCamera(gameWindow) {
     // Dolly zoom support
     let dollyZoomEnabled = false;
     const baselineFov = camera.isPerspectiveCamera ? camera.fov : 75; // Default FOV for perspective
-    let baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
-    
+    let baselineRadius = (MAX_CAMERA_RADIUS + ZOOM_REFERENCE_MIN_RADIUS) / 2;
+
     // Function to recalculate baseline radius when MAX_CAMERA_RADIUS changes
     function updateBaselineRadius() {
-        baselineRadius = (MAX_CAMERA_RADIUS + MIN_CAMERA_RADIUS) / 2;
+        baselineRadius = (MAX_CAMERA_RADIUS + ZOOM_REFERENCE_MIN_RADIUS) / 2;
     }
     updateCameraPosition();
 
@@ -424,7 +430,7 @@ export function createCamera(gameWindow) {
         // Handle zoom differently for orthographic vs perspective
         if (isIsometricMode && camera.isOrthographicCamera) {
             // Orthographic zoom: adjust camera.zoom property
-            camera.zoom = Math.max(0.3, Math.min(3, baselineRadius / cameraRadius));
+            camera.zoom = Math.max(0.3, Math.min(ORTHO_MAX_ZOOM, baselineRadius / cameraRadius));
         } else if (camera.isPerspectiveCamera) {
             // Perspective dolly zoom: adjust FOV inversely with radius
             if (dollyZoomEnabled) {

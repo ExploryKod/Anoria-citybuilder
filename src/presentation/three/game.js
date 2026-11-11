@@ -526,13 +526,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return false;
     }
 
+    // Paid and written: show the building now, not after the history, the news and the sweep of the whole city below
+    await scene.update(city, time, { meshAt: { x: placeX, y: placeY } });
     if (!isRoadBuildingType(buildingType)) {
       playPlaceBuildingSound();
     }
     await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
     await announceFirstBuiltNews(buildingType);
 
-    await scene.update(city, time);
+    // In construction mode the building is already drawn (`meshAt` above) and nothing runs: the sweep of the whole city (icons, sprites) waits for the end of the mode
+    // (`settlePendingChanges`). A road does not wait: it changes the road icons of the houses around it.
+    if (!constructionPause || isRoadBuildingType(buildingType)) {
+      await scene.update(city, time);
+    }
     if (isLimitedBuilding(buildingType)) syncLimitedBuildingButtons();
     if (constructionPause) {
       await noteChangesInConstructionMode([
@@ -1109,6 +1115,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (changes.length === 0) return;
     gameUI.setConstructionSettling(true);
     try {
+      // The sweep of the whole city that each placement of the mode skipped (icons, sprites), once for everything built
+      await scene.update(city, time);
       await digestBuildingChanges(changes);
     } finally {
       gameUI.setConstructionSettling(false);
@@ -1232,6 +1240,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     roadPaint.placedCount += 1;
+    // Paid and written: this piece of road shows now, as the drag is laid, not after the sweep of the whole city
+    await scene.update(city, time, { meshAt: { x, y } });
 
     const multiplayerManager = getMultiplayerManager();
     if (multiplayerManager?.isMultiplayer) {
@@ -1499,6 +1509,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
           break;
         }
         placed.push({ plot, instanceId: result.instanceId });
+        // Paid and written: this house shows now, one by one as the drag is laid, not all together after the sweep of the whole city
+        await scene.update(city, time, { meshAt: { x: plot.x, y: plot.y } });
         await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: plot.x, y: plot.y });
         const multiplayerManager = getMultiplayerManager();
         if (multiplayerManager?.isMultiplayer) {
@@ -1515,7 +1527,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
       playPlaceBuildingSound();
-      await scene.update(city, time);
+      // The houses are drawn already (`meshAt` above). In construction mode the sweep of the whole city waits for the end of the mode (`settlePendingChanges`).
+      if (!constructionPause) {
+        await scene.update(city, time);
+      }
       timer.step('scene.update (the houses appear)');
       if (constructionPause) {
         await noteChangesInConstructionMode(
