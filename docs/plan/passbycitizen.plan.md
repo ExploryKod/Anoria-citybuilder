@@ -37,7 +37,7 @@ Aujourd'hui la maison porte `pop`, le lieu de travail (`employees.workerSources`
 ## 3. Modèle
 
 Table `citizens` (schéma Dexie v23, sans `upgrade` : il n'y a pas de partie à migrer) :
-`id, houseId, hamletId` (index). `deleteGameDatabaseForNewGame` (qui supprime toute la base à chaque nouvelle partie, hors `cheatCodes`) la repart de zéro.
+`id, houseId, hamletId` (index). `deleteGameDatabase` puis `createEmptyGameDatabase` (toute la base est supprimée à la sortie d'une partie et recréée au chargement de la suivante, codes de triche compris) la repartent de zéro.
 
 Une ligne se compose de deux parties :
 

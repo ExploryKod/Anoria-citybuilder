@@ -134,7 +134,7 @@ export async function initAppBoot() {
     exclusiveWith: 'hud-build-row-toggle',
   });
   initHudPopRailScope();
-  initParametersPanel({
+  const parametersPanel = initParametersPanel({
     pauseGame,
     playGame,
     registerAppService,
@@ -142,7 +142,8 @@ export async function initAppBoot() {
     getGame: getSessionGame,
     getScene: getSessionScene,
   });
-  await bootstrapGameSession(assetManager);
+  const redirected = (await bootstrapGameSession(assetManager)) === false;
+  if (!redirected) await parametersPanel.showGameCalendar();
   initCheatCodePrompt();
   initMapFiltersPanel({
     getScene: getSessionScene,

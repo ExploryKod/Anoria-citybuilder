@@ -323,36 +323,32 @@ function clearLegacyLocalStorage() {
   }
 }
 
-/** Tables that outlive a game: the cheat codes the player has activated, not the game's data. */
-const TABLES_KEPT_ACROSS_GAMES = Object.freeze(['cheatCodes']);
-
 /**
- * A new game starts from nothing: the whole database is deleted (schema and every table: buildings, citizens, hamlets, journal, traceability, news, trade relations,
- * objectives, clock, calendar) and created again, so the next boot builds them afresh. Only the tables that outlive a game (the cheat codes) are read before and written
- * back after. Called only for a boot that follows a menu choice of a new game — never on a plain reload.
+ * The whole database is deleted and stays deleted: schema and every table (buildings, citizens, hamlets, journal, traceability, news, trade relations, objectives,
+ * clock, calendar, and the cheat codes, which belong to the game they were typed in). Nothing is kept and nothing is created again here: leaving a game leaves no
+ * database behind, and the next game creates its own while it loads (`createEmptyGameDatabase`).
  *
  * Other tabs holding the database open are closed by Dexie on the version change; a connection of this tab that stays open would block the deletion, which then does not
- * finish: nothing of this tab uses the database while this runs (it is awaited before the game boots).
+ * finish: nothing of this tab uses the database while this runs. Dexie does not open a deleted database again by itself: only `waitForDatabaseReady` does.
  * @returns {Promise<void>}
  */
-export async function deleteGameDatabaseForNewGame() {
-  await waitForDatabaseReady();
-  const kept = new Map();
-  for (const name of TABLES_KEPT_ACROSS_GAMES) kept.set(name, await db.table(name).toArray());
-  // The next `waitForDatabaseReady` must open the new database, not hand back the promise of the old one.
+export async function deleteGameDatabase() {
+  // The next `waitForDatabaseReady` must open a new database, not hand back the promise of the one deleted.
   dbReadyPromise = null;
   db.close();
   await db.delete();
+}
+
+/**
+ * Creates the database of a game that starts from nothing, after `deleteGameDatabase`. The deletion is checked, not trusted: a table that still holds a row means
+ * the game before is still there. The residents are counted again on opening (`ready`): the new database has none.
+ * @returns {Promise<void>}
+ */
+export async function createEmptyGameDatabase() {
   await waitForDatabaseReady();
-  // The deletion is checked, not trusted: a table that still holds a row means the old game is still there.
   for (const table of db.tables) {
-    if (TABLES_KEPT_ACROSS_GAMES.includes(table.name)) continue;
     const left = await table.count();
     if (left > 0) throw new Error(`[db] the game database was not deleted: ${table.name} still holds ${left} row(s)`);
-  }
-  // The residents are counted again on opening (`ready`): the new database has none.
-  for (const [name, rows] of kept) {
-    if (rows.length > 0) await db.table(name).bulkAdd(rows);
   }
 }
 

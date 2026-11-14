@@ -2,8 +2,12 @@ import { SITE_LEGAL_LINKS } from './siteLegalLinks.js';
 
 /**
  * Pied de page légal (hors /game).
+ *
+ * `infoLines` : de courtes lignes d'information de la page (sa nature, sa version), sur une seule ligne sous la ligne du projet.
+ *
+ * @param {{ infoLines?: string[] }} [options]
  */
-export function mountSiteLegalFooter() {
+export function mountSiteLegalFooter({ infoLines = [] } = {}) {
   if (document.querySelector('.site-legal-footer')) {
     return;
   }
@@ -42,7 +46,23 @@ export function mountSiteLegalFooter() {
 
   const inner = document.createElement('div');
   inner.className = 'site-legal-footer__inner';
-  inner.append(copy, nav);
+  inner.append(copy);
+
+  // The page's notes share one line (they wrap on a narrow screen), a dot between them
+  if (infoLines.length > 0) {
+    const notes = document.createElement('p');
+    notes.className = 'site-legal-footer__notes';
+
+    infoLines.forEach((text) => {
+      const note = document.createElement('span');
+      note.textContent = text;
+      notes.appendChild(note);
+    });
+
+    inner.appendChild(notes);
+  }
+
+  inner.appendChild(nav);
 
   footer.appendChild(inner);
   document.body.appendChild(footer);

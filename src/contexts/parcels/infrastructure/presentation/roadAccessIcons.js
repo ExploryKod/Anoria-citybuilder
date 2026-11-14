@@ -31,6 +31,8 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     if (!view?.mesh) return;
 
     logRoadJudgement('event', event.instanceId, view.mesh, event.hasAccess, event.newRoadCount);
+    // The mesh carries the judgement the other status icons read: kept in step here, since a mesh already known is not recalculated by the sync below.
+    if (view.mesh.userData) view.mesh.userData.hasRoadAccess = event.hasAccess;
     setRoadAccessIcon({
       assetManager,
       mesh: view.mesh,
@@ -41,7 +43,22 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     });
   });
 
-  return async function syncRoadAccess({ instanceId, mesh, position, scale }) {
+  syncRoadAccess.forget = forgetRoadAccessView;
+  return syncRoadAccess;
+
+  /**
+   * Whoever takes the road icon off a mesh (a building about to collapse shows that alone) says so: the next sync judges the building again and puts the icon back.
+   * @param {string} instanceId
+   */
+  function forgetRoadAccessView(instanceId) {
+    views.delete(instanceId);
+  }
+
+  async function syncRoadAccess({ instanceId, mesh, position, scale }) {
+    // A mesh already known has its icon kept up to date by the event above: every placement, every removal and every day recalculate the road access of the whole
+    // city and publish what changed. Only a new mesh (just placed, or redrawn after an evolution) needs its first judgement here. Recalculating every building at every
+    // sweep of the scene, twice a day, was the scene's biggest cost (two reads of the database per building).
+    if (mesh && views.get(instanceId)?.mesh === mesh) return null;
     if (mesh) {
       views.set(instanceId, { mesh, position, scale });
     }
@@ -62,7 +79,7 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     }
 
     return { hasAccess, roadCount };
-  };
+  }
 }
 
 /** @internal Tests uniquement */

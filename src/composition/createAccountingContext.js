@@ -2465,6 +2465,16 @@ export function createAccountingContext(deps = {}) {
     },
 
     /**
+     * The duties in force, for a pass that asks many of them at once (the merchants' deals of a day): whether the customs have a collector is read once
+     * (it reads every building), and each duty is then answered from it. Same rule as `getCustomsDutyInForce`; the reader is only good for the pass that asked it.
+     * @returns {Promise<(authority: string, flow: 'export' | 'import', good: string, turn: number) => number>}
+     */
+    async readCustomsDutiesInForce() {
+      const collected = await taxIsCollected(TAX_COLLECTION_SKILLS.customs);
+      return (authority, flow, good, turn) => (collected ? fiscalSettingsRepository.getCustomsDuty(authority, flow, good, turn) : 0);
+    },
+
+    /**
      * Sets Anoria's duty on one good for one flow, and logs the change as a dated policy event (who, which good, from, to,
      * at which turn): the history a later trade-policy phase explains a trade war with. The log is appended, never edited.
      * @returns {Promise<number>} the duty, once stored

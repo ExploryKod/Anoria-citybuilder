@@ -110,10 +110,14 @@ function createCropField(stageModels, cropConfig, width, depth, seed) {
     template.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const mesh = new THREE.InstancedMesh(child.geometry, child.material, placements.length);
-      mesh.castShadow = true;
+      // Plants a few centimetres high cast no shadow worth its cost: each caster is set up and drawn a second time for the shadow map.
+      // `castsNoShadow` keeps the camera-distance pass (PerformanceManager.updateShadowCasting) from switching it back on.
+      mesh.castShadow = false;
+      mesh.userData.castsNoShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       mesh.count = 0;
+      mesh.visible = false;
       root.add(mesh);
       parts.push({ mesh, matrix: child.matrixWorld.clone() });
     });
@@ -149,7 +153,11 @@ function createCropField(stageModels, cropConfig, width, depth, seed) {
       for (const [name, stageData] of Object.entries(stages)) {
         const active = name === stage;
         if (active) fillStage(stageData);
-        stageData.parts.forEach(({ mesh }) => { mesh.count = active ? placements.length : 0; });
+        // An inactive stage is not drawn at all: `count = 0` alone left its meshes in the render (and in the shadow pass) of every frame, for every field.
+        stageData.parts.forEach(({ mesh }) => {
+          mesh.count = active ? placements.length : 0;
+          mesh.visible = active;
+        });
       }
     },
   };

@@ -3,6 +3,7 @@ import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getR
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
+import { isWebGpuEnabled, setWebGpuEnabled } from '../../config/renderBackend.js';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
 import { logRenderLoad } from './renderLoadBreakdown.js';
@@ -57,6 +58,7 @@ import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
+import { noticeModal } from '../dom/shell/ConfirmModal.js';
 import { ASSET_CATALOG, resolveAndCreateBuildingMesh, resolveVisualBuildingId } from './meshs/resolveBuildingMesh.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
@@ -212,13 +214,38 @@ export function createScene(_gameStore, assetManager, deps) {
         // sur un GPU jugé "faible" (failIfMajorPerformanceCaveat bloquerait sinon
         // la création du renderer sur pas mal de terminaux Android d'entrée de gamme).
         antialias: !runningOnMobile,
-        powerPreference: 'default',
+        // WebGL2 unless the player asked for WebGPU (Paramètres, tab Performance; config/renderBackend.js): WebGL2 is the backend the game was built and played on
+        // (see the note below: WebGPU never started before 2026-11-11), and the first try of WebGPU lost its device at once (a Vulkan error of Chrome on Linux).
+        forceWebGL: !isWebGpuEnabled(),
+        // No `powerPreference` here: three hands it as it is to WebGPU's `requestAdapter`, which knows only 'low-power' and 'high-performance'. 'default' (a WebGL
+        // value) made that call throw, and three then fell back to WebGL2 on every browser, saying "WebGPU is not available" whatever the browser could do.
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
     });
     // Le backend (WebGPU ou WebGL2 de secours) n'est prêt qu'après cette
     // promesse : tout rendu avant résolution serait silencieusement ignoré.
     let rendererReady = renderer.init();
+    // The player asked for WebGPU and the browser could not give it: three fell back to WebGL2 on its own (it says so in the console only). The player is told,
+    // once the loader is gone, with a notice that has nothing to decide; the setting is switched off so the next game does not try (and fail) again.
+    rendererReady.then(() => {
+        if (!isWebGpuEnabled() || renderer.backend?.isWebGPUBackend) return;
+        setWebGpuEnabled(false);
+        const showNotice = () => {
+            if (loaderManager.isShowing()) {
+                setTimeout(showNotice, 500);
+                return;
+            }
+            void noticeModal({
+                title: 'WebGPU indisponible',
+                message: [
+                    'Vous avez choisi **WebGPU** dans les paramètres, mais **votre navigateur ou votre carte graphique ne le prend pas en charge**.',
+                    'Le jeu fonctionne avec **WebGL2**, comme d’habitude. Rien n’est perdu et vous n’avez rien à faire.',
+                    'Le réglage a été désactivé : vous pourrez le réactiver dans Paramètres, onglet Performance.',
+                ].join('\n\n'),
+            });
+        };
+        showNotice();
+    });
     // Dev only: lets the console read GPU memory (renderer.info) when checking a hamlet switch.
     if (import.meta.env.DEV) Object.assign(window, { __renderer: renderer, __threeScene: scene, __reachOverlay: reachOverlay, __roadPaintPreview: roadPaintPreview, __placementGhost: placementGhost });
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
@@ -286,6 +313,16 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = true;
         console.error('[WebGPU] Device lost — ressources GPU insuffisantes.', info);
         loaderManager.hide(0);
+        if (renderer.backend?.isWebGPUBackend) {
+            // A lost WebGPU device does not come back, and the scene cannot change backend while it runs: the player's choice is switched off, and they are told
+            // what to do. Left on, every reload would lose the device again.
+            setWebGpuEnabled(false);
+            showWarningToast(
+                'Le moteur WebGPU a cessé de fonctionner sur cet appareil. Il a été désactivé dans les paramètres : rechargez la page pour reprendre avec WebGL2.',
+                { timeout: 20000 }
+            );
+            return;
+        }
         showWarningToast(
             "Le rendu 3D a rencontré un problème (ressources graphiques insuffisantes). Tentative de récupération automatique…",
             { timeout: 6000 }
@@ -706,8 +743,14 @@ export function createScene(_gameStore, assetManager, deps) {
         return queued;
     }
 
+    /**
+     * @param {object} city
+     * @param {number} [time]
+     * @param {{ meshAt?: { x: number, y: number } }} [_options] `meshAt`: draw only the building just placed on that tile (see below), not the whole city
+     */
     async function runUpdate(city, time = 0, _options = {}) {
-        lastSceneUpdateTime = time;
+        // A one-tile draw is not a day: it must not move the scene's clock
+        if (!_options.meshAt) lastSceneUpdateTime = time;
 
         // Measurement only: the milliseconds each section of this update took, reported at its end (dev builds).
         const sectionMs = {};
@@ -929,6 +972,17 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                 }
             }
+        }
+
+        // `meshAt`: a placement shows its building at once, the moment it is paid and written, instead of waiting for the sweep of every tile below
+        // (which the game still runs after, and which finds this tile already drawn). Same queue as a full update, so no two touch the scene together.
+        if (_options.meshAt) {
+            const { x: meshX, y: meshY } = _options.meshAt;
+            const tileBuildingId = city.tiles[meshX]?.[meshY]?.buildingId;
+            const meshType = buildings[meshX]?.[meshY]?.userData?.catalogId;
+            const drawnType = meshType && meshType !== 'grass' ? meshType : null;
+            await placeTileMeshIfNeeded(meshX, meshY, Boolean(tileBuildingId && tileBuildingId !== drawnType), tileBuildingId);
+            return;
         }
 
         // Population for HUD / citizens (gameplay persist + turn budget owned by game tick)
@@ -1465,6 +1519,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 mesh.userData.collapseRisk = wornBuildingIds.has(instanceId);
                 if (mesh.userData.collapseRisk) {
                     for (const name of ['no-road', 'no-work', 'no-resource']) assetManager.removeStatusSprite(mesh, name);
+                    // The road icon is gone from the mesh: it is judged again once the building is out of danger.
+                    syncRoadAccess.forget(instanceId);
                     if (collapseSprite) {
                         collapseSprite.visible = mapFilterOn('alerts');
                     } else {
@@ -1562,9 +1618,9 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZATION: Returns only buildings + terrain, not backdrop/lights/etc.
      * Since objects are now in zone groups, we collect them from all zone groups
      */
-    function getInteractiveObjects() {
+    function getInteractiveObjects(zones = zoneGroups) {
         const objects = [];
-        zoneGroups.forEach((zoneGroup) => {
+        zones.forEach((zoneGroup) => {
             zoneGroup.children.forEach((child) => {
                 if (child.userData?.isDecorative) return;
                 if (child.userData?.nonInteractive) return;
@@ -1572,7 +1628,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 objects.push(child);
             });
         });
-        if (objects.length === 0) {
+        // Only when the city has no zone content at all (not when a narrowed list of zones holds nothing: the ray simply crosses none)
+        if (objects.length === 0 && zones === zoneGroups) {
             scene.children.forEach((child) => {
                 if (child.userData?.isDecorative) return;
                 if (child.userData?.nonInteractive) return;
@@ -2056,12 +2113,30 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZED: Only raycast against interactive objects (buildings + terrain)
      * instead of all scene children (backdrop, lights, etc.)
      */
-    function pickInteractiveTile(raycaster) {
-        return pickTileFromRaycast(raycaster, getInteractiveObjects())
+    function pickInteractiveTile(raycaster, roots = getInteractiveObjects()) {
+        return pickTileFromRaycast(raycaster, roots)
             ?? (isEditorMode() && currentCity
                 ? pickEditorTileOnGroundPlane(raycaster, currentCity.size)
                 : null);
     }
+
+    /**
+     * What a hover pick walks: the zones the ray crosses, not every mesh of the city (undefined before the zones exist: the pick then walks them all, as a click does).
+     * Only the hover uses it; a click always picks among everything.
+     */
+    function hoverPickRoots(pickRaycaster) {
+        return performanceManager ? getInteractiveObjects(performanceManager.zonesAlongRay(pickRaycaster.ray)) : undefined;
+    }
+
+    // What the last hover pick was made from: the pointer, the camera and what the zones held. The pick runs again only when one of them moved
+    // (it walks every mesh it may hit, which at every frame was the frame's biggest cost); a still screen keeps its focus.
+    const lastHoverPick = {
+        pointerX: NaN,
+        pointerY: NaN,
+        contentVersion: -1,
+        cameraWorld: new THREE.Matrix4(),
+        cameraProjection: new THREE.Matrix4(),
+    };
 
     function updateFocusedObject() {
         if (focusDrivenByTouch) {
@@ -2073,12 +2148,30 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         const { x: clientX, y: clientY } = inputMouse;
+        const cameraObject = camera.camera;
+        const contentVersion = performanceManager?.contentVersion ?? -1;
+        const unchanged = clientX === lastHoverPick.pointerX
+            && clientY === lastHoverPick.pointerY
+            && contentVersion === lastHoverPick.contentVersion
+            && cameraObject.matrixWorld.equals(lastHoverPick.cameraWorld)
+            && cameraObject.projectionMatrix.equals(lastHoverPick.cameraProjection);
+        if (unchanged) {
+            return;
+        }
+
         mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
         mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
-        
-        raycaster.setFromCamera(mouse, camera.camera);
-        
-        const newFocusedObject = pickInteractiveTile(raycaster);
+
+        raycaster.setFromCamera(mouse, cameraObject);
+
+        const roots = hoverPickRoots(raycaster);
+        lastHoverPick.pointerX = clientX;
+        lastHoverPick.pointerY = clientY;
+        lastHoverPick.contentVersion = performanceManager?.contentVersion ?? -1;
+        lastHoverPick.cameraWorld.copy(cameraObject.matrixWorld);
+        lastHoverPick.cameraProjection.copy(cameraObject.projectionMatrix);
+
+        const newFocusedObject = pickInteractiveTile(raycaster, roots);
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
@@ -2166,6 +2259,24 @@ export function createScene(_gameStore, assetManager, deps) {
     // Store last frame time for animation delta calculation
     let lastFrameTime = performance.now();
 
+    // `[frame-perf]`: a frame slower than SLOW_FRAME_MS says where it went (walkers, hover pick, culling, shadows, render) and what the render drew, at most once a second.
+    // Same switch as the turn's `[tick-perf]`: always in dev; in a build `localStorage.setItem('show-tick-perf', 'true')`, then reload.
+    const SLOW_FRAME_MS = 40;
+    const frameTiming = tickPerfEnabled();
+    let lastSlowFrameReportAt = 0;
+
+    function reportSlowFrame(frameMs) {
+        if (!frameMs) return;
+        const total = Object.values(frameMs).reduce((sum, ms) => sum + ms, 0);
+        const now = performance.now();
+        if (total < SLOW_FRAME_MS || now - lastSlowFrameReportAt < 1000) return;
+        lastSlowFrameReportAt = now;
+        const sections = Object.entries(frameMs).map(([section, ms]) => `${section}=${ms.toFixed(1)}`).join(' ');
+        const { drawCalls, triangles } = renderer.info.render;
+        const { geometries, textures } = renderer.info.memory;
+        console.info(`[frame-perf] ${total.toFixed(0)}ms ${sections} | drawCalls=${drawCalls} triangles=${triangles} geometries=${geometries} textures=${textures}`);
+    }
+
     // Note: updateCitizen() moved to CitizenManager.updateAllCitizens()
     
     function draw() {
@@ -2181,25 +2292,42 @@ export function createScene(_gameStore, assetManager, deps) {
         const currentTime = performance.now();
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
-        
+
+        // Measurement only (`[frame-perf]`, see frameTiming below): where the milliseconds of a slow frame went.
+        const frameMs = frameTiming ? {} : null;
+        let frameLapAt = currentTime;
+        const frameLap = (section) => {
+            if (!frameMs) return;
+            const now = performance.now();
+            frameMs[section] = now - frameLapAt;
+            frameLapAt = now;
+        };
+
         // Legacy border-bounce citizen spawn/update (CitizenManager.updateCitizens /
         // updateAllCitizens) retired — superseded by walkerEventController below.
 
         if (walkerEventController && !gameUI.isPaused) {
             walkerEventController.update(deltaTime);
         }
+        frameLap('walkers');
 
         updateFocusedObject(); // Update focused object every frame
+        frameLap('hoverPick');
         if (typeof onPlacementHoverHandler === 'function') {
             onPlacementHoverHandler(focusedObject ?? null);
         }
+        frameLap('hoverHandler');
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
             performanceManager.updateFrustumCulling(usesEditorLikePresentation());
+            frameLap('culling');
             // OPTIMIZATION: Update shadow casting based on camera distance (throttled, not every frame)
             performanceManager.updateShadowCasting(50); // 50 unit distance threshold - objects beyond this won't cast shadows
+            frameLap('shadows');
         }
         renderer.render(scene, camera.camera);
+        frameLap('render');
+        reportSlowFrame(frameMs);
         logPerformanceStats(); // Log performance stats if enabled
 
         // `info.render.drawCalls` is this frame's draw calls; `info.render.calls` of the WebGPU renderer is the number of `render()` calls since the app started (it only grows).
@@ -2371,7 +2499,7 @@ function onMouseMove(event) {
 
     // Perform raycasting (OPTIMIZED: only interactive objects)
     raycaster.setFromCamera(mouse, camera.camera);
-    focusedObject = pickInteractiveTile(raycaster);
+    focusedObject = pickInteractiveTile(raycaster, hoverPickRoots(raycaster));
     hoveredObjectName = focusedObject?.name || '';
 
     if (typeof this.onPlacementHover === 'function') {

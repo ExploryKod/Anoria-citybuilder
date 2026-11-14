@@ -210,6 +210,7 @@ const SHELF_LIFE_MONTHS = Object.freeze({
   rock: Infinity, clay: Infinity, iron: Infinity, gold: Infinity, bandwidth: Infinity,
   // An agreement waiting for its import is not a good: it never goes bad.
   dealCoal: Infinity, dealPetrol: Infinity, dealUranium: Infinity, dealExoticWood: Infinity,
+  dealWheat: Infinity, dealWoodImport: Infinity, dealCarrot: Infinity, dealCabbage: Infinity, dealPot: Infinity, dealPlate: Infinity, dealAmphora: Infinity,
 });
 
 /**
