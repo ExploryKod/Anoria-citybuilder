@@ -150,6 +150,32 @@ a {
   margin: 0;
 }
 
+/*
+ * The home's background: a dusk skyline (public/images, the Pexels original resized to 2400 px, as WebP), fixed behind the page, under a soft dark veil
+ * so the panel and the footer read on any screen. Only the home carries the class: the other site pages keep the plain background.
+ */
+.site-home {
+  background:
+    linear-gradient(rgba(29, 34, 40, 0.35), rgba(29, 34, 40, 0.55)),
+    url('/images/pexels-laura-tancredi-7078525.webp') center / cover no-repeat fixed;
+  background-color: var(--primary);
+}
+
+/* The footer sits on the photo: light text, with a faint shadow for the bright parts of the sky */
+.site-home .site-footer {
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.site-home .site-footer a {
+  color: #fff;
+}
+
+.site-footer__credit {
+  margin-top: 4px;
+  font-size: 0.7rem;
+}
+
 /* La version du jeu, discrète, sous la ligne du pied de page */
 .site-footer__version {
   margin-top: 4px;

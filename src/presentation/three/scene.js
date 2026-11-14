@@ -58,6 +58,7 @@ import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
+import { noticeModal } from '../dom/shell/ConfirmModal.js';
 import { ASSET_CATALOG, resolveAndCreateBuildingMesh, resolveVisualBuildingId } from './meshs/resolveBuildingMesh.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
@@ -224,6 +225,27 @@ export function createScene(_gameStore, assetManager, deps) {
     // Le backend (WebGPU ou WebGL2 de secours) n'est prêt qu'après cette
     // promesse : tout rendu avant résolution serait silencieusement ignoré.
     let rendererReady = renderer.init();
+    // The player asked for WebGPU and the browser could not give it: three fell back to WebGL2 on its own (it says so in the console only). The player is told,
+    // once the loader is gone, with a notice that has nothing to decide; the setting is switched off so the next game does not try (and fail) again.
+    rendererReady.then(() => {
+        if (!isWebGpuEnabled() || renderer.backend?.isWebGPUBackend) return;
+        setWebGpuEnabled(false);
+        const showNotice = () => {
+            if (loaderManager.isShowing()) {
+                setTimeout(showNotice, 500);
+                return;
+            }
+            void noticeModal({
+                title: 'WebGPU indisponible',
+                message: [
+                    'Vous avez choisi **WebGPU** dans les paramètres, mais **votre navigateur ou votre carte graphique ne le prend pas en charge**.',
+                    'Le jeu fonctionne avec **WebGL2**, comme d’habitude. Rien n’est perdu et vous n’avez rien à faire.',
+                    'Le réglage a été désactivé : vous pourrez le réactiver dans Paramètres, onglet Performance.',
+                ].join('\n\n'),
+            });
+        };
+        showNotice();
+    });
     // Dev only: lets the console read GPU memory (renderer.info) when checking a hamlet switch.
     if (import.meta.env.DEV) Object.assign(window, { __renderer: renderer, __threeScene: scene, __reachOverlay: reachOverlay, __roadPaintPreview: roadPaintPreview, __placementGhost: placementGhost });
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
