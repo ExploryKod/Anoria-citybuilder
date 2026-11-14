@@ -44,7 +44,16 @@ function showWelcomeNoticeOnce() {
   });
 }
 
-bootSiteChrome({ cookieAutoOpen: true, beforeCookies: showWelcomeNoticeOnce() });
+const appVersion = document.body.dataset.appVersion;
+if (!appVersion) {
+  throw new Error('[landing] data-app-version is missing from the <body> of index.html');
+}
+
+bootSiteChrome({
+  cookieAutoOpen: true,
+  beforeCookies: showWelcomeNoticeOnce(),
+  infoLines: ['City Builder de démonstration', `Version ${appVersion}`],
+});
 
 document.querySelectorAll('[data-boot-mode]').forEach((el) => {
   el.addEventListener('click', () => {

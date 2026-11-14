@@ -9,11 +9,13 @@ import { mountCookieConsent } from './mountCookieBanner.js';
  * `beforeCookies` : promesse que le bandeau cookies attend avant de se monter (un message d'arrivée ne se
  * superpose pas au bandeau).
  *
- * @param {{ cookieAutoOpen?: boolean, legalFooter?: boolean, beforeCookies?: Promise<void> }} [options]
+ * `infoLines` : lignes d'information de la page, dans le même pied de page.
+ *
+ * @param {{ cookieAutoOpen?: boolean, legalFooter?: boolean, beforeCookies?: Promise<void>, infoLines?: string[] }} [options]
  */
-export function bootSiteChrome({ cookieAutoOpen = false, legalFooter = true, beforeCookies = Promise.resolve() } = {}) {
+export function bootSiteChrome({ cookieAutoOpen = false, legalFooter = true, beforeCookies = Promise.resolve(), infoLines } = {}) {
   if (legalFooter) {
-    mountSiteLegalFooter();
+    mountSiteLegalFooter({ infoLines });
   }
   beforeCookies.then(() => mountCookieConsent({ autoOpen: cookieAutoOpen }));
   initPWA();
