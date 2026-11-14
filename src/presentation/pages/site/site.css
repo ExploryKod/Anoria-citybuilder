@@ -161,19 +161,170 @@ a {
   background-color: var(--primary);
 }
 
-/* The footer sits on the photo: light text, with a faint shadow for the bright parts of the sky */
-.site-home .site-footer {
-  color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+/*
+ * The home's menu as frosted glass over the photo: one translucent card, a thin light edge, white text, the buttons see-through with only the main
+ * one in orange (the photo's own warm sky). Scoped to .site-home: the other pages keep their solid panels.
+ */
+.site-home .site-home-panel {
+  background: rgba(20, 26, 36, 0.42);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
-.site-home .site-footer a {
+/* No shadow anywhere in the menu: the glass and its thin edge are enough, and the main button's glow would stand out on it */
+.site-home .site-btn--primary {
+  box-shadow: none;
+}
+
+.site-home .site-menu-title h1 {
+  color: #fff;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.site-home .site-menu-title p {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.site-home .site-btn:not(.site-btn--primary) {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
-.site-footer__credit {
-  margin-top: 4px;
+.site-home .site-btn:not(.site-btn--primary):hover:not(:disabled):not(.site-btn--disabled) {
+  border-color: var(--cta);
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.site-home .site-btn:focus-visible {
+  outline: 3px solid rgba(251, 129, 34, 0.7);
+  outline-offset: 2px;
+}
+
+/* A button not yet available: dimmer than the live ones, still readable on the photo */
+.site-home .site-btn:is(:disabled, .site-btn--disabled) {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  opacity: 1;
+}
+
+.site-home .site-btn--beta::after {
+  color: inherit;
+}
+
+/* The legal strip takes the menu's glass (same tint, blur and light edge), so the two read as one design over the photo */
+.site-home .site-legal-footer {
+  border-top: 0;
+  background: rgba(20, 26, 36, 0.42);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
+.site-home .site-legal-footer__copy,
+.site-home .site-legal-footer__notes {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.site-home .site-legal-footer__link {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.site-home .site-legal-footer__link:hover {
+  color: var(--cta);
+}
+
+.site-home .site-legal-footer__sep,
+.site-home .site-legal-footer__notes > * + *::before {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* The page spans the whole window, so the photo's credit can sit in the corner of the picture, just above the legal strip */
+.site-home .site-page {
+  position: relative;
+  max-width: none;
+  padding-bottom: 32px;
+}
+
+/* The photo's credit: small, dim and in the bottom-left corner, so it is there without drawing the eye */
+.site-photo-credit {
+  position: absolute;
+  left: max(var(--site-page-gutter), env(safe-area-inset-left, 0px));
+  bottom: 8px;
+  margin: 0;
   font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.site-photo-credit a {
+  color: inherit;
+}
+
+.site-photo-credit a:hover {
+  color: #fff;
+}
+
+/*
+ * A wide screen: the menu becomes a glass side panel, the full height of the window, docked to the right edge, on the water, so the tower (about 37%
+ * from the left) stays in view. The photo is 3:2, so this holds while the window is at least 4:3 (a taller window crops the sides and moves the
+ * tower): below that, the card stays centred.
+ */
+@media (min-width: 900px) and (min-height: 501px) and (min-aspect-ratio: 4/3) {
+  /*
+   * The window is two columns: the photo on the left, all the height; the glass column on the right, the menu over the legal footer. <main> steps out of
+   * the way (display: contents) so the menu, the credit and the footer are placed straight on the page's grid.
+   */
+  .site-home {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(440px, 38vw, 720px);
+    grid-template-rows: 1fr auto;
+  }
+
+  .site-home .site-page {
+    display: contents;
+  }
+
+  .site-home .site-home-panel {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 48px max(40px, env(safe-area-inset-right, 0px)) 48px 40px;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .site-home .site-legal-footer {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* The credit, at the bottom-left corner of the whole photo (it spans both rows, so it sits at the window's bottom) */
+  .site-home .site-photo-credit {
+    position: static;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: end;
+    justify-self: start;
+    margin: 0 0 8px max(var(--site-page-gutter), env(safe-area-inset-left, 0px));
+  }
+
+  /* The panel grows with the window, its content does not: the title and the buttons keep a readable width, centred in the glass */
+  .site-home .site-home-panel > * {
+    width: 100%;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 /* La version du jeu, discrète, sous la ligne du pied de page */

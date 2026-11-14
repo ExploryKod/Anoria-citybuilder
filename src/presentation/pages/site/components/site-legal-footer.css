@@ -27,6 +27,23 @@
   color: var(--site-text-muted);
 }
 
+/* The page's own notes (its nature, its version): one line under the project line, a notch smaller, a dot between them */
+.site-legal-footer__notes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--site-text-muted);
+}
+
+.site-legal-footer__notes > * + *::before {
+  content: '·';
+  margin: 0 0.6em;
+  color: var(--site-border-light);
+  user-select: none;
+}
+
 .site-legal-footer__links {
   display: flex;
   flex-wrap: wrap;
